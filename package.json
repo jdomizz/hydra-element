@@ -1,0 +1,39 @@
+{
+  "name": "hydra-element",
+  "version": "0.1.0",
+  "description": "A custom element for wrapping the hydra-synth video engine",
+  "author": "Jesus Dominguez",
+  "license": "AGPL",
+  "homepage": "https://github.com/jdomizz/hydra-element#readme",
+  "main": "dist/hydra-element.js",
+  "module": "dist/hydra-element.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "start": "webpack serve",
+    "build": "webpack --mode=production"
+  },
+  "dependencies": {
+    "hydra-synth": "^1.3.8"
+  },
+  "devDependencies": {
+    "webpack": "^5.50.0",
+    "webpack-cli": "^4.7.2",
+    "webpack-dev-server": "^3.11.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jdomizz/hydra-element.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jdomizz/hydra-element/issues"
+  },
+  "keywords": [
+    "creative-coding",
+    "livecoding",
+    "hydra-synth",
+    "custom-element",
+    "web-component"
+  ]
+}
