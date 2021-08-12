@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>&lt;hydra-element&gt;</title>
+  <style>
+    body {
+      margin: 0px;
+    }
+    .background {
+      display: block;
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+    }
+    #foreground {
+      position: absolute;
+      margin: 0 1em;
+    }
+  </style>
+</head>
+
+<body>
+  <hydra-element code="noise().out(o0)" class="background"></hydra-element>
+  <div id="foreground">&lt;hydra-element&gt;</div>
+  <script src="./dist/hydra-element.js"></script>
+</body>
+
+</html>
