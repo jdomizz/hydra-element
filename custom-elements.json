@@ -1,0 +1,166 @@
+{
+  "version": "experimental",
+  "tags": [
+    {
+      "name": "hydra-element",
+      "path": "./dist/hydra-element.js",
+      "attributes": [
+        {
+          "name": "width",
+          "type": "number",
+          "default": "\"innerWidth\""
+        },
+        {
+          "name": "height",
+          "type": "number",
+          "default": "\"innerHeight\""
+        },
+        {
+          "name": "audio",
+          "type": "boolean",
+          "default": "false"
+        },
+        {
+          "name": "sources",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "outputs",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "precision",
+          "type": "string",
+          "default": "\"highp\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "width",
+          "attribute": "width",
+          "type": "number",
+          "default": "\"innerWidth\""
+        },
+        {
+          "name": "height",
+          "attribute": "height",
+          "type": "number",
+          "default": "\"innerHeight\""
+        },
+        {
+          "name": "audio",
+          "attribute": "audio",
+          "type": "boolean",
+          "default": "false"
+        },
+        {
+          "name": "sources",
+          "attribute": "sources",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "outputs",
+          "attribute": "outputs",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "precision",
+          "attribute": "precision",
+          "type": "string",
+          "default": "\"highp\""
+        }
+      ]
+    },
+    {
+      "name": "hydra-element",
+      "path": "./hydra-element.js",
+      "description": "Custom element with a global instance of `hydra-synth` embedded.",
+      "attributes": [
+        {
+          "name": "width",
+          "description": "Width of the canvas element to render to",
+          "type": "number",
+          "default": "\"innerWidth\""
+        },
+        {
+          "name": "height",
+          "description": "Height of the canvas element to render to",
+          "type": "number",
+          "default": "\"innerHeight\""
+        },
+        {
+          "name": "audio",
+          "description": "Autodetect audio (ask for microphone)",
+          "type": "Boolean",
+          "default": "false"
+        },
+        {
+          "name": "sources",
+          "description": "Number of source buffers to create initially",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "outputs",
+          "description": "Number of output buffers to use",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "precision",
+          "description": "Precision of the shaders",
+          "type": "\"highp\" | \"mediump\" | \"lowp\"",
+          "default": "\"highp\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "width",
+          "attribute": "width",
+          "description": "Width of the canvas element to render to",
+          "type": "number",
+          "default": "\"innerWidth\""
+        },
+        {
+          "name": "height",
+          "attribute": "height",
+          "description": "Height of the canvas element to render to",
+          "type": "number",
+          "default": "\"innerHeight\""
+        },
+        {
+          "name": "audio",
+          "attribute": "audio",
+          "description": "Autodetect audio (ask for microphone)",
+          "type": "Boolean",
+          "default": "false"
+        },
+        {
+          "name": "sources",
+          "attribute": "sources",
+          "description": "Number of source buffers to create initially",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "outputs",
+          "attribute": "outputs",
+          "description": "Number of output buffers to use",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "precision",
+          "attribute": "precision",
+          "description": "Precision of the shaders",
+          "type": "\"highp\" | \"mediump\" | \"lowp\"",
+          "default": "\"highp\""
+        }
+      ]
+    }
+  ]
+}
