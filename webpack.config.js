@@ -14,7 +14,7 @@ module.exports = function (env, { mode }) {
       port: 9000,
       historyApiFallback: true,
       writeToDisk: true,
-      open: !process.env.CI,
+      open: false,
       lazy: false,
     }
   }
