@@ -1,7 +1,7 @@
 {
   "name": "hydra-element",
   "version": "0.1.0",
-  "description": "A custom element for wrapping the hydra-synth video engine",
+  "description": "A custom element for wrapping the hydra-synth engine",
   "author": "Jesus Dominguez",
   "license": "AGPL",
   "homepage": "https://github.com/jdomizz/hydra-element#readme",
