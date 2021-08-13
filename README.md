@@ -6,9 +6,17 @@ A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-s
 
 [Hydra](https://github.com/ojack/hydra) is a set of tools for livecoding networked visuals developed by [Olivia Jack](https://ojack.xyz/).
 
+## TODO
+
+- [ ] Add JSDoc
+- [ ] Add tests
+- [ ] Add changelog
+- [ ] Distribute the wc manifest
+- [ ] Document `analyze` and `manifest` scripts
+
 ## Rationale
 
-The purpose of this project is to embed a _global_ instance of `hydra-synth` in a [web component](https://developer.mozilla.org/en-US/docs/Web/Web_Components) bundled as a standard [ES module](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
+The purpose of this project is to embed a _global_ instance of `hydra-synth` in a [web component](https://developer.mozilla.org/en-US/docs/Web/Web_Components) _bundled_ as a native [ES module](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
 
 ## Usage
 
@@ -71,6 +79,8 @@ Read the [`hydra-synth` documentation](https://github.com/ojack/hydra-synth#api)
 The following `npm` scripts are available:
 
 - `start`: runs the project for _development_ (reloading on file changes)
+- `analyze`:
+- `manifest`:
 - `build`: builds the project for _production_ (in the `dist` directory)
 
 ## License
