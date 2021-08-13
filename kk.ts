@@ -20,9 +20,7 @@ export class HydraElement extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.initElement();
     this.createCanvas();
-    new HydraSynth({
-      canvas: this.canvas
-    });
+    new HydraSynth(this.options);
   }
 
   connectedCallback() {
@@ -30,18 +28,32 @@ export class HydraElement extends HTMLElement {
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
-    
+    this.updateHydraSynth(attrName, newValue);
   }
 
   initElement() {
-    this.code = '';
     this.width = 1280;
     this.height = 720;
+    this.auto = true;
     this.audio = false;
     this.sources = 4;
     this.outputs = 4;
     this.transforms = [];
+    this.precision = 'highp';
     this.pb = null;
+    this.options = {
+      canvas: this.canvas,
+      // width: this.width,
+      // height: this.height,
+      autoLoop: this.auto,
+      makeGlobal: true,
+      detectAudio: this.audio,
+      numSources: this.sources,
+      numOutputs: this.outputs,
+      extendTransforms: this.transforms,
+      precision: this.precision,
+      pb: this.pb,
+    };
   }
 
   createCanvas() {
@@ -51,5 +63,9 @@ export class HydraElement extends HTMLElement {
     canvas.style.width = "100%";
     canvas.style.height = "100%";
     this.canvas = canvas;
+  }
+
+  updateHydraSynth() {
+
   }
 }
