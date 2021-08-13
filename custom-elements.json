@@ -1,20 +1,29 @@
 {
-  "version": 2,
+  "version": "experimental",
   "tags": [
     {
       "name": "hydra-element",
-      "description": "A custom element for wrapping the hydra-synth video engine",
-      "properties": [
+      "path": "./hydra-element.js",
+      "attributes": [
         {
-          "name": "src",
-          "type": "String",
-          "description": "The source code of the Hydra sketch",
-          "default": ""
+          "name": "width"
+        },
+        {
+          "name": "height"
+        },
+        {
+          "name": "audio"
+        },
+        {
+          "name": "sources"
+        },
+        {
+          "name": "outputs"
+        },
+        {
+          "name": "precision"
         }
-      ],
-      "events": [],
-      "slots": [],
-      "cssProperties": []
+      ]
     }
   ]
 }
