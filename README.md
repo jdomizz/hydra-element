@@ -2,15 +2,13 @@
 
 # \<hydra-element>
 
-A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-synth) video engine.
+A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-synth) engine.
 
 [Hydra](https://github.com/ojack/hydra) is a set of tools for livecoding networked visuals developed by [Olivia Jack](https://ojack.xyz/).
 
 ## Rationale
 
-Embed `hydra-synth` into a [web component](https://developer.mozilla.org/en-US/docs/Web/Web_Components) to use it as an HTML tag in [ESM](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)-based developments.
-
-The `hydra-synth` code is based on [CommonJS](https://en.wikipedia.org/wiki/CommonJS), which is incompatible with ES modules. The code distributed with this project is compatible with the new standard. As a result, it can be used with modern bundlers that leverage ESM to offer a much faster development experience.
+The purpose of this project is to embed a _global_ instance of `hydra-synth` in a [web component](https://developer.mozilla.org/en-US/docs/Web/Web_Components) bundled as a standard [ES module](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
 
 ## Usage
 
@@ -30,7 +28,7 @@ The `hydra-synth` code is based on [CommonJS](https://en.wikipedia.org/wiki/Comm
         gradient(0.5).colorama(0.5).pixelate(20, 20).out(o0);
       });
     </script>
-    <script src="https://unpkg.com/hydra-element"></script>
+    <script type="module" src="https://unpkg.com/hydra-element"></script>
   </body>
 </html>
 ```
@@ -72,9 +70,9 @@ Read the [`hydra-synth` documentation](https://github.com/ojack/hydra-synth#api)
 
 The following `npm` scripts are available:
 
-- `start`: runs the app for _development_ (reloading on file changes)
-- `build`: builds the app for _production_ (in the `dist` directory)
+- `start`: runs the project for _development_ (reloading on file changes)
+- `build`: builds the project for _production_ (in the `dist` directory)
 
 ## License
 
-Distributed under the GNU Affero General Public License.
+Distributed under the GNU Affero General Public License, the same as Hydra.
