@@ -6,6 +6,8 @@ A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-s
 
 [Hydra](https://github.com/ojack/hydra) is a set of tools for livecoding networked visuals developed by [Olivia Jack](https://ojack.xyz/).
 
+## Rationale
+
 ## Usage
 
 ### In a web page
@@ -16,6 +18,11 @@ A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-s
   <head>
     <meta charset="utf-8" />
     <title>My Hydra Sketch</title>
+    <script>
+      window.addEventListener("load", function () {
+        gradient(0.5).colorama(0.5).pixelate(20, 20).out(o0);
+      });
+    </script>
   </head>
   <body>
     <hydra-element></hydra-element>
