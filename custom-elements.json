@@ -7,22 +7,84 @@
       "description": "Custom element with a global instance of `hydra-synth` embedded.",
       "attributes": [
         {
-          "name": "width"
+          "name": "width",
+          "description": "Width of the canvas element to render to",
+          "type": "number",
+          "default": "\"innerWidth\""
         },
         {
-          "name": "height"
+          "name": "height",
+          "description": "Height of the canvas element to render to",
+          "type": "number",
+          "default": "\"innerHeight\""
         },
         {
-          "name": "audio"
+          "name": "audio",
+          "description": "Autodetect audio (ask for microphone)",
+          "type": "Boolean",
+          "default": "false"
         },
         {
-          "name": "sources"
+          "name": "sources",
+          "description": "Number of source buffers to create initially",
+          "type": "number",
+          "default": "4"
         },
         {
-          "name": "outputs"
+          "name": "outputs",
+          "description": "Number of output buffers to use",
+          "type": "number",
+          "default": "4"
         },
         {
-          "name": "precision"
+          "name": "precision",
+          "description": "Precision of the shaders",
+          "type": "\"highp\" | \"mediump\" | \"lowp\"",
+          "default": "\"highp\""
+        }
+      ],
+      "properties": [
+        {
+          "name": "width",
+          "attribute": "width",
+          "description": "Width of the canvas element to render to",
+          "type": "number",
+          "default": "\"innerWidth\""
+        },
+        {
+          "name": "height",
+          "attribute": "height",
+          "description": "Height of the canvas element to render to",
+          "type": "number",
+          "default": "\"innerHeight\""
+        },
+        {
+          "name": "audio",
+          "attribute": "audio",
+          "description": "Autodetect audio (ask for microphone)",
+          "type": "Boolean",
+          "default": "false"
+        },
+        {
+          "name": "sources",
+          "attribute": "sources",
+          "description": "Number of source buffers to create initially",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "outputs",
+          "attribute": "outputs",
+          "description": "Number of output buffers to use",
+          "type": "number",
+          "default": "4"
+        },
+        {
+          "name": "precision",
+          "attribute": "precision",
+          "description": "Precision of the shaders",
+          "type": "\"highp\" | \"mediump\" | \"lowp\"",
+          "default": "\"highp\""
         }
       ]
     }
