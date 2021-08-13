@@ -5,13 +5,10 @@ export class HydraElement extends HTMLElement {
     return [
       'width',
       'height',
-      'auto',
       'audio',
       'sources',
       'outputs',
-      'transforms',
       'precision',
-      'pb',
     ];
   }
 
@@ -19,12 +16,10 @@ export class HydraElement extends HTMLElement {
     super();
     this.attachShadow({ mode: 'open' });
     this.initElement();
-    this.createCanvas();
-    new HydraSynth({
-      ...this.opts,
+    this.initCanvas();
+    this.hydra = new HydraSynth({
+      ...this.options,
       canvas: this.canvas,
-      extendTransforms: this.transforms,
-      pb: this.pb,
     });
   }
 
@@ -40,9 +35,6 @@ export class HydraElement extends HTMLElement {
       case 'height': 
         this.canvas.height = parseInt(newValue);
         break;
-      case 'auto':
-        this.updateHydraSynth({ autoLoop: JSON.parse(newValue) });
-        break;
       case 'audio':
         this.updateHydraSynth({ detectAudio: JSON.parse(newValue) });
         break;
@@ -52,27 +44,20 @@ export class HydraElement extends HTMLElement {
       case 'outputs':
         this.updateHydraSynth({ numOutputs: parseInt(newValue) });
         break;
-      // TODO: case 'transforms':  
       case 'precision':
         this.updateHydraSynth({ precision: newValue }); 
         break; 
-      // TODO: case 'pb':  
     }
   }
 
   initElement() {
     this.width = window.innerWidth;
     this.height = window.innerHeight;
-    this.auto = true;
     this.audio = false;
     this.sources = 4;
     this.outputs = 4;
-    this.transforms = [];
     this.precision = 'highp';
-    this.pb = null;
-    this.opts = {
-      makeGlobal: true,
-      autoLoop: this.auto,
+    this.options = {
       detectAudio: this.audio,
       numSources: this.sources,
       numOutputs: this.outputs,
@@ -80,7 +65,7 @@ export class HydraElement extends HTMLElement {
     }
   }
 
-  createCanvas() {
+  initCanvas() {
     const canvas = document.createElement('canvas');
     canvas.width = this.width;
     canvas.height = this.height;
@@ -90,12 +75,10 @@ export class HydraElement extends HTMLElement {
   }
 
   updateHydraSynth(option) {
-    new HydraSynth({
-      ...this.opts,
+    this.hydra = new HydraSynth({
+      ...this.options,
       ...option,
       canvas: this.canvas,
-      extendTransforms: this.transforms,
-      pb: this.pb,
     });
   }
 }
