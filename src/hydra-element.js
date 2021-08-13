@@ -1,5 +1,8 @@
 import HydraSynth from 'hydra-synth';
 
+/**
+ * Custom element with a global instance of `hydra-synth` embedded.
+ */
 export class HydraElement extends HTMLElement {
   static get observedAttributes() {
     return [

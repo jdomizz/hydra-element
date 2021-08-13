@@ -4,6 +4,7 @@
     {
       "name": "hydra-element",
       "path": "./hydra-element.js",
+      "description": "Custom element with a global instance of `hydra-synth` embedded.",
       "attributes": [
         {
           "name": "width"
