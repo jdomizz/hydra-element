@@ -17,7 +17,6 @@ module.exports = function (env, { mode }) {
     plugins: production ? [
       new CopyPlugin({
         patterns: [
-          { from: "LICENSE" },
           { from: "custom-elements.json" },
         ],
       })
