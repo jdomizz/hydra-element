@@ -1,4 +1,4 @@
-<!-- ![Logo](/logo.png) -->
+![Logo](/logo.png)
 
 # \<hydra-element>
 
@@ -7,6 +7,10 @@ A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-s
 [Hydra](https://github.com/ojack/hydra) is a set of tools for livecoding networked visuals developed by [Olivia Jack](https://ojack.xyz/).
 
 ## Rationale
+
+Embed `hydra-synth` into a [web component](https://developer.mozilla.org/en-US/docs/Web/Web_Components) to use it as an HTML tag in [ESM](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules)-based developments.
+
+The `hydra-synth` code is based on [CommonJS](https://en.wikipedia.org/wiki/CommonJS), which is incompatible with ES modules. The code distributed with this project is compatible with the new standard. As a result, it can be used with modern bundlers that leverage ESM to offer a much faster development experience.
 
 ## Usage
 
@@ -18,14 +22,14 @@ A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-s
   <head>
     <meta charset="utf-8" />
     <title>My Hydra Sketch</title>
+  </head>
+  <body>
+    <hydra-element></hydra-element>
     <script>
       window.addEventListener("load", function () {
         gradient(0.5).colorama(0.5).pixelate(20, 20).out(o0);
       });
     </script>
-  </head>
-  <body>
-    <hydra-element></hydra-element>
     <script src="https://unpkg.com/hydra-element"></script>
   </body>
 </html>
@@ -48,24 +52,29 @@ import "hydra-element";
 Use the custom tag:
 
 ```html
-<hydra-element></hydra-element>
+<hydra-element audio="true" precision="lowp"></hydra-element>
 ```
 
 ## Configuration
 
-```
-'code',
-'width', // ? canvas element width, defaults to 1280
-'height', // ? canvas element height, defaults to 720
-// 'auto-loop': defaults to true, if false you must implement a loop function using the tick() method
-'audio', // autodetect microphones (asks for permission), defaults to false
-'sources', // number of initial source buffers, defaults to 4
-'outputs', // number of available output buffers, defaults to 4
-'transforms', // array of transforms to be added to the synth, defaults to []
-// ?? [['ios','lowp']] 'precision', // 'highp' or 'mediump' or 'lowp' (recommended for ios), defaults to 'mediump' except for ios ('highp')
-'pb', // instance of rtc-patch-bay to use for streaming, defaults to null
-```
+Read the [`hydra-synth` documentation](https://github.com/ojack/hydra-synth#api) for more information about these options.
+
+| `hydra-element` attribute | `hydra-synth` option | Default value        |
+| ------------------------- | -------------------- | -------------------- |
+| `width`                   | `width`              | `window.innerWidth`  |
+| `height`                  | `height`             | `window.innerHeight` |
+| `audio`                   | `detectAudio`        | `false`              |
+| `sources`                 | `numSources`         | `4`                  |
+| `outputs`                 | `numOutputs`         | `4`                  |
+| `precision`               | `precision`          | `highp`              |
+
+## Development
+
+The following `npm` scripts are available:
+
+- `start`: runs the app for _development_ (reloading on file changes)
+- `build`: builds the app for _production_ (in the `dist` directory)
 
 ## License
 
-Distributed under the GNU Affero General Public License, the same as Hydra.
+Distributed under the GNU Affero General Public License.
