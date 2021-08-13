@@ -17,10 +17,7 @@ export class HydraElement extends HTMLElement {
     this.attachShadow({ mode: 'open' });
     this.initElement();
     this.initCanvas();
-    this.hydra = new HydraSynth({
-      ...this.options,
-      canvas: this.canvas,
-    });
+    this.initHydraSynth();
   }
 
   connectedCallback() {
@@ -74,11 +71,18 @@ export class HydraElement extends HTMLElement {
     this.canvas = canvas;
   }
 
+  initHydraSynth() {
+    this.hydra = new HydraSynth({
+      canvas: this.canvas,
+      ...this.options,
+    });
+  }
+
   updateHydraSynth(option) {
     this.hydra = new HydraSynth({
+      canvas: this.canvas,
       ...this.options,
       ...option,
-      canvas: this.canvas,
     });
   }
 }
