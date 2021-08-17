@@ -4,49 +4,6 @@ import HydraSynth from 'hydra-synth';
  * Custom element with a global instance of `hydra-synth` embedded.
  */
 export class HydraElement extends HTMLElement {
-
-  /**
-   * Width of the canvas element to render to
-   * @attr
-   * @type {number}
-   */
-  width = window.innerWidth;
-
-  /**
-   * Height of the canvas element to render to
-   * @attr
-   * @type {number}
-   */
-  height = window.innerHeight;
-
-  /**
-   * Autodetect audio (ask for microphone)
-   * @attr
-   * @type {Boolean}
-   */
-  audio = false;
-
-  /**
-   * Number of source buffers to create initially
-   * @attr
-   * @type {number}
-   */
-  sources = 4;
-
-  /**
-   * Number of output buffers to use
-   * @attr
-   * @type {number}
-   */
-  outputs = 4;
-
-  /**
-   * Precision of the shaders
-   * @attr
-   * @type {"highp" | "mediump" | "lowp"}
-   */
-  precision = 'highp';
-
   static get observedAttributes() {
     return [
       'width',
@@ -60,6 +17,42 @@ export class HydraElement extends HTMLElement {
 
   constructor() {
     super();
+    /**
+     * Width of the canvas element to render to
+     * @attr
+     * @type {number}
+     */
+    this.width = window.innerWidth;
+    /**
+     * Height of the canvas element to render to
+     * @attr
+     * @type {number}
+     */
+    this.height = window.innerHeight;
+    /**
+     * Autodetect audio (ask for microphone)
+     * @attr
+     * @type {Boolean}
+     */
+    this.audio = false;
+    /**
+     * Number of source buffers to use
+     * @attr
+     * @type {number}
+     */
+    this.sources = 4;
+    /**
+     * Number of output buffers to use
+     * @attr
+     * @type {number}
+     */
+    this.outputs = 4;
+    /**
+     * Precision of the shaders
+     * @attr
+     * @type {"highp" | "mediump" | "lowp"}
+     */
+    this.precision = 'highp';
     this.attachShadow({ mode: 'open' });
     this.initCanvas();
     this.initHydraSynth();
