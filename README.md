@@ -20,14 +20,14 @@ The purpose of this project is to embed a _global_ instance of `hydra-synth` in 
   <head>
     <meta charset="utf-8" />
     <title>My Hydra Sketch</title>
-  </head>
-  <body>
-    <hydra-element></hydra-element>
     <script>
       window.addEventListener("load", function () {
         gradient(0.5).colorama(0.5).pixelate(20, 20).out(o0);
       });
     </script>
+  </head>
+  <body>
+    <hydra-element></hydra-element>
     <script type="module" src="https://unpkg.com/hydra-element"></script>
   </body>
 </html>
@@ -71,8 +71,8 @@ Read the [`hydra-synth` documentation](https://github.com/ojack/hydra-synth#api)
 The following `npm` scripts are available:
 
 - `start`: runs the project for _development_ (reloading on file changes)
-- `analyze`: displays information extracted from the source code documentation
-- `manifest`: generates the `custom.elements.json` manifest
+- `analyze`: displays documentation extracted from the source code
+- `manifest`: generates the `custom-elements.json` manifest
 - `build`: builds the project for _production_ (in the `dist` directory)
 
 ## License
