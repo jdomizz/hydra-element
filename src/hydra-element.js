@@ -1,3 +1,4 @@
+//@ts-check
 import HydraSynth from 'hydra-synth';
 
 /**
@@ -55,11 +56,12 @@ export class HydraElement extends HTMLElement {
     this.precision = 'highp';
     this.attachShadow({ mode: 'open' });
     this.initCanvas();
-    this.initHydraSynth();
+    this.initOptions();
   }
 
   connectedCallback() {
     this.shadowRoot.appendChild(this.canvas);
+    this.initHydraSynth();
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
@@ -71,18 +73,30 @@ export class HydraElement extends HTMLElement {
         this.canvas.height = parseInt(newValue);
         break;
       case 'audio':
-        this.updateHydraSynth({ detectAudio: JSON.parse(newValue) });
+        this.options = {...this.options, detectAudio: JSON.parse(newValue) };
         break;
       case 'sources': 
-        this.updateHydraSynth({ numSources: parseInt(newValue) });
+      this.options = {...this.options, numSources: parseInt(newValue) };
         break;
       case 'outputs':
-        this.updateHydraSynth({ numOutputs: parseInt(newValue) });
+        this.options = {...this.options, numOutputs: parseInt(newValue) };
         break;
       case 'precision':
-        this.updateHydraSynth({ precision: newValue }); 
+        this.options = {...this.options, precision: newValue };
         break; 
     }
+  }
+
+  /**
+   * Initialize the default `hydra-synth` options.
+   */
+  initOptions() {
+    this.options = {
+      detectAudio: this.audio,
+      numSources: this.sources,
+      numOutputs: this.outputs,
+      precision: this.precision,
+    };
   }
 
   /**
@@ -98,30 +112,21 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
-   * Initialize the `hydra-synth` engine.
+   * Initialize the `hydra-synth` engine with the passed options.
+   * @param {*} options Partial of the `hydra-synth` options
    */
-  initHydraSynth() {
-    this.options = {
-      detectAudio: this.audio,
-      numSources: this.sources,
-      numOutputs: this.outputs,
-      precision: this.precision,
+   initHydraSynth(options) {
+    if (!this.hydra) {
+      if (options) {
+        this.options = {
+          ...this.options,
+          ...options,
+        };
+      }
+      this.hydra = new HydraSynth({
+        canvas: this.canvas,
+        ...this.options,
+      });
     }
-    this.hydra = new HydraSynth({
-      canvas: this.canvas,
-      ...this.options,
-    });
-  }
-
-  /**
-   * Update the `hydra-synth` engine with the new option value.
-   * @param {*} option Partial of the `hydra-synth` options
-   */
-  updateHydraSynth(option) {
-    this.hydra = new HydraSynth({
-      canvas: this.canvas,
-      ...this.options,
-      ...option,
-    });
   }
 }
