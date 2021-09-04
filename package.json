@@ -1,10 +1,10 @@
 {
   "name": "hydra-element",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A custom element for wrapping the hydra-synth engine",
   "homepage": "https://github.com/jdomizz/hydra-element#readme",
   "author": "jdomizz",
-  "license": "AGPL",
+  "license": "AGPL-3.0-or-later",
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
   "files": [
