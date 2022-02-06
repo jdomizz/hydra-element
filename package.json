@@ -1,6 +1,6 @@
 {
   "name": "hydra-element",
-  "version": "1.0.0-rc.0",
+  "version": "1.0.0",
   "description": "A custom element for wrapping the hydra-ts engine",
   "homepage": "https://github.com/jdomizz/hydra-element#readme",
   "author": "jdomizz",
