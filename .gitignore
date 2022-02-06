@@ -1,2 +1,7 @@
-dist
+test/hydra-element.js
+test/regl.esm.js
 node_modules
+.DS_Store
+dist
+types
+*.local
