@@ -1,42 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>&lt;hydra-element&gt;</title>
-  <link rel="icon" type="image/png" href="logo.png" />
-  <style>
-    body {
-      margin: 0px;
-    }
-    .background {
-      display: block;
-      position: fixed;
-      width: 100%;
-      height: 100%;
-    }
-    #foreground {
-      z-index: 10;
-      position: absolute;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 100%;
-      height: 100%;
-      font-size: 2000%;
-      font-weight: bold;
-      color: white;
-      font-family:'Courier New'
-    }
-  </style>
-  <script>
-    window.addEventListener('load', function() {
-      gradient(0.5).colorama(0.5).pixelate(20,20).out(o0);
+  <script type="module">
+    import { generators } from 'hydra-ts';
+    const { src, osc, gradient, shape, voronoi, noise } = generators;
+
+    window.addEventListener('hydra-element:1', (event) => {
+      const { sources, outputs, hush, loop, render } = event.detail;
+      const [o0, o1, o2, o3] = outputs;
+      osc().out(o0);
+      loop.start();
+    });
+    window.addEventListener('hydra-element:2', (event) => {
+      const { outputs, loop } = event.detail;
+      noise().out(outputs[0]);
+      loop.start();
     });
   </script>
+  <script type="module" src="./hydra-element.js"></script>
 </head>
+
 <body>
-  <div id="foreground">&lt;/&gt;</div>
-  <hydra-element audio="true" precision="lowp" class="background"></hydra-element>
-  <script type="module" src="./dist/hydra-element.js"></script>
+  <hydra-element id="1" width="200" height="200"></hydra-element>
+  <hydra-element id="2" width="200" height="200"></hydra-element>
 </body>
+
 </html>

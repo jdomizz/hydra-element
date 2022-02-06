@@ -1,132 +1,110 @@
-//@ts-check
-import HydraSynth from 'hydra-synth';
+import REGL from 'regl';
+import { Hydra } from 'hydra-ts';
+import arrayUtils from 'hydra-ts/src/lib/array-utils';
 
-/**
- * Custom element with a global instance of `hydra-synth` embedded.
- */
+const defaultOptions = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+  numOutputs: 4,
+  numSources: 4,
+  precision: 'mediump',
+};
+
 export class HydraElement extends HTMLElement {
   static get observedAttributes() {
     return [
       'width',
       'height',
-      'audio',
-      'sources',
-      'outputs',
+      'num-outputs',
+      'num-sources',
       'precision',
     ];
   }
 
-  constructor() {
-    super();
-    /**
-     * Width of the canvas element to render to
-     * @attr
-     * @type {number}
-     */
-    this.width = window.innerWidth;
-    /**
-     * Height of the canvas element to render to
-     * @attr
-     * @type {number}
-     */
-    this.height = window.innerHeight;
-    /**
-     * Autodetect audio (ask for microphone)
-     * @attr
-     * @type {Boolean}
-     */
-    this.audio = false;
-    /**
-     * Number of source buffers to use
-     * @attr
-     * @type {number}
-     */
-    this.sources = 4;
-    /**
-     * Number of output buffers to use
-     * @attr
-     * @type {number}
-     */
-    this.outputs = 4;
-    /**
-     * Precision of the shaders
-     * @attr
-     * @type {"highp" | "mediump" | "lowp"}
-     */
-    this.precision = 'highp';
-    this.attachShadow({ mode: 'open' });
-    this.initCanvas();
-    this.initOptions();
+  static #parseInt(value, defaultValue) {
+    const result = parseInt(value);
+    return Number.isNaN(result) || result < 0 ? defaultValue : result;
   }
 
-  connectedCallback() {
-    this.shadowRoot.appendChild(this.canvas);
-    this.initHydraSynth();
+  static #parsePrecision(value) {
+    return ['highp', 'mediump', 'lowp'].includes(value) ? value : defaultOptions.precision;
+  }
+
+  options = defaultOptions;
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: 'open' });
+    this.style.display = 'flex';
+  }
+
+  get eventName() {
+    const idSufix = this.hasAttribute('id') ? `:${this.getAttribute('id')}` : '';
+    return `hydra-element${idSufix}`;
   }
 
   attributeChangedCallback(attrName, oldValue, newValue) {
-    switch (attrName) {
-      case 'width':
-        this.canvas.width = parseInt(newValue);
-        break;
-      case 'height': 
-        this.canvas.height = parseInt(newValue);
-        break;
-      case 'audio':
-        this.options = {...this.options, detectAudio: JSON.parse(newValue) };
-        break;
-      case 'sources': 
-      this.options = {...this.options, numSources: parseInt(newValue) };
-        break;
-      case 'outputs':
-        this.options = {...this.options, numOutputs: parseInt(newValue) };
-        break;
-      case 'precision':
-        this.options = {...this.options, precision: newValue };
-        break; 
+    this.#updateOption(attrName, newValue);
+    if (this.hydra) {
+      this.#initHydra();
     }
   }
 
-  /**
-   * Initialize the default `hydra-synth` options.
-   */
-  initOptions() {
-    this.options = {
-      detectAudio: this.audio,
-      numSources: this.sources,
-      numOutputs: this.outputs,
-      precision: this.precision,
-    };
+  connectedCallback() {
+    this.#createCanvas();
+    this.#initHydra();
   }
 
-  /**
-   * Initialize the canvas element to render to.
-   */
-  initCanvas() {
-    const canvas = document.createElement('canvas');
-    canvas.width = this.width;
-    canvas.height = this.height;
-    canvas.style.width = "100%";
-    canvas.style.height = "100%";
-    this.canvas = canvas;
+  #createCanvas() {
+    this.canvas = document.createElement('canvas');
+    this.canvas.width = this.options.width;
+    this.canvas.height = this.options.height;
+    if (this.canvas.width === defaultOptions.width) {
+      this.canvas.style.width = "100%";
+    }
+    if (this.canvas.height === defaultOptions.height) {
+      this.canvas.style.height = "100%";
+    }
+    this.shadowRoot.appendChild(this.canvas);
   }
 
-  /**
-   * Initialize the `hydra-synth` engine with the passed options.
-   * @param {*} options Partial of the `hydra-synth` options
-   */
-   initHydraSynth(options) {
-    if (!this.hydra) {
-      if (options) {
-        this.options = {
-          ...this.options,
-          ...options,
-        };
-      }
-      this.hydra = new HydraSynth({
-        canvas: this.canvas,
-        ...this.options,
-      });
+  #initHydra() {
+    arrayUtils.init();
+    const options = { regl: REGL(this.canvas), ...this.options };
+    this.hydra = new Hydra(options);
+    const { sources, outputs, hush, loop, render } = this.hydra;
+    this.dispatchEvent(new CustomEvent(this.eventName, {
+      detail: { sources, outputs, hush, loop, render },
+      bubbles: true,
+      composed: true
+    }));
+    console.info(this.eventName, this.hydra);
+  }
+
+  #updateOption(attrName, newValue) {
+    switch (attrName) {
+      case 'width':
+        const width = HydraElement.#parseInt(newValue, defaultOptions.width);
+        this.options = { ...this.options, width };
+        // TODO: this.canvas.width = width;
+        break;
+      case 'height':
+        const height = HydraElement.#parseInt(newValue, defaultOptions.height);
+        this.options = { ...this.options, height };
+        // TODO: this.canvas.height = height;
+        break;
+      case 'num-sources':
+        const numSources = HydraElement.#parseInt(newValue, defaultOptions.numSources);
+        this.options = { ...this.options, numSources };
+        break;
+      case 'num-outputs':
+        const numOutputs = HydraElement.#parseInt(newValue, defaultOptions.numOutputs);
+        this.options = { ...this.options, numOutputs };
+        break;
+      case 'precision':
+        const precision = HydraElement.#parsePrecision(newValue);
+        this.options = { ...this.options, precision };
+        break;
     }
   }
 }
