@@ -1,14 +1,16 @@
-![Logo](/logo.png)
-
 # \<hydra-element>
 
-A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-synth) engine.
-
-[Hydra](https://github.com/ojack/hydra) is a set of tools for livecoding networked visuals developed by [Olivia Jack](https://ojack.xyz/).
+A custom element for wrapping the [hydra-ts](https://github.com/folz/hydra-ts) engine.
 
 ## Rationale
 
-The purpose of this project is to embed a _global_ instance of `hydra-synth` in a [web component](https://developer.mozilla.org/en-US/docs/Web/Web_Components) _bundled_ as a native [ES module](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules).
+[Hydra](https://github.com/ojack/hydra) is a set of tools for livecoding networked visuals developed by [Olivia Jack](https://github.com/ojack).
+
+[hydra-ts](https://github.com/folz/hydra-ts) is a fork of [hydra-synth](https://github.com/ojack/hydra-synth) (hydra's video synthesizer and shader compiler) developed by [Rodney Folz](https://github.com/folz). It is focused on interoperability, adding great value to the already excellent original library.
+
+This custom element wraps [hydra-ts](https://github.com/folz/hydra-ts) exposing the _sources_, _outputs_ and _public functions_ of the internal engine through a custom event.
+
+> For differences between `hydra-ts` and `hydra-synth`, refer to [`hydra-ts`'s documentation](https://github.com/folz/hydra-ts#readme).
 
 ## Usage
 
@@ -19,15 +21,28 @@ The purpose of this project is to embed a _global_ instance of `hydra-synth` in 
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>My Hydra Sketch</title>
-    <script>
-      window.addEventListener("load", function () {
-        gradient(0.5).colorama(0.5).pixelate(20, 20).out(o0);
+    <title>My Hydra Sketches</title>
+    <script type="module">
+      import { generators } from 'hydra-ts';
+      const { src, osc, gradient, shape, voronoi, noise } = generators;
+
+      window.addEventListener('hydra-element:1', (event) => {
+        const { sources, outputs, hush, loop, render } = event.detail;
+        const [o0, o1, o2, o3] = outputs;
+        osc().out(o0);
+        loop.start();
+      });
+      window.addEventListener('hydra-element:2', (event) => {
+        const { sources, outputs, hush, loop, render } = event.detail;
+        const [o0, o1, o2, o3] = outputs;
+        noise().out(o0);
+        loop.start();
       });
     </script>
   </head>
   <body>
-    <hydra-element></hydra-element>
+    <hydra-element id="1" width="200" height="200"></hydra-element>
+    <hydra-element id="2" width="200" height="200"></hydra-element>
     <script type="module" src="https://unpkg.com/hydra-element"></script>
   </body>
 </html>
@@ -41,38 +56,51 @@ Install the module:
 npm i hydra-element
 ```
 
-Import the custom element:
+Import the custom element and the hydra generators (with destructuring):
 
 ```js
 import "hydra-element";
+import { generators } from 'hydra-ts';
+const { src, osc, gradient, shape, voronoi, noise } = generators;
 ```
 
 Use the custom tag:
 
 ```html
-<hydra-element audio="true" precision="lowp"></hydra-element>
+<hydra-element></hydra-element>
 ```
+
+Listen to the custom event:
+
+```js
+window.addEventListener('hydra-element', (event) => {
+  const { outputs, loop } = event.detail;
+  noise().out(outputs[0]);
+  loop.start();
+});
+```
+The name of the event fired by a hydra-element is based on its associated identifier. For example, a hydra-element with `id="myElement"` will fire an event named `hydra-element:myElement` while one without an associated identifier will fire an event simply named `hydra-element`.
+
+> For general information about using Hydra, refer to [hydra's documentation](https://github.com/ojack/hydra#readme).
 
 ## Configuration
 
-Read the [`hydra-synth` documentation](https://github.com/ojack/hydra-synth#api) for more information about these options.
+Read the [`hydra-ts`'s documentation](https://github.com/folz/hydra-ts#readme) for more information about these options.
 
-| `hydra-element` attribute | `hydra-synth` option | Default value        |
+| `hydra-element` attribute | `hydra-ts` option    | Default value        |
 | ------------------------- | -------------------- | -------------------- |
 | `width`                   | `width`              | `window.innerWidth`  |
 | `height`                  | `height`             | `window.innerHeight` |
-| `audio`                   | `detectAudio`        | `false`              |
-| `sources`                 | `numSources`         | `4`                  |
-| `outputs`                 | `numOutputs`         | `4`                  |
+| `num-sources`             | `numSources`         | `4`                  |
+| `num-outputs`             | `numOutputs`         | `4`                  |
 | `precision`               | `precision`          | `highp`              |
 
 ## Development
 
 The following `npm` scripts are available:
 
-- `start`: runs the project for _development_ (reloading on file changes)
-- `analyze`: displays documentation extracted from the source code
-- `manifest`: generates the `custom-elements.json` manifest
+- `dev`: runs the project for _development_ (reloading on file changes)
+- `test`: executes a single test run
 - `build`: builds the project for _production_ (in the `dist` directory)
 
 ## License
