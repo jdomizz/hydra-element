@@ -1,28 +1,50 @@
-import { HydraCompiler, HydraElement } from '../../index'
+import { Output, Source } from 'hydra-ts'
+import '../../definition'
 import { customTransforms } from './transforms'
+import { HydraCompiler } from '../../index'
 
-window.customElements.define('my-hydra-sketch', HydraElement)
+function evalSrc(src = '') {
+  try {
+    new Function(src)()
+  } catch (error) {
+    console.log(error)
+  }
+}
 
-const app = document.querySelector('#app')!
+declare global {
+  interface Window {
+    __SYNTH__: Synth;
+  }
+}
 
+export interface Synth {
+  inputs: Source[]
+  outputs: Output[]
+  sources: Record<string, (...args: unknown[]) => any>
+  render: (output?: Output) => void
+  stream: MediaStream
+}
 
-app.addEventListener('my-hydra-sketch:1', (event) => {
-  const { hydra } = (event as CustomEvent).detail
-  const [o0] = hydra.outputs
-  const { noise2 } = new HydraCompiler(customTransforms).sources
+const app = document.querySelector('#app')
+if (app) {
+  app.addEventListener('hydra-element', (event) => {
+    const { hydra, stream } = (event as CustomEvent).detail
+    const compiler = new HydraCompiler(customTransforms)
 
-  noise2().modulate(o0, 0.0003).pixelate().out(o0)
-})
+    window.__SYNTH__ = {
+      render: hydra.render,
+      inputs: hydra.sources,
+      outputs: hydra.outputs,
+      sources: compiler.sources,
+      stream
+    } as Synth
 
-app.addEventListener('my-hydra-sketch:2', async (event) => {
-  const { hydra } = (event as CustomEvent).detail
-  const [o0] = hydra.outputs
-  const { osc } = new HydraCompiler().sources
+    console.log(window.__SYNTH__)
 
-  osc().modulate(o0, 4).out(o0)
-})
-
-app.innerHTML = `
-  <my-hydra-sketch id="1" width="200" height="200"></my-hydra-sketch>
-  <my-hydra-sketch id="2" width="200" height="200"></my-hydra-sketch>
-`
+    evalSrc(`
+      __SYNTH__.sources.wave().out(__SYNTH__.outputs[0]);
+      __SYNTH__.render(__SYNTH__.outputs[0]);
+    `)
+  })
+  app.innerHTML = `<hydra-element></hydra-element>`
+}
