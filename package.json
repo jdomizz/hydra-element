@@ -1,46 +1,46 @@
 {
   "name": "hydra-element",
-  "version": "1.0.0",
+  "version": "1.0.0-rc.0",
   "description": "A custom element for wrapping the hydra-ts engine",
-  "homepage": "https://github.com/jdomizz/hydra-element#readme",
-  "author": "jdomizz",
-  "license": "AGPL-3.0-or-later",
-  "main": "dist/hydra-element.es.js",
-  "module": "dist/hydra-element.es.js",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "type": "module",
   "exports": {
-    ".": "./dist/hydra-element.es.js"
+    ".": "./dist/index.js",
+    "./definition.js": "./dist/definition.js"
   },
-  "files": [
-    "dist"
-  ],
-  "unpkg": "dist/hydra-element.es.js",
   "scripts": {
     "dev": "vite",
-    "test": "rollup -c && node test/setup.js && wtr test/**/*.test.js --node-resolve",
-    "build": "vite build"
-  },
-  "dependencies": {
-    "hydra-ts": "^1.0.0"
-  },
-  "devDependencies": {
-    "@open-wc/testing": "^3.0.3",
-    "@rollup/plugin-commonjs": "^21.0.1",
-    "@web/test-runner": "^0.13.26",
-    "vite": "^2.7.2"
+    "build": "tsc",
+    "postinstall": "rm -rf node_modules/hydra-ts/src/compiler/compileWithContext.ts && rm -rf node_modules/hydra-ts/src/compiler/generateGlsl.ts"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jdomizz/hydra-element.git"
   },
-  "bugs": {
-    "url": "https://github.com/jdomizz/hydra-element/issues"
-  },
   "keywords": [
     "creative-coding",
     "livecoding",
-    "hydra",
+    "hydra-synth",
     "hydra-ts",
     "custom-element",
     "web-component"
-  ]
+  ],
+  "dependencies": {
+    "hydra-ts": "^1.0.0"
+  },
+  "devDependencies": {
+    "@tsconfig/recommended": "^1.0.1",
+    "@typescript-eslint/eslint-plugin": "^5.30.7",
+    "@typescript-eslint/parser": "^5.30.7",
+    "eslint": "^8.20.0",
+    "typescript": "^4.7.4",
+    "vite": "^3.0.3"
+  },
+  "author": "jdomizz",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/jdomizz/hydra-element/issues"
+  },
+  "homepage": "https://github.com/jdomizz/hydra-element#readme"
 }

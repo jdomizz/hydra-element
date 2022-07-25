@@ -1,0 +1,21 @@
+{
+  "exclude": [
+    "demo",
+    "dist",
+    "vite.config.ts"
+  ],
+  "extends": "@tsconfig/recommended/tsconfig.json",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "module": "ES2020",
+    "moduleResolution": "Node",
+    "outDir": "dist/",
+    "lib": [
+      "es2020",
+      "dom"
+    ],
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+  }
+}

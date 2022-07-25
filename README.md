@@ -8,25 +8,23 @@ A custom element for wrapping the [hydra-ts](https://github.com/folz/hydra-ts) e
 
 [hydra-ts](https://github.com/folz/hydra-ts) is a fork of [hydra-synth](https://github.com/ojack/hydra-synth) (hydra's video synthesizer and shader compiler) developed by [Rodney Folz](https://github.com/folz). It is focused on interoperability, adding great value to the already excellent original library.
 
-This custom element wraps [hydra-ts](https://github.com/folz/hydra-ts) by exposing the synthesizer's _sources_, _outputs_ and _public functions_ through a custom event.
+This custom element wraps [hydra-ts](https://github.com/folz/hydra-ts) exposing the _synth engine_ and the _canvas stream_ through a custom event.
 
 > For differences between `hydra-ts` and `hydra-synth`, refer to [`hydra-ts`'s documentation](https://github.com/folz/hydra-ts#readme).
 
 ## Installation
 
 ```bash
-npm install hydra-element hydra-ts
+npm install hydra-element
 ```
 
 ## Usage
 
-Import the custom element and the hydra generators (with destructuring):
+Import the custom element and the hydra generators:
 
 ```js
 import "hydra-element";
 import { generators } from 'hydra-ts';
-
-const { src, osc, gradient, shape, voronoi, noise } = generators;
 ```
 
 Use the custom tag:
@@ -40,19 +38,20 @@ Listen to the custom events:
 
 ```js
 window.addEventListener('hydra-element', (event) => {
-  const { sources, outputs, hush, loop, render } = event.detail;
-  const [s0, s1, s2, s3] = sources;
-  const [o0, o1, o2, o3] = outputs;
-  osc().out(o0);
-  loop.start();
-});
+  const { hydra } = event.detail
+  const { osc } = generators
+  const [o0] = hydra.outputs
+
+  osc().out(o0)
+})
 
 window.addEventListener('hydra-element:mySketch', (event) => {
-  const { outputs, loop, render } = event.detail;
-  noise().out(outputs[15]);
-  render(outputs[15]);
-  loop.start();
-});
+  const { outputs } = event.detail.hydra
+  const { noise } = generators
+
+  noise().out(outputs[15])
+  render(outputs[15])
+})
 ```
 
 The name of the event fired by a hydra-element is based on its associated identifier. For example, a hydra-element with `id="myElement"` will fire an event named `hydra-element:myElement` while one without an associated identifier will fire an event simply named `hydra-element`.
@@ -70,6 +69,7 @@ Read the [`hydra-ts`'s documentation](https://github.com/folz/hydra-ts#readme) f
 | `num-sources`             | `numSources`         | `4`                  |
 | `num-outputs`             | `numOutputs`         | `4`                  |
 | `precision`               | `precision`          | `highp`              |
+| `density`                 | `density`            | `1`                  |
 
 ## Development
 
