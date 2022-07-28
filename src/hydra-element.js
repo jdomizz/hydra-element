@@ -1,9 +1,6 @@
-//@ts-check
-import HydraSynth from 'hydra-synth';
+import HydraSynth from '../lib/hydra-synth'
 
-/**
- * Custom element with a global instance of `hydra-synth` embedded.
- */
+
 export class HydraElement extends HTMLElement {
   static get observedAttributes() {
     return [
@@ -18,79 +15,35 @@ export class HydraElement extends HTMLElement {
 
   constructor() {
     super();
-    /**
-     * Width of the canvas element to render to
-     * @attr
-     * @type {number}
-     */
     this.width = window.innerWidth;
-    /**
-     * Height of the canvas element to render to
-     * @attr
-     * @type {number}
-     */
     this.height = window.innerHeight;
-    /**
-     * Autodetect audio (ask for microphone)
-     * @attr
-     * @type {Boolean}
-     */
     this.audio = false;
-    /**
-     * Number of source buffers to use
-     * @attr
-     * @type {number}
-     */
     this.sources = 4;
-    /**
-     * Number of output buffers to use
-     * @attr
-     * @type {number}
-     */
     this.outputs = 4;
-    /**
-     * Precision of the shaders
-     * @attr
-     * @type {"highp" | "mediump" | "lowp"}
-     */
-    this.precision = 'highp';
+    this.precision = 'highp'; /* @type {"highp" | "mediump" | "lowp"} */
     this.attachShadow({ mode: 'open' });
-    this.initCanvas();
-    this.initOptions();
+    this.#initCanvas();
+    this.#initOptions();
   }
 
   connectedCallback() {
-    this.shadowRoot.appendChild(this.canvas);
-    this.initHydraSynth();
-  }
-
-  attributeChangedCallback(attrName, oldValue, newValue) {
-    switch (attrName) {
-      case 'width':
-        this.canvas.width = parseInt(newValue);
-        break;
-      case 'height': 
-        this.canvas.height = parseInt(newValue);
-        break;
-      case 'audio':
-        this.options = {...this.options, detectAudio: JSON.parse(newValue) };
-        break;
-      case 'sources': 
-      this.options = {...this.options, numSources: parseInt(newValue) };
-        break;
-      case 'outputs':
-        this.options = {...this.options, numOutputs: parseInt(newValue) };
-        break;
-      case 'precision':
-        this.options = {...this.options, precision: newValue };
-        break; 
+    if (this.shadowRoot && this.canvas) {
+      this.shadowRoot.appendChild(this.canvas);
+      this.#initHydraSynth();
     }
   }
 
-  /**
-   * Initialize the default `hydra-synth` options.
-   */
-  initOptions() {
+  attributeChangedCallback(attrName, oldValue, newValue) {
+    this.#setIfWidth(attrName, newValue)
+    this.#setIfHeight(attrName, newValue)
+    this.#setIfAudio(attrName, newValue)
+    this.#setIfSources(attrName, newValue)
+    this.#setIfOutputs(attrName, newValue)
+    this.#setIfPrecision(attrName, newValue)
+    this.#initHydraSynth();
+  }
+
+  #initOptions() {
     this.options = {
       detectAudio: this.audio,
       numSources: this.sources,
@@ -99,10 +52,7 @@ export class HydraElement extends HTMLElement {
     };
   }
 
-  /**
-   * Initialize the canvas element to render to.
-   */
-  initCanvas() {
+  #initCanvas() {
     const canvas = document.createElement('canvas');
     canvas.width = this.width;
     canvas.height = this.height;
@@ -111,22 +61,52 @@ export class HydraElement extends HTMLElement {
     this.canvas = canvas;
   }
 
-  /**
-   * Initialize the `hydra-synth` engine with the passed options.
-   * @param {*} options Partial of the `hydra-synth` options
-   */
-   initHydraSynth(options) {
-    if (!this.hydra) {
-      if (options) {
-        this.options = {
-          ...this.options,
-          ...options,
-        };
-      }
-      this.hydra = new HydraSynth({
-        canvas: this.canvas,
+  #initHydraSynth(options) {
+    if (options) {
+      this.options = {
         ...this.options,
-      });
+        ...options,
+      };
+    }
+    this.hydra = new HydraSynth({
+      canvas: this.canvas,
+      ...this.options,
+    });
+  }
+
+  #setIfWidth(attrName, newValue) {
+    if ('width' === attrName && this.canvas) {
+      this.canvas.width = parseInt(newValue);
+    }
+  }
+
+  #setIfHeight(attrName, newValue) {
+    if ('height' === attrName && this.canvas) {
+      this.canvas.height = parseInt(newValue);
+    }
+  }
+
+  #setIfAudio(attrName, newValue) {
+    if ('audio' === attrName) {
+      this.options = { ...this.options, detectAudio: JSON.parse(newValue) };
+    }
+  }
+
+  #setIfSources(attrName, newValue) {
+    if ('sources' === attrName) {
+      this.options = { ...this.options, numSources: parseInt(newValue) };
+    }
+  }
+
+  #setIfOutputs(attrName, newValue) {
+    if ('outputs' === attrName) {
+      this.options = { ...this.options, numOutputs: parseInt(newValue) };
+    }
+  }
+
+  #setIfPrecision(attrName, newValue) {
+    if ('precision' === attrName) {
+      this.options = { ...this.options, precision: newValue };
     }
   }
 }

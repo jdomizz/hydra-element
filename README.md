@@ -1,5 +1,3 @@
-![Logo](/logo.png)
-
 # \<hydra-element>
 
 A custom element for wrapping the [hydra-synth](https://github.com/ojack/hydra-synth) engine.
@@ -21,9 +19,9 @@ The purpose of this project is to embed a _global_ instance of `hydra-synth` in 
     <meta charset="utf-8" />
     <title>My Hydra Sketch</title>
     <script>
-      window.addEventListener("load", function () {
+      window.onload = () => {
         gradient(0.5).colorama(0.5).pixelate(20, 20).out(o0);
-      });
+      };
     </script>
   </head>
   <body>
@@ -61,19 +59,18 @@ Read the [`hydra-synth` documentation](https://github.com/ojack/hydra-synth#api)
 | ------------------------- | -------------------- | -------------------- |
 | `width`                   | `width`              | `window.innerWidth`  |
 | `height`                  | `height`             | `window.innerHeight` |
-| `audio`                   | `detectAudio`        | `false`              |
-| `sources`                 | `numSources`         | `4`                  |
-| `outputs`                 | `numOutputs`         | `4`                  |
+| `detect-audio`            | `detectAudio`        | `false`              |
+| `num-sources`             | `numSources`         | `4`                  |
+| `num-outputs`             | `numOutputs`         | `4`                  |
 | `precision`               | `precision`          | `highp`              |
 
 ## Development
 
 The following `npm` scripts are available:
 
-- `start`: runs the project for _development_ (reloading on file changes)
-- `analyze`: displays documentation extracted from the source code
-- `manifest`: generates the `custom-elements.json` manifest
-- `build`: builds the project for _production_ (in the `dist` directory)
+- `dev`: runs the project for _development_ (reloading on file changes)
+- `test`: executes a single test run
+- `postinstall`: Transforms the hydra-synth lib into an ES module
 
 ## License
 
