@@ -1,45 +1,48 @@
 {
   "name": "hydra-element",
-  "version": "0.2.0",
+  "version": "0.3.0-rc.1",
   "description": "A custom element for wrapping the hydra-synth engine",
-  "homepage": "https://github.com/jdomizz/hydra-element#readme",
-  "author": "jdomizz",
-  "license": "AGPL-3.0-or-later",
+  "type": "module",
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
-  "files": [
-    "dist"
-  ],
-  "unpkg": "dist/hydra-element.js",
+  "exports": {
+    ".": "./dist/hydra-element.js"
+  },
   "scripts": {
-    "start": "webpack serve",
-    "analyze": "node_modules/.bin/wca analyze",
-    "manifest": "node_modules/.bin/wca analyze --outFile custom-elements.json",
-    "build": "webpack --mode=production"
+    "dev": "vite",
+    "test": "wtr --config wtr.config.js",
+    "build": "vite build"
   },
   "dependencies": {
-    "hydra-synth": "^1.3.8"
+    "hydra-synth": "^1.3.29"
   },
   "devDependencies": {
-    "copy-webpack-plugin": "^9.0.1",
-    "web-component-analyzer": "^1.1.6",
-    "webpack": "^5.50.0",
-    "webpack-cli": "^4.7.2",
-    "webpack-dev-server": "^3.11.2"
+    "@open-wc/testing": "^4.0.0",
+    "@remcovaes/web-test-runner-vite-plugin": "^1.2.0",
+    "@web/test-runner": "^0.18.0",
+    "vite": "^4.5.0"
   },
+  "author": "jdomizz",
+  "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jdomizz/hydra-element.git"
   },
+  "homepage": "https://github.com/jdomizz/hydra-element#readme",
+  "qna" : "https://github.com/jdomizz/hydra-element/discussions",
   "bugs": {
     "url": "https://github.com/jdomizz/hydra-element/issues"
+  },
+  "sponsor": {
+    "url": "https://opencollective.com/hydra-synth"
   },
   "keywords": [
     "creative-coding",
     "livecoding",
+    "video",
+    "synth",
     "hydra-synth",
     "custom-element",
-    "web-component",
-    "esm"
+    "web-component"
   ]
 }
