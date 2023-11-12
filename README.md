@@ -51,7 +51,7 @@ Include your code between the element tags.
 </hydra-element>
 ```
 
-Note you can load scripts as in the hydra editor (see [limitations](#limitations)).
+Note you can load scripts as in the hydra editor.
 
 ```html
 <hydra-element>
@@ -61,42 +61,25 @@ Note you can load scripts as in the hydra editor (see [limitations](#limitations
 </hydra-element>
 ```
 
-If you need to update the code of the element, use javascript to set the `code` property.
+If you need to update the code, use the `code` property with javascript.
 
 ```js
 document.querySelector('hydra-element').code = 'osc().out()'
 ```
 
-Finally, you can use css to style the element.
+Finally, use css to style the element.
 
 ```css
 hydra-element {
-  width: 10rem;
-  height: 10rem;
-  display: grid;
+  width: 15rem;
+  height: 15rem;
+  color: white;
 }
 ```
 
 ## Configuration
 
 You can use the following attributes and properties to configure the embeded engine. Read the `hydra-synth` [API](https://github.com/hydra-synth/hydra-synth#api) documentation for more information about these options.
-
-| Attribute     | Option             | Default value       | 
-| ------------- | ------------------ |-------------------- | 
-| `width`       | `width`            | `window.innerWidth` | 
-| `height`      | `height`           | `window.innerHeight`| 
-| `loop`        | `autoLoop`         | `true`              | 
-| `global`      | `makeGlobal`       | `true`              | 
-| `audio`       | `detectAudio`      | `false`             | 
-| `sources`     | `numSources`       | `4`                 | 
-| `outputs`     | `numOutputs`       | `4`                 |  
-| `precision`   | `precision`        | `null`              |
-
-| Property      | Option             | Default value       | 
-| ------------- | ------------------ |-------------------- | 
-| `canvas`      | `canvas`           | `null`              | 
-| `transforms`  | `extendTransforms` | `[]`                | 
-| `pb`          | `pb`               | `null`              | 
 
 ### Attributes `width` and `height`
 
@@ -122,7 +105,7 @@ If you want to use your own render loop for triggering hydra updates, set the `l
 <hydra-element loop="false"></hydra-element>
 ```
 
-Note you will need to call the `tick` function, where `dt` is the time elapsed in milliseconds since the last update.
+Note you will need to call the `tick` method, where `dt` is the time elapsed in milliseconds since the last update.
 
 ```js
 document.querySelector('hydra-element').tick(dt)
@@ -142,6 +125,9 @@ The embed engine runs in global scope by default. If you want to safely use seve
 </hydra-element>
 ```
 
+> **Warning**
+> Running the engine in function scope is experimental and may lead to unexpected behavior. For now use global mode whenever possible.
+
 ### Attribute `audio`
 
 Hydra's audio capabilities are disabled by default because they require requesting microphone permissions from the page visitor and not all sketches use them, so don't forget to set the `audio` attribute to `true` if you use the `a` object in your sketch.
@@ -157,7 +143,7 @@ Hydra's audio capabilities are disabled by default because they require requesti
 
 ### Attribute `sources`
 
-You can use the `sources` attribute to set the number of source buffers available for multimedia resources.
+You can use the `sources` attribute to set the number of source buffers available for multimedia resources. The default value is `4`.
 
 ```html
 <hydra-element sources="8">
@@ -176,15 +162,26 @@ You can use the `sources` attribute to set the number of source buffers availabl
 
 ### Attribute `outputs`
 
-You can use the `outputs` attribute to set the number of output buffers to use. Note that `hydra-synth` itself has only been tested with `4` outputs, so use this attribute with caution.
+You can use the `outputs` attribute to set the number of output buffers to use. The default value is `4`.
 
 ```html
-<hydra-element outputs="8">osc().out(o7)</hydra-element>
+<hydra-element outputs="8">
+  osc().out(o7)
+
+  render(o7)
+</hydra-element>
 ```
+
+> **Warning**
+> Note that `hydra-synth` itself has only been tested with `4` outputs, so use this attribute with caution.
 
 ### Attribute `precision`
 
 You can use the `precision` attribute to force precision of shaders. By default no precision is specified, so the engine will use `highp` for iOS and `mediump` for everything else. Avaiblable options are `highp`, `mediump` and `lowp`.
+
+```html
+<hydra-element precision="highp"></hydra-element>
+```
 
 ### Property `transforms`
 
@@ -218,8 +215,32 @@ document.querySelector('hydra-element').pb = yourRtcPatchBayInstance
 
 ## Limitations
 
-- p5.js
-- Tone.js
+Currently it is not possible to work with [p5.js](https://p5js.org) as in the hydra editor because `hydra-synth` does not include the necessary wrapper. However, you can load it from a CDN with `loadScript` and use it as follows.
+
+```html
+<hydra-element>
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.8.0/p5.min.js')
+
+  s0.init({src: new p5(( sketch ) => {
+
+    let x = 100;
+    let y = 100;
+
+    sketch.setup = () => {
+      sketch.createCanvas(200, 200);
+    };
+
+    sketch.draw = () => {
+      sketch.background(0);
+      sketch.fill(255);
+      sketch.rect(x,y,50,50);
+    };
+
+  }).canvas})
+
+  src(s0).repeat().out()
+</hydra-element>
+```
 
 ## Development
 

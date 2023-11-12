@@ -95,6 +95,7 @@ export class HydraElement extends HTMLElement {
   connectedCallback() {
     if (this._code === '' && this.textContent) {
       this._code = this.textContent
+      this.textContent = ''
     }
     if (!this._options.canvas) {
       this._initCanvas()

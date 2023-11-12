@@ -1,6 +1,6 @@
 {
   "name": "hydra-element",
-  "version": "0.3.0-rc.1",
+  "version": "0.3.0",
   "description": "A custom element for wrapping the hydra-synth engine",
   "type": "module",
   "main": "dist/hydra-element.js",
