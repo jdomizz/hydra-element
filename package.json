@@ -1,6 +1,6 @@
 {
   "name": "hydra-element",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "A custom element for wrapping the hydra-synth engine",
   "type": "module",
   "main": "dist/hydra-element.js",
@@ -18,9 +18,10 @@
   },
   "devDependencies": {
     "@open-wc/testing": "^4.0.0",
-    "@remcovaes/web-test-runner-vite-plugin": "^1.2.0",
+    "@remcovaes/web-test-runner-vite-plugin": "^1.2.1",
     "@web/test-runner": "^0.18.0",
-    "vite": "^4.5.0"
+    "sinon": "^17.0.1",
+    "vite": "^5.0.8"
   },
   "author": "jdomizz",
   "license": "AGPL-3.0-or-later",
@@ -29,7 +30,7 @@
     "url": "git+https://github.com/jdomizz/hydra-element.git"
   },
   "homepage": "https://github.com/jdomizz/hydra-element#readme",
-  "qna" : "https://github.com/jdomizz/hydra-element/discussions",
+  "qna": "https://github.com/jdomizz/hydra-element/discussions",
   "bugs": {
     "url": "https://github.com/jdomizz/hydra-element/issues"
   },
