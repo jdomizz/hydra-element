@@ -1,6 +1,6 @@
 {
   "name": "hydra-element",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "A custom element for wrapping the hydra-synth engine",
   "type": "module",
   "main": "dist/hydra-element.js",
@@ -21,7 +21,7 @@
     "@remcovaes/web-test-runner-vite-plugin": "^1.2.1",
     "@web/test-runner": "^0.18.0",
     "sinon": "^17.0.1",
-    "vite": "^5.0.8"
+    "vite": "^5.0.10"
   },
   "author": "jdomizz",
   "license": "AGPL-3.0-or-later",
@@ -40,9 +40,11 @@
   "keywords": [
     "creative-coding",
     "livecoding",
+    "hydra-synth",
+    "canvas",
+    "glsl",
     "video",
     "synth",
-    "hydra-synth",
     "custom-element",
     "web-component"
   ]
