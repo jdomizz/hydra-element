@@ -37,11 +37,21 @@
           document.querySelector('hydra-element').code = document.querySelector('textarea').value
         }
       }
+
+      window.onload = () => document.querySelector('hydra-element').transforms = [{
+        name: 'noixe',
+        type: 'src',
+        inputs: [
+          { type: 'float', name: 'scale', default: 5 },
+          { type: 'float', name: 'offset', default: 0.5 }
+        ],
+        glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`
+      }]   
     </script>
     <script type="module" src="./index.js"></script>
   </head>
   <body onkeypress="keypressHandler(event)">
     <textarea name="editor" spellcheck="false"></textarea>
-    <hydra-element></hydra-element>
+    <hydra-element audio="true"></hydra-element>
   </body>
 </html>
