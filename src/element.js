@@ -1,5 +1,6 @@
 import Hydra from 'hydra-synth'
 import { parseJSON, parseNumber, parseOption } from './helper'
+import { hydraEval } from './eval'
 
 /**
  * Default options for Hydra Element.
@@ -21,7 +22,7 @@ const DEFAULT_OPTIONS = {
   width: window.innerWidth,
   height: window.innerHeight,
   autoLoop: true,
-  makeGlobal: true,
+  makeGlobal: false,
   detectAudio: false,
   numSources: 4,
   numOutputs: 4,
@@ -87,7 +88,7 @@ export class HydraElement extends HTMLElement {
 
   /**
    * Get the transforms of the element.
-   * @returns {Object} The extended transforms.
+   * @returns {Array<Function>} The extended transforms.
    */
   get transforms() {
     return this._options.extendTransforms;
@@ -222,7 +223,7 @@ export class HydraElement extends HTMLElement {
     if (this._options.makeGlobal) {
       this._hydra.sandbox.eval(code)
     } else {
-      new Function('synth', code)(this._hydra.synth)
+      hydraEval(code, this._hydra.synth)
     }
   }
 
@@ -231,6 +232,7 @@ export class HydraElement extends HTMLElement {
    * @param {string} attrName - The name of the attribute to update.
    * @param {any} newValue - The new value for the attribute.
    * @returns {Object} - A new options object with the updated attribute value.
+   * @private
    */
   _getNewOptions(attrName, newValue) {
     switch (attrName) {

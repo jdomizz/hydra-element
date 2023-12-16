@@ -20,7 +20,7 @@ describe('<hydra-element>', () => {
     expect(el._options.width).to.equal(window.innerWidth)
     expect(el._options.height).to.equal(window.innerHeight)
     expect(el._options.autoLoop).to.be.true
-    expect(el._options.makeGlobal).to.be.true
+    expect(el._options.makeGlobal).to.be.false
     expect(el._options.detectAudio).to.be.false
     expect(el._options.numSources).to.equal(4)
     expect(el._options.numOutputs).to.equal(4)
@@ -33,7 +33,7 @@ describe('<hydra-element>', () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     el.setAttribute('width', '500')
     el.setAttribute('height', '300')
-    el.setAttribute('global', 'false')
+    el.setAttribute('global', 'true')
     el.setAttribute('audio', 'true')
     el.setAttribute('sources', '2')
     el.setAttribute('outputs', '1')
@@ -42,7 +42,7 @@ describe('<hydra-element>', () => {
     expect(el.canvas.height).to.equal(300)
     expect(el._options.width).to.equal(500)
     expect(el._options.height).to.equal(300)
-    expect(el._options.makeGlobal).to.be.false
+    expect(el._options.makeGlobal).to.be.true
     expect(el._options.detectAudio).to.be.true
     expect(el._options.numSources).to.equal(2)
     expect(el._options.numOutputs).to.equal(1)
@@ -54,20 +54,20 @@ describe('<hydra-element>', () => {
     expect(el.code).to.equal('osc(10).out()')
   })
 
-  it('should set code property', async () => {
+  it('should set code', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     el.code = 'osc(10).out()'
     expect(el.code).to.equal('osc(10).out()')
   })
 
-  it('should set canvas property', async () => {
+  it('should set canvas', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     const canvas = document.createElement('canvas')
     el.canvas = canvas
     expect(el.canvas).to.equal(canvas)
   })
 
-  it('should set transforms property', async () => {
+  it('should set transforms', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     const fn = {
       name: 'yourNoise',
@@ -82,13 +82,13 @@ describe('<hydra-element>', () => {
     expect(el.transforms).to.deep.equal([fn])
   })
 
-  it('should set pb property', async () => {
+  it('should set pb', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     el.pb = undefined
     expect(el.pb).to.equal(undefined)
   })
 
-  it('should tick hydra when tick method is called', async () => {
+  it('should call hydra tick', async () => {
     const el = await fixture(html`<hydra-element loop="false"></hydra-element>`)
     el._hydra = { tick: spy() }
     el.tick(0.1)
