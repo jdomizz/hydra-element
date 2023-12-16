@@ -4,9 +4,11 @@ A custom element for wrapping the [hydra-synth](https://github.com/hydra-synth/h
 
 ## Rationale
 
-[Hydra](https://hydra.ojack.xyz/) is a set of tools for livecoding networked visuals developed by [Olivia Jack](https://ojack.xyz/). It stands out for its elegant DSL, modeled on a fluent interface.
+[Hydra](https://hydra.ojack.xyz/) is a video synth and coding environment that runs in the browser. It stands out for its elegant DSL, modeled on a fluent interface.
 
-This project aims to simplify the render of hydra sketches in html documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components).
+This project aims to simplify the render of Hydra sketches in HTML documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (Hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). 
+
+By default each element contains its own instance of `hydra-synth` (with its own inputs, functions and outputs). In this way, several elements can be used in the same HTML document without collisions.
 
 ## Installation
 
@@ -14,7 +16,7 @@ This package is published in the [npm](https://www.npmjs.com/) registry as `hydr
 
 ### CDN
 
-Load the custom element via CDN adding the following script to your html file.
+Load the custom element via CDN adding the following script to your HTML file.
 
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element"></script>
@@ -28,7 +30,7 @@ Install the package from [npm](https://docs.npmjs.com/cli/commands/npm) with the
 npm install hydra-element
 ```
 
-Once you’ve done that, import the custom element in your javascript module.
+Once you’ve done that, import the custom element in your JavaScript module.
 
 ```js
 import "hydra-element"
@@ -51,7 +53,7 @@ Include your code between the element tags.
 </hydra-element>
 ```
 
-Note you can load scripts as in the hydra editor.
+Note you can load scripts as in the Hydra editor.
 
 ```html
 <hydra-element>
@@ -61,13 +63,13 @@ Note you can load scripts as in the hydra editor.
 </hydra-element>
 ```
 
-If you need to update the code, use the `code` property with javascript.
+If you need to update the code, use the `code` property with JavaScript.
 
 ```js
 document.querySelector('hydra-element').code = 'osc().out()'
 ```
 
-Finally, use css to style the element.
+Finally, use CSS to style the element.
 
 ```css
 hydra-element {
@@ -79,7 +81,25 @@ hydra-element {
 
 ## Configuration
 
-You can use the following attributes and properties to configure the embeded engine. Read the `hydra-synth` [API](https://github.com/hydra-synth/hydra-synth#api) documentation for more information about these options.
+By default the embedded `hydra-synth` engine is created with these settings:
+
+```js
+{
+  canvas: null,
+  width: window.innerWidth,
+  height: window.innerHeight,
+  autoLoop: true,
+  makeGlobal: false,
+  detectAudio: false,
+  numSources: 4,
+  numOutputs: 4,
+  extendTransforms: [],
+  precision: null,
+  pb: null
+}
+```
+
+You can use the following attributes and properties to configure these options. Read the `hydra-synth` [API](https://github.com/hydra-synth/hydra-synth#api) documentation for more information.
 
 ### Attributes `width` and `height`
 
@@ -91,7 +111,7 @@ In addition to the engine, the custom element also takes care of the canvas. By 
 
 ### Property `canvas`
 
-If you prefer to take care of the canvas yourself, use the `canvas` property to specify a canvas element to render to. In this case the component does not create any canvas but uses the assigned one.
+If you prefer to take care of the canvas yourself, use the `canvas` property to specify a canvas element to render on. In this case the component does not create any canvas but uses the assigned one.
 
 ```js
 document.querySelector('hydra-element').canvas = yourCanvasElement
@@ -99,7 +119,7 @@ document.querySelector('hydra-element').canvas = yourCanvasElement
 
 ### Attribute `loop`
 
-If you want to use your own render loop for triggering hydra updates, set the `loop` attribute to `false`.
+If you want to use your own render loop for triggering Hydra updates, set the `loop` attribute to `false`.
 
 ```html
 <hydra-element loop="false"></hydra-element>
@@ -113,25 +133,19 @@ document.querySelector('hydra-element').tick(dt)
 
 ### Attribute `global`
 
-The embed engine runs in global scope by default. If you want to safely use several elements on the same page, you should set the `global` attribute to `false` for the engine to run in function scope. In this scope all hydra functions, buffers, and variables are available via the `synth` object (e.g. `synth.osc()`). Consider destructuring the object to preserve the syntax.
+If you want the embedded engine to be instantiated globally set the `global` attribute to `true`. In this case the inputs, functions and outputs of the engine will be stored in the `window` object and shared among all the elements of the same HTML document.
 
 ```html
-<hydra-element global="false">
-  const { noise, o0, mouse } = synth
-  
+<hydra-element global="true">
   noise()
     .modulateRotate(o0, () => mouse.x * 0.003)
     .out(o0)
 </hydra-element>
 ```
 
-> **Warning**
-> Running the engine in function scope is experimental and may lead to unexpected behavior. For now use global mode whenever possible.
-
 ### Attribute `audio`
 
-Hydra's audio capabilities are disabled by default because they require requesting microphone permissions from the page visitor and not all sketches use them, so don't forget to set the `audio` attribute to `true` if you use the `a` object in your sketch.
-
+Hydra's audio capabilities are disabled by default because they require requesting microphone permissions and not all sketches use them, so don't forget to set the `audio` attribute to `true` if you use the `a` object in your sketch.
 
 ```html
 <hydra-element audio="true">
@@ -143,10 +157,12 @@ Hydra's audio capabilities are disabled by default because they require requesti
 
 ### Attribute `sources`
 
-You can use the `sources` attribute to set the number of source buffers available for multimedia resources. The default value is `4`.
+You can use the `sources` attribute to set the number of source buffers available for multimedia resources. The default value is `4`. Extra buffers are available via the `synth` object.
 
 ```html
 <hydra-element sources="8">
+  const { s6, s7 } = synth
+
   s0.initCam()
   s1.initScreen()
   s6.initImage('https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg')
@@ -162,10 +178,12 @@ You can use the `sources` attribute to set the number of source buffers availabl
 
 ### Attribute `outputs`
 
-You can use the `outputs` attribute to set the number of output buffers to use. The default value is `4`.
+You can use the `outputs` attribute to set the number of output buffers to use. The default value is `4`. Extra buffers are available via the `synth` object.
 
 ```html
 <hydra-element outputs="8">
+  const { o7 } = synth
+
   osc().out(o7)
 
   render(o7)
@@ -185,7 +203,7 @@ You can use the `precision` attribute to force precision of shaders. By default 
 
 ### Property `transforms`
 
-You can add custom glsl functions setting the `transforms` property with javascript.
+You can add custom GLSL functions setting the `transforms` property with JavaScript.
 
 ```js
 document.querySelector('hydra-element').transforms = [{
@@ -199,15 +217,19 @@ document.querySelector('hydra-element').transforms = [{
 }]
 ```
 
-Once done, you can use the new functions in your sketch.
+Once done, you can use the new functions in your sketch. Generator functions (those of type `src`) will be available via the `synth` object.
 
 ```html
-<hydra-element>yourNoise().out()</hydra-element>
+<hydra-element>
+  const { yourNoise } = synth
+
+  yourNoise().out()
+</hydra-element>
 ```
 
 ### Property `pb`
 
-If you have access to an instance of `rtc-patch-bay` for streaming, you can assign it to the `pb` property with javascript.
+If you have access to an instance of `rtc-patch-bay` for streaming, you can assign it to the `pb` property with JavaScript.
 
 ```js
 document.querySelector('hydra-element').pb = yourRtcPatchBayInstance
@@ -215,7 +237,7 @@ document.querySelector('hydra-element').pb = yourRtcPatchBayInstance
 
 ## Limitations
 
-Currently it is not possible to work with [p5.js](https://p5js.org) as in the hydra editor because `hydra-synth` does not include the necessary wrapper. However, you can load it from a CDN with `loadScript` and use it as follows.
+Currently it is not possible to work with [p5.js](https://p5js.org) as in the [Hydra](https://hydra.ojack.xyz/) editor. However, you can load it from a CDN with `loadScript` and use it as follows.
 
 ```html
 <hydra-element>
@@ -252,8 +274,8 @@ This project uses [Vite](https://vitejs.dev/) for development and [Web Test Runn
 
 ## Credits
 
-- [Naoto Hieda](https://naotohieda.com/) for [forking](https://github.com/hydra-synth/hydra-element) and improving the usability of the custom element 🪄
-- [Olivia Jack]() for creating such a fun tool as hydra 🌈
+- [Naoto Hieda](https://naotohieda.com/) for improving the usability of the custom element 🪄
+- [Olivia Jack](https://ojack.xyz/) for creating such a fun tool as Hydra 🌈
 - The hydra community for turning the tool into something even more fun 🧩
 
 ## License
