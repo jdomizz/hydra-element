@@ -221,6 +221,8 @@ export class HydraElement extends HTMLElement {
   _evalCode() {
     const code = `(async () => { ${this._code} })()`
     if (this._options.makeGlobal) {
+      // NOTE: some scripts need access to the hydra instance
+      globalThis._hydra = this._hydra
       this._hydra.sandbox.eval(code)
     } else {
       hydraEval(code, this._hydra.synth)
