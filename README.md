@@ -8,7 +8,7 @@ A custom element for wrapping the [hydra-synth](https://github.com/hydra-synth/h
 
 This project aims to simplify the render of Hydra sketches in HTML documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (Hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). 
 
-By default each `hydra-element` contains its own instance of `hydra-synth` (with its own inputs, functions and outputs). In this way, several elements can be used in the same HTML document without collisions.
+By default each `hydra-element` contains its own `hydra-synth` (with its own sources, functions and outputs). In this way, several elements can be used in the same HTML document without collisions.
 
 ## Installation
 
@@ -50,16 +50,6 @@ Include your code between the element tags.
     .posterize([3,10,2].fast(0.5).smooth(1))
     .modulateRotate(o0, () => mouse.x * 0.003)
     .out()
-</hydra-element>
-```
-
-Note you can load scripts as in the Hydra editor.
-
-```html
-<hydra-element>
-  await loadScript('https://cdn.jsdelivr.net/npm/hydra-midi@latest/dist/index.js')
-  
-  await midi.start({ input: '*', channel: '*' }).show()
 </hydra-element>
 ```
 
@@ -132,15 +122,18 @@ document.querySelector('hydra-element').tick(dt)
 
 ### Attribute `global`
 
-If you want the embedded engine to be instantiated globally set the `global` attribute to `true`. In this case the inputs, functions and outputs of the engine will be stored in the `window` object and shared among all the elements of the same HTML document.
+If you set the `global` attribute to `true` all sources, functions and outputs of the synthesizer will be stored in the `window` object, so they will be directly available. You should use this option if you need to extend the functionality of the synthesizer by loading external extensions or libraries with `loadScript`.
 
 ```html
 <hydra-element global="true">
-  noise()
-    .modulateRotate(o0, () => mouse.x * 0.003)
-    .out(o0)
+  await loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
+  
+  warp().out()
 </hydra-element>
 ```
+
+> **Warning**
+> You must not use more than one `hydra-element` with `global` set to `true` in the same HTML document.
 
 ### Attribute `audio`
 
@@ -236,32 +229,8 @@ document.querySelector('hydra-element').pb = yourRtcPatchBayInstance
 
 ## Limitations
 
-Currently it is not possible to work with [p5.js](https://p5js.org) as in the [Hydra](https://hydra.ojack.xyz/) editor. However, you can load it from a CDN with `loadScript` and use it as follows.
-
-```html
-<hydra-element>
-  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.8.0/p5.min.js')
-
-  s0.init({src: new p5(( sketch ) => {
-
-    let x = 100;
-    let y = 100;
-
-    sketch.setup = () => {
-      sketch.createCanvas(200, 200);
-    };
-
-    sketch.draw = () => {
-      sketch.background(0);
-      sketch.fill(255);
-      sketch.rect(x,y,50,50);
-    };
-
-  }).canvas})
-
-  src(s0).repeat().out()
-</hydra-element>
-```
+- The `loadScript` function is only available when `global` is `true`.
+- It is not possible to work with [p5.js](https://p5js.org). 
 
 ## Development
 
