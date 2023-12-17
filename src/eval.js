@@ -45,59 +45,39 @@ export function hydraEval(code, synth, log = false) {
       vidRecorder
     } = synth
   
-    // NOTE: for some reason I can't destructure loadScript from synth
-    const loadScript = (url = "") => new Promise((resolve, reject) => {
-      // scripts usually assume global mode
-      globalThis.setFunction = setFunction
-      const script = document.createElement("script")
-      script.onload = () => {
-        delete globalThis.setFunction
-        resolve()
-      }
-      script.onerror = () => { 
-        delete globalThis.setFunction
-        reject() 
-      }
-      script.src = url
-      document.head.appendChild(script)
-    })
-
-    // NOTE: quick & dirty trick to avoid treeshaking
+    // NOTE: avoids treeshaking
     if (log) {
-      console.log(
-        render,
-        update,
-        setResolution,
-        hush,
-        setFunction,
-        speed,
-        bpm,
-        width,
-        height,
-        time,
-        mouse,
-        stats,
-        o0,
-        o1,
-        o2,
-        o3,
-        s0,
-        s1,
-        s2,
-        s3,
-        noise,
-        voronoi,
-        osc,
-        shape,
-        gradient,
-        src,
-        solid,
-        prev,
-        a,
-        screencap,
-        vidRecorder,
-        loadScript,
-      )
+      console.log(render)
+      console.log(update)
+      console.log(setResolution)
+      console.log(hush)
+      console.log(setFunction)
+      console.log(speed)
+      console.log(bpm)
+      console.log(width)
+      console.log(height)
+      console.log(time)
+      console.log(mouse)
+      console.log(stats)
+      console.log(o0)
+      console.log(o1)
+      console.log(o2)
+      console.log(o3)
+      console.log(s0)
+      console.log(s1)
+      console.log(s2)
+      console.log(s3)
+      console.log(noise)
+      console.log(voronoi)
+      console.log(osc)
+      console.log(shape)
+      console.log(gradient)
+      console.log(src)
+      console.log(solid)
+      console.log(prev)
+      console.log(a)
+      console.log(screencap)
+      console.log(vidRecorder)
     }
   
     eval(code)
