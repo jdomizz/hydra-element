@@ -60,7 +60,7 @@ export class HydraElement extends HTMLElement {
   constructor() {
     super()
     this._code = ''
-    this._options = DEFAULT_OPTIONS
+    this._options = { ...DEFAULT_OPTIONS }
     this.attachShadow({ mode: 'open' })
   }
 
