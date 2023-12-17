@@ -47,9 +47,17 @@ export function hydraEval(code, synth, log = false) {
   
     // NOTE: for some reason I can't destructure loadScript from synth
     const loadScript = (url = "") => new Promise((resolve, reject) => {
+      // scripts usually assume global mode
+      globalThis.setFunction = setFunction
       const script = document.createElement("script")
-      script.onload = () => resolve()
-      script.onerror = () => reject()
+      script.onload = () => {
+        delete globalThis.setFunction
+        resolve()
+      }
+      script.onerror = () => { 
+        delete globalThis.setFunction
+        reject() 
+      }
       script.src = url
       document.head.appendChild(script)
     })
