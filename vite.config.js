@@ -6,9 +6,6 @@ export default defineConfig({
       entry: 'index.js',
       formats: ['es'],
       fileName: 'hydra-element'
-    },
-    rollupOptions: {
-      // external: /^hydra-synth/
     }
   },
   optimizeDeps: {
