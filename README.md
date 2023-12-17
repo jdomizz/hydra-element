@@ -8,7 +8,7 @@ A custom element for wrapping the [hydra-synth](https://github.com/hydra-synth/h
 
 This project aims to simplify the render of Hydra sketches in HTML documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (Hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). 
 
-By default each element contains its own instance of `hydra-synth` (with its own inputs, functions and outputs). In this way, several elements can be used in the same HTML document without collisions.
+By default each `hydra-element` contains its own instance of `hydra-synth` (with its own inputs, functions and outputs). In this way, several elements can be used in the same HTML document without collisions.
 
 ## Installation
 
@@ -78,25 +78,24 @@ hydra-element {
   color: white;
 }
 ```
+You can see and remix a live example [here](https://glitch.com/edit/#!/hydra-element).
 
 ## Configuration
 
 By default the embedded `hydra-synth` engine is created with these settings:
 
 ```js
-{
-  canvas: null,
-  width: window.innerWidth,
-  height: window.innerHeight,
-  autoLoop: true,
-  makeGlobal: false,
-  detectAudio: false,
-  numSources: 4,
-  numOutputs: 4,
-  extendTransforms: [],
-  precision: null,
-  pb: null
-}
+canvas: null,
+width: window.innerWidth,
+height: window.innerHeight,
+autoLoop: true,
+makeGlobal: false,
+detectAudio: false,
+numSources: 4,
+numOutputs: 4,
+extendTransforms: [],
+precision: null,
+pb: null
 ```
 
 You can use the following attributes and properties to configure these options. Read the `hydra-synth` [API](https://github.com/hydra-synth/hydra-synth#api) documentation for more information.
