@@ -6,7 +6,7 @@ A custom element for wrapping the [hydra-synth](https://github.com/hydra-synth/h
 
 [Hydra](https://hydra.ojack.xyz/) is a video synth and coding environment that runs in the browser. It stands out for its elegant DSL, modeled on a fluent interface.
 
-This project aims to simplify the render of Hydra sketches in HTML documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (Hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). 
+This project aims to simplify the render of Hydra scripts in HTML documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (Hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). 
 
 By default each `hydra-element` contains its own `hydra-synth` (with its own sources, functions and outputs). In this way, several elements can be used in the same HTML document without collisions.
 
@@ -122,7 +122,7 @@ document.querySelector('hydra-element').tick(dt)
 
 ### Attribute `global`
 
-If you set the `global` attribute to `true` all sources, functions and outputs of the synthesizer will be stored in the `window` object, so they will be directly available. You should use this option if you need to extend the functionality of the synthesizer by loading external extensions or libraries with `loadScript`.
+If you set the `global` attribute to `true` all sources, functions and outputs of the synthesizer will be stored in the `window` object, so they will be directly available. You should use this option if you need to extend the functionality of the synthesizer by loading extensions or external libraries with `loadScript`.
 
 ```html
 <hydra-element global="true">
@@ -137,7 +137,7 @@ If you set the `global` attribute to `true` all sources, functions and outputs o
 
 ### Attribute `audio`
 
-Hydra's audio capabilities are disabled by default because they require requesting microphone permissions and not all sketches use them, so don't forget to set the `audio` attribute to `true` if you use the `a` object in your sketch.
+Hydra's audio capabilities are disabled by default because they require requesting microphone permissions and not all scripts use them, so don't forget to set the `audio` attribute to `true` if you use the `a` object in your script.
 
 ```html
 <hydra-element audio="true">
@@ -209,7 +209,7 @@ document.querySelector('hydra-element').transforms = [{
 }]
 ```
 
-Once done, you can use the new functions in your sketch. Generator functions (those of type `src`) will be available via the `synth` object.
+Once done, you can use the new functions in your script. Generator functions (those of type `src`) will be available via the `synth` object.
 
 ```html
 <hydra-element>
@@ -230,7 +230,7 @@ document.querySelector('hydra-element').pb = yourRtcPatchBayInstance
 ## Limitations
 
 - The `loadScript` function is only available when `global` is `true`.
-- It is not possible to work with [p5.js](https://p5js.org). 
+- It is not possible to work with [p5.js](https://p5js.org) as in the Hydra web editor.
 
 ## Development
 
@@ -244,7 +244,7 @@ This project uses [Vite](https://vitejs.dev/) for development and [Web Test Runn
 
 - [Naoto Hieda](https://naotohieda.com/) for improving the usability of the custom element 🪄
 - [Olivia Jack](https://ojack.xyz/) for creating such a fun tool as Hydra 🌈
-- The hydra community for turning the tool into something even more fun 🧩
+- The Hydra community for turning the tool into something even more fun 🧩
 
 ## License
 
