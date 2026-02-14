@@ -20,6 +20,7 @@
     "@open-wc/testing": "^4.0.0",
     "@remcovaes/web-test-runner-vite-plugin": "^1.4.0",
     "@web/test-runner": "^0.20.2",
+    "@web/test-runner-playwright": "^0.11.1",
     "sinon": "^21.0.1",
     "vite": "^7.3.1"
   },
