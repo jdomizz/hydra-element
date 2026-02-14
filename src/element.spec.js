@@ -25,6 +25,7 @@ describe('<hydra-element>', () => {
     expect(el._options.numSources).to.equal(4)
     expect(el._options.numOutputs).to.equal(4)
     expect(el._options.precision).to.be.null
+    expect(el._options.useAudioAnalyzer).to.be.true
     expect(el.transforms).to.deep.equal([])
     expect(el.pb).to.be.null
   })
@@ -38,6 +39,7 @@ describe('<hydra-element>', () => {
     el.setAttribute('sources', '2')
     el.setAttribute('outputs', '1')
     el.setAttribute('precision', 'lowp')
+    el.setAttribute('analyzer', 'false')
     expect(el.canvas.width).to.equal(500)
     expect(el.canvas.height).to.equal(300)
     expect(el._options.width).to.equal(500)
@@ -47,6 +49,7 @@ describe('<hydra-element>', () => {
     expect(el._options.numSources).to.equal(2)
     expect(el._options.numOutputs).to.equal(1)
     expect(el._options.precision).to.equal('lowp')
+    expect(el._options.useAudioAnalyzer).to.be.false
   })
   
   it('should get code from textContent', async () => {

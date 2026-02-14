@@ -147,6 +147,14 @@ Hydra's audio capabilities are disabled by default because they require requesti
 </hydra-element>
 ```
 
+### Attribute `analyzer`
+
+You can use the `analyzer` attribute if you need to disable the Hydra audio analyzer UI.
+
+```html
+<hydra-element audio="true" analyzer="false"></hydra-element>
+```
+
 ### Attribute `sources`
 
 You can use the `sources` attribute to set the number of source buffers available for multimedia resources. The default value is `4`. Extra buffers are available via the `synth` object.
