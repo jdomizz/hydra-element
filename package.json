@@ -9,19 +9,19 @@
     ".": "./dist/hydra-element.js"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "test": "wtr --config wtr.config.js",
     "build": "vite build"
   },
   "dependencies": {
-    "hydra-synth": "^1.3.29"
+    "hydra-synth": "^1.4.0"
   },
   "devDependencies": {
     "@open-wc/testing": "^4.0.0",
-    "@remcovaes/web-test-runner-vite-plugin": "^1.2.1",
-    "@web/test-runner": "^0.18.1",
-    "sinon": "^17.0.1",
-    "vite": "^5.2.8"
+    "@remcovaes/web-test-runner-vite-plugin": "^1.4.0",
+    "@web/test-runner": "^0.20.2",
+    "sinon": "^21.0.1",
+    "vite": "^7.3.1"
   },
   "author": "jdomizz",
   "license": "AGPL-3.0-or-later",
