@@ -16,6 +16,7 @@ import { hydraEval } from './eval'
  * @property {Array} extendTransforms - An array of custom transform functions.
  * @property {number} precision - The precision of the rendering.
  * @property {Object} pb - The instance of `rtc-patch-bay` for streaming.
+ * @property {boolean} useAudioAnalyzer - Whether to use the Hydra audio analyzer UI.
  */
 const DEFAULT_OPTIONS = {
   canvas: null,
@@ -28,7 +29,8 @@ const DEFAULT_OPTIONS = {
   numOutputs: 4,
   extendTransforms: [],
   precision: null,
-  pb: null
+  pb: null,
+  useAudioAnalyzer: true,
 }
 
 /**
@@ -46,6 +48,7 @@ export class HydraElement extends HTMLElement {
       'width',
       'height',
       'global',
+      'analyzer',
       'audio',
       'sources',
       'outputs',
@@ -78,7 +81,7 @@ export class HydraElement extends HTMLElement {
    */
   set canvas(value) {
     if (this._options.canvas) {
-      this.shadowRoot?.querySelector('canvas')?.remove()
+      this.shadowRoot?.getElementById('hydra-element-canvas')?.remove()
     }
     this._options.canvas = value;
     if (this._hydra) {
@@ -196,8 +199,9 @@ export class HydraElement extends HTMLElement {
    * @private
    */
   _initCanvas() {
-    this.shadowRoot?.querySelector('canvas')?.remove()
+    this.shadowRoot?.querySelectorAll('canvas').forEach(canvas => canvas.remove());
     this._options.canvas = document.createElement('canvas')
+    this._options.canvas.id = 'hydra-element-canvas'
     this._options.canvas.width = this._options.width
     this._options.canvas.height = this._options.height
     this._options.canvas.style.width = "100%"
@@ -211,7 +215,11 @@ export class HydraElement extends HTMLElement {
    */
   _initHydra() {
     this._hydra = new Hydra({ ...this._options })
-    this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))
+    this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))    
+    if (!this._options.useAudioAnalyzer) {
+      this.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => canvas.remove());
+    }
+    globalThis._hydra = this._hydra
   }
 
   /**
@@ -221,8 +229,6 @@ export class HydraElement extends HTMLElement {
   _evalCode() {
     const code = `(async () => { ${this._code} })()`
     if (this._options.makeGlobal) {
-      // NOTE: some scripts need access to the hydra instance
-      globalThis._hydra = this._hydra
       this._hydra.sandbox.eval(code)
     } else {
       hydraEval(code, this._hydra.synth)
@@ -236,11 +242,12 @@ export class HydraElement extends HTMLElement {
    * @returns {Object} - A new options object with the updated attribute value.
    * @private
    */
-  _getNewOptions(attrName, newValue) {
+  _getNewOptions(attrName, newValue) {    
     switch (attrName) {
       case 'width': return { ...this._options, width: parseNumber(newValue, DEFAULT_OPTIONS.width, 0) }
       case 'height': return { ...this._options, height: parseNumber(newValue, DEFAULT_OPTIONS.height, 0) }
       case 'global': return { ...this._options, makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) }
+      case 'analyzer': return { ...this._options, useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer) }
       case 'audio': return { ...this._options, detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) }
       case 'sources': return { ...this._options, numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) }
       case 'outputs': return { ...this._options, numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) }
