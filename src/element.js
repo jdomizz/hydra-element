@@ -200,6 +200,10 @@ export class HydraElement extends HTMLElement {
   disconnectedCallback() {
     this._connected = false
     this._stopLoop()
+    if (this._hydra) {
+      this._hydra.s?.forEach(s => s.clear?.())
+      this._hydra = null
+    }
   }
 
   /**

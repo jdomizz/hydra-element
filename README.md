@@ -42,9 +42,9 @@ Include your code between the element tags.
 
 ```html
 <hydra-element>
-  s0.initImage("https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg") osc(30,0.01,1)
-  .mult(osc(() => (100 * Math.sin(time * 0.1)),-0.1,1).modulate(noise(3,1)).rotate(0.7))
-  .blend(src(s0)) .posterize([3,10,2].fast(0.5).smooth(1)) .modulateRotate(o0, () => mouse.x *
+  s0.initImage("https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg") osc(30, 0.01,
+  1) .mult(osc(() => 100 * Math.sin(time * 0.1), -0.1, 1).modulate(noise(3, 1)).rotate(0.7))
+  .blend(src(s0)) .posterize([3, 10, 2].fast(0.5).smooth(1)) .modulateRotate(o0, () => mouse.x *
   0.003) .out()
 </hydra-element>
 ```
@@ -138,7 +138,7 @@ If you set the `global` attribute to `true` all sources, functions and outputs o
 Hydra's audio capabilities are disabled by default because they require requesting microphone permissions and not all scripts use them, so don't forget to set the `audio` attribute to `true` if you use the `a` object in your script.
 
 ```html
-<hydra-element audio="true"> a.show() osc(10, 0, () => a.fft[0]*4).out() </hydra-element>
+<hydra-element audio="true"> a.show() osc(10, 0, () => a.fft[0] * 4).out() </hydra-element>
 ```
 
 ### Attribute `analyzer`
@@ -151,11 +151,11 @@ You can use the `analyzer` attribute if you need to disable the Hydra audio anal
 
 ### Attribute `sources`
 
-You can use the `sources` attribute to set the number of source buffers available for multimedia resources. The default value is `4`. Extra buffers are available via the `synth` object.
+You can use the `sources` attribute to set the number of source buffers available for multimedia resources. The default value is `4`. Extra buffers (s4-s7) are available directly in your code.
 
 ```html
 <hydra-element sources="8">
-  const { s6, s7 } = synth s0.initCam() s1.initScreen()
+  s0.initCam() s1.initScreen()
   s6.initImage('https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg')
   s7.initVideo('https://media.giphy.com/media/AS9LIFttYzkc0/giphy.mp4') src(s0) .blend(src(s1))
   .blend(src(s6)) .blend(src(s7)) .out()
@@ -164,10 +164,10 @@ You can use the `sources` attribute to set the number of source buffers availabl
 
 ### Attribute `outputs`
 
-You can use the `outputs` attribute to set the number of output buffers to use. The default value is `4`. Extra buffers are available via the `synth` object.
+You can use the `outputs` attribute to set the number of output buffers to use. The default value is `4`. Extra buffers (o4-o7) are available directly in your code.
 
 ```html
-<hydra-element outputs="8"> const { o7 } = synth osc().out(o7) render(o7) </hydra-element>
+<hydra-element outputs="8"> osc().out(o7) render(o7) </hydra-element>
 ```
 
 > **Warning**
@@ -199,10 +199,10 @@ document.querySelector('hydra-element').transforms = [
 ]
 ```
 
-Once done, you can use the new functions in your script. Generator functions (those of type `src`) will be available via the `synth` object.
+Once done, you can use the new functions in your script directly.
 
 ```html
-<hydra-element> const { yourNoise } = synth yourNoise().out() </hydra-element>
+<hydra-element> yourNoise().out() </hydra-element>
 ```
 
 ### Property `pb`

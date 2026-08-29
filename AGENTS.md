@@ -5,7 +5,8 @@
 - `npm run dev` — serve `index.html` with Vite (HMR)
 - `npm test` — run all tests via Web Test Runner (headless Chromium)
 - `npm run build` — bundle to `dist/hydra-element.js` (ES module only)
-- No lint or typecheck scripts exist
+- `npm run lint` — lint and fix with oxlint, then format with oxfmt
+- `npm run format` — format code with oxfmt
 
 ## Test runner quirks
 
@@ -24,6 +25,10 @@
 
 ## Conventions
 
-- No TypeScript, no lint config — follow existing JSDoc + plain JS style
+- No TypeScript — follow existing JSDoc + plain JS style
+- Linting: oxlint (config in `.oxlintrc.json`)
+- Formatting: oxfmt (config in `.oxfmtrc.json`)
+- Pre-commit: husky + lint-staged auto-runs lint and format on staged files
+- CI: GitHub Actions runs lint, test, and build on push/PR to main/dev
 - `hydra-synth` is the sole runtime dependency; keep it that way
 - `index.html` is a dev playground, not part of the library — don't import from it

@@ -17,6 +17,15 @@ describe('parseNumber', () => {
   it('should return the default value if the input is not a valid number', () => {
     expect(parseNumber('abc', 10, 5, 15)).to.equal(10)
   })
+
+  it('should work without max parameter', () => {
+    expect(parseNumber('10', 0, 5)).to.equal(10)
+    expect(parseNumber('3', 10, 5)).to.equal(10)
+  })
+
+  it('should use Infinity as default max', () => {
+    expect(parseNumber('999999', 0, 0)).to.equal(999999)
+  })
 })
 
 describe('parseJSON', () => {

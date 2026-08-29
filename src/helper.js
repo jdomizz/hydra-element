@@ -3,10 +3,10 @@
  * @param {string} value - The string to be parsed into a number.
  * @param {number} defaultValue - The default value to be returned if the parsed value is not a number or is outside the specified range.
  * @param {number} min - The minimum value allowed for the parsed number.
- * @param {number} max - The maximum value allowed for the parsed number.
+ * @param {number} [max=Infinity] - The maximum value allowed for the parsed number.
  * @returns {number} - The parsed number or the default value if the parsed value is not a number or is outside the specified range.
  */
-export function parseNumber(value, defaultValue, min, max) {
+export function parseNumber(value, defaultValue, min, max = Infinity) {
   const parsedValue = parseInt(value, 10)
   return isNaN(parsedValue, min, max) ? defaultValue : parsedValue
 }

@@ -113,6 +113,13 @@ describe('<hydra-element>', () => {
     expect(el._stopLoop).to.have.been.calledOnce
   })
 
+  it('should destroy hydra on disconnect', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    expect(el._hydra).to.exist
+    el.remove()
+    expect(el._hydra).to.be.null
+  })
+
   it('should not throw on eval error', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     expect(() => {

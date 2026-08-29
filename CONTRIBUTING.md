@@ -26,6 +26,7 @@ Thanks for your interest in contributing! This document will help you get starte
 This project uses **ox-standard** for linting and formatting (JavaScript Standard Style). Before committing, your code will be automatically checked via pre-commit hooks.
 
 You can also run linting manually:
+
 ```sh
 npm run lint
 ```
