@@ -13,7 +13,6 @@ import { hydraEval } from './eval'
  * @property {boolean} detectAudio - Whether to detect audio input.
  * @property {number} numSources - The number of audio sources.
  * @property {number} numOutputs - The number of audio outputs.
- * @property {Array} extendTransforms - An array of custom transform functions.
  * @property {number} precision - The precision of the rendering.
  * @property {Object} pb - The instance of `rtc-patch-bay` for streaming.
  * @property {boolean} useAudioAnalyzer - Whether to use the Hydra audio analyzer UI.
@@ -27,7 +26,6 @@ const DEFAULT_OPTIONS = {
   detectAudio: false,
   numSources: 4,
   numOutputs: 4,
-  extendTransforms: [],
   precision: null,
   pb: null,
   useAudioAnalyzer: true,
@@ -64,7 +62,6 @@ export class HydraElement extends HTMLElement {
     }
     this._rafId = null
     this._connected = false
-    this._loadedScripts = new Set()
     this.attachShadow({ mode: 'open' })
   }
 
@@ -97,25 +94,6 @@ export class HydraElement extends HTMLElement {
    */
   get synth() {
     return this._hydra?.synth
-  }
-
-  /**
-   * Get the transforms of the element.
-   * @returns {Array<Function>} The extended transforms.
-   */
-  get transforms() {
-    return this._options.extendTransforms
-  }
-
-  /**
-   * Setter for the transforms property.
-   * @param {Array<Function>} value - An array of functions to extend the transforms.
-   */
-  set transforms(value) {
-    this._options.extendTransforms = value
-    if (this._hydra) {
-      this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))
-    }
   }
 
   /**
@@ -158,28 +136,6 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
-   * Load external script (works in both global and non-global modes)
-   * @param {string} url - The URL of the script to load
-   * @returns {Promise<void>} Resolves when the script is loaded
-   */
-  loadScript(url) {
-    if (this._loadedScripts.has(url)) {
-      return Promise.resolve()
-    }
-    this._loadedScripts.add(url)
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script')
-      script.addEventListener('load', () => resolve())
-      script.addEventListener('error', () => {
-        this._loadedScripts.delete(url)
-        reject(new Error(`Failed to load ${url}`))
-      })
-      script.src = url
-      document.head.append(script)
-    })
-  }
-
-  /**
    * Called when an observed attribute has been added, removed, updated, or replaced.
    * @param {string} attrName - The name of the attribute that was changed.
    * @param {string|null} oldValue - The previous value of the attribute, or null if it didn't exist before.
@@ -201,7 +157,7 @@ export class HydraElement extends HTMLElement {
 
   connectedCallback() {
     this._connected = true
-    if (this._code === '' && this.textContent) {
+    if (this._code === '' && this.textContent.trim()) {
       this._code = this.textContent
       this.textContent = ''
     }
@@ -228,23 +184,13 @@ export class HydraElement extends HTMLElement {
     }
   }
 
-  /**
-   * Updates the element's state based on the elapsed time since the last tick.
-   * @param {number} dt - The elapsed time in seconds.
-   */
-  tick(dt) {
-    if (this._hydra) {
-      this._hydra.tick(dt)
-    }
-  }
-
   _startLoop() {
     if (this._rafId !== null) return
     let last = performance.now()
     const step = now => {
       const dt = now - last
       last = now
-      this.tick(dt)
+      this._hydra?.tick(dt)
       this._rafId = requestAnimationFrame(step)
     }
     this._rafId = requestAnimationFrame(step)
@@ -270,7 +216,12 @@ export class HydraElement extends HTMLElement {
    * @private
    */
   _initCanvas() {
-    this.shadowRoot?.querySelectorAll('canvas').forEach(canvas => canvas.remove())
+    if (this._options.canvas && this._options.canvas.id !== 'hydra-element-canvas') {
+      return
+    }
+    this.shadowRoot
+      ?.querySelectorAll('canvas#hydra-element-canvas')
+      .forEach(canvas => canvas.remove())
     this._options.canvas = document.createElement('canvas')
     this._options.canvas.id = 'hydra-element-canvas'
     this._options.canvas.width = this._options.width
@@ -288,7 +239,6 @@ export class HydraElement extends HTMLElement {
     this._stopLoop()
     const opts = { ...this._options, autoLoop: false }
     this._hydra = new Hydra({ ...opts })
-    this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))
     if (!this._options.useAudioAnalyzer) {
       this._removeAnalyzerCanvases()
     }
@@ -331,11 +281,7 @@ export class HydraElement extends HTMLElement {
       if (this._options.makeGlobal) {
         result = this._hydra.sandbox.eval(code)
       } else {
-        const context = {
-          ...this._hydra.synth,
-          loadScript: this.loadScript.bind(this),
-        }
-        result = hydraEval(code, context)
+        result = hydraEval(code, this._hydra.synth)
       }
       if (result && typeof result.catch === 'function') {
         result.then(dispatchSuccess).catch(dispatchError)
@@ -418,20 +364,19 @@ export class HydraElement extends HTMLElement {
    * @private
    */
   _getNewOptions(attrName, newValue) {
-    const attrMap = {
-      width: () => ({ width: parseNumber(newValue, this._options.width, 0) }),
-      height: () => ({ height: parseNumber(newValue, this._options.height, 0) }),
-      global: () => ({ makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) }),
-      analyzer: () => ({ useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer) }),
-      audio: () => ({ detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) }),
-      sources: () => ({ numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) }),
-      outputs: () => ({ numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) }),
-      precision: () => ({
+    const updates = {
+      width: { width: parseNumber(newValue, this._options.width, 0) },
+      height: { height: parseNumber(newValue, this._options.height, 0) },
+      global: { makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) },
+      analyzer: { useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer) },
+      audio: { detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) },
+      sources: { numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) },
+      outputs: { numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) },
+      precision: {
         precision: parseOption(newValue, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']),
-      }),
-      loop: () => ({ autoLoop: parseJSON(newValue, DEFAULT_OPTIONS.autoLoop) }),
+      },
+      loop: { autoLoop: parseJSON(newValue, DEFAULT_OPTIONS.autoLoop) },
     }
-    const updater = attrMap[attrName]
-    return { ...this._options, ...(updater ? updater() : {}) }
+    return { ...this._options, ...updates[attrName] }
   }
 }
