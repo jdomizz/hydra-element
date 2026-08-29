@@ -239,4 +239,21 @@ describe('hydraEval', () => {
     hydraEval('vidRecorder.stop()', synth)
     expect(synth.vidRecorder.stop).to.have.been.calledOnceWith()
   })
+
+  it('should prioritize synth properties over window', () => {
+    const synth = { time: 42, osc: spy() }
+    hydraEval('osc(time)', synth)
+    expect(synth.osc).to.have.been.calledOnceWith(42)
+  })
+
+  it('should fallback to window for Math', () => {
+    const synth = { osc: spy() }
+    hydraEval('osc(Math.PI)', synth)
+    expect(synth.osc).to.have.been.calledOnceWith(Math.PI)
+  })
+
+  it('should allow access to console', () => {
+    const synth = {}
+    expect(() => hydraEval('console.log("test")', synth)).to.not.throw()
+  })
 })
