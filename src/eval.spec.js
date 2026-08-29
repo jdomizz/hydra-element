@@ -1,6 +1,6 @@
 import { expect } from '@open-wc/testing'
 import { spy } from 'sinon'
-import { hydraEval } from './eval'
+import { hydraEval, hydraEvalAsync } from './eval'
 
 describe('hydraEval', () => {
   it('should prioritize synth properties over window', () => {
@@ -75,5 +75,41 @@ describe('hydraEval', () => {
     const synth = { osc: () => oscResult, modulate: modulateSpy }
     hydraEval('osc(10).modulate(osc(5)).out()', synth)
     expect(outSpy).to.have.been.calledOnce
+  })
+
+  describe('scope isolation (trap set)', () => {
+    it('should not pollute synth with bare assignments', () => {
+      const synth = { osc: spy() }
+      hydraEval('x = 42; osc(x)', synth)
+      expect(synth.x).to.be.undefined
+      expect(synth.osc).to.have.been.calledOnceWith(42)
+    })
+
+    it('should sync speed assignment to synth', () => {
+      const synth = { speed: 1 }
+      hydraEval('speed = 2', synth)
+      expect(synth.speed).to.equal(2)
+    })
+
+    it('should sync bpm assignment to synth', () => {
+      const synth = { bpm: 30 }
+      hydraEval('bpm = 120', synth)
+      expect(synth.bpm).to.equal(120)
+    })
+  })
+
+  describe('hydraEvalAsync', () => {
+    it('should support async/await syntax', async () => {
+      const synth = { osc: spy(), speed: 1 }
+      await hydraEvalAsync('await Promise.resolve(); osc(42); speed = 3', synth)
+      expect(synth.osc).to.have.been.calledOnceWith(42)
+      expect(synth.speed).to.equal(3)
+    })
+
+    it('should return a promise', () => {
+      const synth = {}
+      const result = hydraEvalAsync('42', synth)
+      expect(result).to.be.a('promise')
+    })
   })
 })

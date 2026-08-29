@@ -1,6 +1,6 @@
 import Hydra from 'hydra-synth'
 import { parseJSON, parseNumber, parseOption } from './helper'
-import { hydraEval } from './eval'
+import { hydraEvalAsync } from './eval'
 
 /**
  * Default options for Hydra Element.
@@ -258,7 +258,6 @@ export class HydraElement extends HTMLElement {
    * @private
    */
   _evalCode() {
-    const code = `(async () => { ${this._code} })()`
     const dispatchSuccess = () => {
       this.dispatchEvent(
         new CustomEvent('hydra-eval', {
@@ -279,9 +278,10 @@ export class HydraElement extends HTMLElement {
     try {
       let result
       if (this._options.makeGlobal) {
+        const code = `(async () => { ${this._code} })()`
         result = this._hydra.sandbox.eval(code)
       } else {
-        result = hydraEval(code, this._hydra.synth)
+        result = hydraEvalAsync(this._code, this._hydra.synth)
       }
       if (result && typeof result.catch === 'function') {
         result.then(dispatchSuccess).catch(dispatchError)
