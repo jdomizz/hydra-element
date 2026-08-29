@@ -2,6 +2,31 @@
   "name": "hydra-element",
   "version": "0.6.0",
   "description": "A custom element for wrapping the hydra-synth engine",
+  "keywords": [
+    "canvas",
+    "creative-coding",
+    "custom-element",
+    "glsl",
+    "hydra-synth",
+    "livecoding",
+    "synth",
+    "video",
+    "web-component"
+  ],
+  "homepage": "https://github.com/jdomizz/hydra-element#readme",
+  "bugs": {
+    "url": "https://github.com/jdomizz/hydra-element/issues"
+  },
+  "license": "AGPL-3.0-or-later",
+  "author": "jdomizz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jdomizz/hydra-element.git"
+  },
+  "sponsor": {
+    "url": "https://opencollective.com/hydra-synth"
+  },
+  "qna": "https://github.com/jdomizz/hydra-element/discussions",
   "type": "module",
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
@@ -11,7 +36,9 @@
   "scripts": {
     "dev": "vite --host",
     "test": "wtr --config wtr.config.js",
-    "build": "vite build"
+    "build": "vite build",
+    "lint": "oxlint --fix .; oxfmt .",
+    "format": "oxfmt ."
   },
   "dependencies": {
     "hydra-synth": "^1.4.0"
@@ -21,32 +48,8 @@
     "@remcovaes/web-test-runner-vite-plugin": "^1.4.0",
     "@web/test-runner": "^0.20.2",
     "@web/test-runner-playwright": "^0.11.1",
+    "oxc-standard": "^1.4.0",
     "sinon": "^21.0.1",
     "vite": "^7.3.1"
-  },
-  "author": "jdomizz",
-  "license": "AGPL-3.0-or-later",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/jdomizz/hydra-element.git"
-  },
-  "homepage": "https://github.com/jdomizz/hydra-element#readme",
-  "qna": "https://github.com/jdomizz/hydra-element/discussions",
-  "bugs": {
-    "url": "https://github.com/jdomizz/hydra-element/issues"
-  },
-  "sponsor": {
-    "url": "https://opencollective.com/hydra-synth"
-  },
-  "keywords": [
-    "creative-coding",
-    "livecoding",
-    "hydra-synth",
-    "canvas",
-    "glsl",
-    "video",
-    "synth",
-    "custom-element",
-    "web-component"
-  ]
+  }
 }
