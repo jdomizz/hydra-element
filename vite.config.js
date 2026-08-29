@@ -5,7 +5,7 @@ export default defineConfig({
     lib: {
       entry: {
         'hydra-element': 'index.js',
-        eval: 'eval.js',
+        eval: 'src/eval.js',
       },
       formats: ['es'],
       fileName: (format, entryName) => `${entryName}.js`,

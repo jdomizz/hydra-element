@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `src/eval.js` now uses Proxy for better isolation (previously used destructuring + eval in 0.6.0)
+- `hydraEval` now always returns a Promise and supports `await` in user code — it merges the internal `hydraEvalAsync` into a single public function (BREAKING: the return value is now a Promise; `await` it)
 - Animation loop now managed by element itself (RAF) instead of delegating to hydra-synth's `autoLoop`
 - CI workflow now runs only on PRs to main (not on every push)
 - Web Test Runner config detects CI environment for sandbox flags
