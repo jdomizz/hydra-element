@@ -157,6 +157,93 @@ By default you get 4 source buffers (`s0`-`s3`) and 4 output buffers (`o0`-`o3`)
 
 > **Warning:** Loaded scripts run with full page privileges — they are not sandboxed. Only load scripts you trust. This is separate from the eval sandboxing note below.
 
+### Community Extensions
+
+`hydra-element` is compatible with the [Hydra extensions ecosystem](https://github.com/hydra-synth/hydra-extensions). All DSL functions (`setFunction()`, `osc()`, `solid()`, etc.) work directly inside the code without needing the `synth.` prefix.
+
+#### metagrowing/extra-shaders-for-hydra
+
+Add noise, patterns, and color filters:
+
+```html
+<hydra-element>
+  await loadScript("https://metagrowing.org/extra-shaders-for-hydra/lib-noise.js")
+  turb(3, 0, () => 6 * ((0.5 * time) % 1.0)).out(o0)
+</hydra-element>
+```
+
+Other extensions: `lib-pattern.js`, `lib-color.js`, `lib-softpattern.js`, `lib-screen.js`
+
+#### geikha/hyper-hydra
+
+Extended source functions with aspect ratio handling:
+
+```html
+<hydra-element>
+  await loadScript("https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-src.js")
+  srcAbs(s0).out()
+</hydra-element>
+```
+
+Other extensions: `hydra-wrap.js`, `hydra-blend.js`, `hydra-arithmetics.js`, `hydra-text.js`
+
+#### arnoson/hydra-midi
+
+Control visuals with MIDI devices:
+
+```html
+<hydra-element>
+  await loadScript("https://cdn.jsdelivr.net/npm/hydra-midi@latest/dist/index.js")
+  await midi.start()
+  osc(30, .01).invert(note('C4')).out()
+</hydra-element>
+```
+
+#### atfornes/Hydra-strudel-extension
+
+Synchronize visuals with Strudel audio patterns:
+
+```html
+<hydra-element>
+  await loadScript("https://cdn.jsdelivr.net/gh/atfornes/Hydra-strudel-extension@latest/hydra-strudel.js")
+  await initHydraStrudel()
+  shape(P("3 <4 5> 6 7>")).out(o0)
+</hydra-element>
+```
+
+#### p5.js
+
+Use p5.js for creative coding alongside Hydra:
+
+```html
+<hydra-element>
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js")
+  // p5.js is now available as window.p5
+  osc().out()
+</hydra-element>
+```
+
+#### Custom GLSL functions with `setFunction()`
+
+Add your own GLSL functions directly in the code:
+
+```html
+<hydra-element>
+  setFunction({
+    name: 'myNoise',
+    type: 'src',
+    inputs: [
+      { type: 'float', name: 'scale', default: 5 },
+      { type: 'float', name: 'offset', default: 0.5 }
+    ],
+    glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`
+  })
+  myNoise(10, 0.2).out()
+</hydra-element>
+```
+
+You can also access the synth instance via `synth.setFunction()` or `window.synth.setFunction()` if needed.
+
 ### Global mode
 
 By default, each element has its own isolated scope. If you want Hydra functions available globally (like in the Hydra editor):
