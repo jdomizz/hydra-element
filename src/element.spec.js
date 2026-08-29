@@ -98,4 +98,35 @@ describe('<hydra-element>', () => {
     expect(el._hydra.tick).to.have.been.calledOnceWith(0.1)
   })
 
+  it('should observe loop attribute', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    expect(el._options.autoLoop).to.be.true
+    el.setAttribute('loop', 'false')
+    expect(el._options.autoLoop).to.be.false
+    el.setAttribute('loop', 'true')
+    expect(el._options.autoLoop).to.be.true
+  })
+
+  it('should stop loop on disconnect', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    el._stopLoop = spy()
+    el.remove()
+    expect(el._stopLoop).to.have.been.calledOnce
+  })
+
+  it('should not throw on eval error', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    expect(() => {
+      el.code = 'throw new Error("test")'
+    }).to.not.throw()
+  })
+
+  it('should resize canvas without recreating it', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const canvas = el.canvas
+    el.setAttribute('width', '500')
+    expect(el.canvas).to.equal(canvas)
+    expect(canvas.width).to.equal(500)
+  })
+
 })

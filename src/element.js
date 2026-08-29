@@ -33,6 +33,8 @@ const DEFAULT_OPTIONS = {
   useAudioAnalyzer: true,
 }
 
+const SYNTH_RECREATE_ATTRS = new Set(['global', 'audio', 'sources', 'outputs', 'precision'])
+
 /**
  * A custom element that renders Hydra sketches.
  * @extends HTMLElement
@@ -53,6 +55,7 @@ export class HydraElement extends HTMLElement {
       'sources',
       'outputs',
       'precision',
+      'loop',
     ]
   }
 
@@ -64,6 +67,8 @@ export class HydraElement extends HTMLElement {
     super()
     this._code = ''
     this._options = { ...DEFAULT_OPTIONS }
+    this._rafId = null
+    this._connected = false
     this.attachShadow({ mode: 'open' })
   }
 
@@ -154,11 +159,16 @@ export class HydraElement extends HTMLElement {
    * @param {string|null} newValue - The new value of the attribute, or null if it was removed.
    */
   attributeChangedCallback(attrName, oldValue, newValue) {
-    if (newValue !== oldValue) {
-      this._options = this._getNewOptions(attrName, newValue)
-      this._initCanvas()
-      this._initHydra()
-      this._evalCode()
+    if (newValue === oldValue) return
+
+    if (attrName === 'width' || attrName === 'height') {
+      this._handleSizeChange(attrName, newValue)
+    } else if (attrName === 'analyzer') {
+      this._handleAnalyzerChange(newValue)
+    } else if (attrName === 'loop') {
+      this._handleLoopChange(newValue)
+    } else if (SYNTH_RECREATE_ATTRS.has(attrName)) {
+      this._handleSynthRecreateChange(attrName, newValue)
     }
   }
 
@@ -169,6 +179,7 @@ export class HydraElement extends HTMLElement {
    * @returns {void}
    */
   connectedCallback() {
+    this._connected = true
     if (this._code === '' && this.textContent) {
       this._code = this.textContent
       this.textContent = ''
@@ -179,9 +190,17 @@ export class HydraElement extends HTMLElement {
     if (!this._hydra) {
       this._initHydra()
     }
+    if (this._options.autoLoop) {
+      this._startLoop()
+    }
     if (this._code !== '') {
       this._evalCode()
     }
+  }
+
+  disconnectedCallback() {
+    this._connected = false
+    this._stopLoop()
   }
 
   /**
@@ -191,6 +210,33 @@ export class HydraElement extends HTMLElement {
   tick(dt) {
     if (this._hydra) {
       this._hydra.tick(dt)
+    }
+  }
+
+  _startLoop() {
+    if (this._rafId !== null) return
+    let last = performance.now()
+    const step = (now) => {
+      const dt = now - last
+      last = now
+      this.tick(dt)
+      this._rafId = requestAnimationFrame(step)
+    }
+    this._rafId = requestAnimationFrame(step)
+  }
+
+  _stopLoop() {
+    if (this._rafId !== null) {
+      cancelAnimationFrame(this._rafId)
+      this._rafId = null
+    }
+  }
+
+  _resizeCanvas() {
+    const canvas = this._options.canvas
+    if (canvas && canvas.id === 'hydra-element-canvas') {
+      canvas.width = this._options.width
+      canvas.height = this._options.height
     }
   }
 
@@ -214,12 +260,16 @@ export class HydraElement extends HTMLElement {
    * @private
    */
   _initHydra() {
-    this._hydra = new Hydra({ ...this._options })
+    this._stopLoop()
+    const opts = { ...this._options, autoLoop: false }
+    this._hydra = new Hydra({ ...opts })
     this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))    
     if (!this._options.useAudioAnalyzer) {
       this.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => canvas.remove());
     }
-    globalThis._hydra = this._hydra
+    if (this._connected && this._options.autoLoop) {
+      this._startLoop()
+    }
   }
 
   /**
@@ -228,11 +278,68 @@ export class HydraElement extends HTMLElement {
    */
   _evalCode() {
     const code = `(async () => { ${this._code} })()`
-    if (this._options.makeGlobal) {
-      this._hydra.sandbox.eval(code)
-    } else {
-      hydraEval(code, this._hydra.synth)
+    try {
+      if (this._options.makeGlobal) {
+        this._hydra.sandbox.eval(code)
+      } else {
+        hydraEval(code, this._hydra.synth)
+      }
+    } catch (e) {
+      console.warn('[hydra-element] eval error:', e)
     }
+  }
+
+  /**
+   * Handles width/height attribute changes.
+   * @param {string} attrName - The attribute name ('width' or 'height').
+   * @param {string} newValue - The new attribute value.
+   * @private
+   */
+  _handleSizeChange(attrName, newValue) {
+    this._options = this._getNewOptions(attrName, newValue)
+    this._resizeCanvas()
+    if (this._hydra) {
+      this._hydra.synth.setResolution(this._options.width, this._options.height)
+    }
+  }
+
+  /**
+   * Handles analyzer attribute changes.
+   * @param {string} newValue - The new attribute value.
+   * @private
+   */
+  _handleAnalyzerChange(newValue) {
+    this._options = this._getNewOptions('analyzer', newValue)
+    if (this._hydra && !this._options.useAudioAnalyzer) {
+      this.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => canvas.remove())
+    }
+  }
+
+  /**
+   * Handles loop attribute changes.
+   * @param {string} newValue - The new attribute value.
+   * @private
+   */
+  _handleLoopChange(newValue) {
+    this._options = this._getNewOptions('loop', newValue)
+    if (this._connected && this._options.autoLoop) {
+      this._startLoop()
+    } else {
+      this._stopLoop()
+    }
+  }
+
+  /**
+   * Handles attribute changes that require recreating the synth.
+   * @param {string} attrName - The attribute name.
+   * @param {string} newValue - The new attribute value.
+   * @private
+   */
+  _handleSynthRecreateChange(attrName, newValue) {
+    this._options = this._getNewOptions(attrName, newValue)
+    this._initCanvas()
+    this._initHydra()
+    this._evalCode()
   }
 
   /**
@@ -252,6 +359,7 @@ export class HydraElement extends HTMLElement {
       case 'sources': return { ...this._options, numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) }
       case 'outputs': return { ...this._options, numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) }
       case 'precision': return { ...this._options, precision: parseOption(newValue, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']) }
+      case 'loop': return { ...this._options, autoLoop: parseJSON(newValue, DEFAULT_OPTIONS.autoLoop) }
       default: return { ...this._options }
     }
   }
