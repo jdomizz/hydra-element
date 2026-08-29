@@ -182,4 +182,50 @@ describe('<hydra-element>', () => {
     const success = await evalPromise
     expect(success).to.be.false
   })
+
+  it('should separate evaluation from event dispatch', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const events = []
+    el.addEventListener('hydra-eval', e => events.push(e.detail))
+    el.code = 'osc().out()'
+    await new Promise(r => setTimeout(r, 10))
+    expect(events).to.have.length(1)
+    expect(events[0].success).to.be.true
+  })
+
+  it('should separate error handling from evaluation', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const events = []
+    el.addEventListener('hydra-eval', e => events.push(e.detail))
+    el.code = 'invalidFunction()'
+    await new Promise(r => setTimeout(r, 10))
+    expect(events).to.have.length(1)
+    expect(events[0].success).to.be.false
+    expect(events[0].error).to.exist
+  })
+
+  it('should manage canvas lifecycle independently', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const canvas1 = el.canvas
+    el.setAttribute('width', '500')
+    expect(el.canvas).to.equal(canvas1)
+    el.setAttribute('global', 'true')
+    expect(el.canvas).to.equal(canvas1)
+  })
+
+  it('should manage hydra lifecycle independently', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const synth1 = el.synth
+    el.setAttribute('global', 'true')
+    expect(el.synth).to.not.equal(synth1)
+  })
+
+  it('should manage animation loop independently', async () => {
+    const el = await fixture(html`<hydra-element loop="false"></hydra-element>`)
+    expect(el._rafId).to.be.null
+    el.setAttribute('loop', 'true')
+    expect(el._rafId).to.not.be.null
+    el.setAttribute('loop', 'false')
+    expect(el._rafId).to.be.null
+  })
 })
