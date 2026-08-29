@@ -21,24 +21,27 @@ describe('hydraEval', () => {
   })
 
   it('should resolve time dynamically after synth.time changes', () => {
-    const synth = { time: 0, captured: null }
-    hydraEval('captured = () => time', synth)
+    const synth = { time: 0 }
+    const scope = Object.create(null)
+    hydraEval('captured = () => time', synth, scope)
     synth.time = 42
-    expect(synth.captured()).to.equal(42)
+    expect(scope.captured()).to.equal(42)
   })
 
   it('should resolve speed dynamically after synth.speed changes', () => {
-    const synth = { speed: 1, captured: null }
-    hydraEval('captured = () => speed', synth)
+    const synth = { speed: 1 }
+    const scope = Object.create(null)
+    hydraEval('captured = () => speed', synth, scope)
     synth.speed = 3
-    expect(synth.captured()).to.equal(3)
+    expect(scope.captured()).to.equal(3)
   })
 
   it('should resolve bpm dynamically after synth.bpm changes', () => {
-    const synth = { bpm: 30, captured: null }
-    hydraEval('captured = () => bpm', synth)
+    const synth = { bpm: 30 }
+    const scope = Object.create(null)
+    hydraEval('captured = () => bpm', synth, scope)
     synth.bpm = 120
-    expect(synth.captured()).to.equal(120)
+    expect(scope.captured()).to.equal(120)
   })
 
   it('should call chained methods', () => {
@@ -110,6 +113,47 @@ describe('hydraEval', () => {
       const synth = {}
       const result = hydraEvalAsync('42', synth)
       expect(result).to.be.a('promise')
+    })
+  })
+
+  describe('persistent scope', () => {
+    it('should persist variables between evals with shared scope', () => {
+      const synth = { osc: spy() }
+      const scope = Object.create(null)
+      hydraEval('myVar = 42', synth, scope)
+      hydraEval('osc(myVar)', synth, scope)
+      expect(synth.osc).to.have.been.calledOnceWith(42)
+    })
+
+    it('should allow function definitions to persist', () => {
+      const synth = { osc: spy() }
+      const scope = Object.create(null)
+      hydraEval('myFunc = (x) => x * 2', synth, scope)
+      hydraEval('osc(myFunc(21))', synth, scope)
+      expect(synth.osc).to.have.been.calledOnceWith(42)
+    })
+
+    it('should isolate variables without shared scope', () => {
+      const synth = { osc: spy() }
+      hydraEval('myVar = 42', synth)
+      hydraEval('osc(myVar)', synth)
+      expect(synth.osc).to.have.been.calledOnceWith(undefined)
+    })
+
+    it('should not persist let declarations (block-scoped)', () => {
+      const synth = { osc: spy() }
+      const scope = Object.create(null)
+      hydraEval('let myLet = 42', synth, scope)
+      hydraEval('osc(myLet)', synth, scope)
+      expect(synth.osc).to.have.been.calledOnceWith(undefined)
+    })
+
+    it('should not persist const declarations (block-scoped)', () => {
+      const synth = { osc: spy() }
+      const scope = Object.create(null)
+      hydraEval('const myConst = 42', synth, scope)
+      hydraEval('osc(myConst)', synth, scope)
+      expect(synth.osc).to.have.been.calledOnceWith(undefined)
     })
   })
 })

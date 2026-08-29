@@ -191,33 +191,33 @@ el.addEventListener('hydra-eval', e => {
 
 ### Attributes
 
-| Attribute | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `width` | number | window width | Canvas width in pixels |
-| `height` | number | window height | Canvas height in pixels |
-| `audio` | boolean | `false` | Enable microphone input |
-| `analyzer` | boolean | `true` | Show audio analyzer UI |
-| `loop` | boolean | `true` | Auto-render loop |
-| `global` | boolean | `false` | Make Hydra functions global |
-| `sources` | number | `4` | Number of source buffers |
-| `outputs` | number | `4` | Number of output buffers |
-| `precision` | string | auto | Shader precision: `highp`, `mediump`, or `lowp` |
+| Attribute   | Type    | Default       | Description                                     |
+| ----------- | ------- | ------------- | ----------------------------------------------- |
+| `width`     | number  | window width  | Canvas width in pixels                          |
+| `height`    | number  | window height | Canvas height in pixels                         |
+| `audio`     | boolean | `false`       | Enable microphone input                         |
+| `analyzer`  | boolean | `true`        | Show audio analyzer UI                          |
+| `loop`      | boolean | `true`        | Auto-render loop                                |
+| `global`    | boolean | `false`       | Make Hydra functions global                     |
+| `sources`   | number  | `4`           | Number of source buffers                        |
+| `outputs`   | number  | `4`           | Number of output buffers                        |
+| `precision` | string  | auto          | Shader precision: `highp`, `mediump`, or `lowp` |
 
 ### Properties
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `code` | string | Get or set the scene code |
-| `canvas` | HTMLCanvasElement | Custom canvas element to render on |
-| `synth` | HydraSynth | Read-only access to the synth instance |
-| `pb` | object | rtc-patch-bay instance for streaming |
+| Property | Type              | Description                            |
+| -------- | ----------------- | -------------------------------------- |
+| `code`   | string            | Get or set the scene code              |
+| `canvas` | HTMLCanvasElement | Custom canvas element to render on     |
+| `synth`  | HydraSynth        | Read-only access to the synth instance |
+| `pb`     | object            | rtc-patch-bay instance for streaming   |
 
 ### Events
 
-| Event | Detail | Description |
-|-------|--------|-------------|
-| `hydra-ready` | `{ synth }` | Fired when Hydra is initialized |
-| `hydra-eval` | `{ success, error? }` | Fired after code evaluation |
+| Event         | Detail                | Description                     |
+| ------------- | --------------------- | ------------------------------- |
+| `hydra-ready` | `{ synth }`           | Fired when Hydra is initialized |
+| `hydra-eval`  | `{ success, error? }` | Fired after code evaluation     |
 
 ## Limitations
 

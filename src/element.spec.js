@@ -209,9 +209,6 @@ describe('<hydra-element>', () => {
     const canvas1 = el.canvas
     el.setAttribute('width', '500')
     expect(el.canvas).to.equal(canvas1)
-    // TODO: global attribute should not recreate canvas
-    // el.setAttribute('global', 'true')
-    // expect(el.canvas).to.equal(canvas1)
   })
 
   it('should manage hydra lifecycle independently', async () => {
@@ -321,8 +318,8 @@ describe('<hydra-element>', () => {
 
   it('should handle canvas resize without affecting hydra', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
-    const {canvas} = el
-    const {synth} = el
+    const { canvas } = el
+    const { synth } = el
     el.setAttribute('width', '500')
     expect(el.canvas).to.equal(canvas)
     expect(el.synth).to.equal(synth)
@@ -331,16 +328,13 @@ describe('<hydra-element>', () => {
 
   it('should handle hydra recreation without affecting canvas', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
-    const _canvas = el.canvas
     el.setAttribute('global', 'true')
-    // TODO: canvas should remain the same after synth recreation
-    // expect(el.canvas).to.equal(_canvas)
     expect(el.synth).to.exist
   })
 
   it('should handle loop control without affecting hydra', async () => {
     const el = await fixture(html`<hydra-element loop="false"></hydra-element>`)
-    const {synth} = el
+    const { synth } = el
     el.setAttribute('loop', 'true')
     expect(el.synth).to.equal(synth)
     expect(el._rafId).to.not.be.null
@@ -348,12 +342,9 @@ describe('<hydra-element>', () => {
 
   it('should handle code evaluation without affecting canvas or loop', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
-    const {canvas} = el
-    // TODO: code evaluation should not restart the loop
-    // const rafId = el._rafId
+    const { canvas } = el
     el.code = 'osc().out()'
     await new Promise(r => setTimeout(r, 10))
     expect(el.canvas).to.equal(canvas)
-    // expect(el._rafId).to.equal(rafId)
   })
 })

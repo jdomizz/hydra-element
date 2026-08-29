@@ -62,6 +62,7 @@ export class HydraElement extends HTMLElement {
     }
     this._rafId = null
     this._connected = false
+    this._scope = Object.create(null)
     this.attachShadow({ mode: 'open' })
   }
 
@@ -281,7 +282,7 @@ export class HydraElement extends HTMLElement {
         const code = `(async () => { ${this._code} })()`
         result = this._hydra.sandbox.eval(code)
       } else {
-        result = hydraEvalAsync(this._code, this._hydra.synth)
+        result = hydraEvalAsync(this._code, this._hydra.synth, this._scope)
       }
       if (result && typeof result.catch === 'function') {
         result.then(dispatchSuccess).catch(dispatchError)

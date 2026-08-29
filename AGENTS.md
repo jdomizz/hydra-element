@@ -32,3 +32,27 @@ Single-package web component library wrapping `hydra-synth`.
 - Formatting: oxfmt (config in `.oxfmtrc.json`)
 - `hydra-synth` is the sole runtime dependency; keep it that way
 - `index.html` is a dev playground, not part of the library — don't import from it
+
+## Workflow
+
+Specs live in `dev/roadmap/`:
+
+```
+backlog/ → active/ → archive/
+```
+
+- **backlog/** — Specs pending implementation
+- **active/** — Spec currently being implemented (one at a time)
+- **archive/** — Specs completed with user approval
+
+When implementing a spec:
+1. Move it from `backlog/` to `active/`
+2. Implement according to the spec's "Hecho cuando" criteria
+3. User reviews and approves
+4. Move to `archive/` and update README status with commit hash
+
+## Language conventions
+
+- **Project language: English** — All code, specs, docs, and commits are in English
+- **Agent responses**: Respond in the user's language when chatting
+- **Code artifacts**: Always in English (variable names, comments, commit messages, spec documents)
