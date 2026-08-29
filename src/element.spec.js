@@ -90,6 +90,17 @@ describe('<hydra-element>', () => {
     expect(el.pb).to.equal(undefined)
   })
 
+  it('should provide loadScript method', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    expect(el.loadScript).to.be.a('function')
+  })
+
+  it('should load external scripts', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const promise = el.loadScript('https://example.com/test.js')
+    expect(promise).to.be.a('promise')
+  })
+
   it('should call hydra tick', async () => {
     const el = await fixture(html`<hydra-element loop="false"></hydra-element>`)
     el._hydra = { tick: spy() }

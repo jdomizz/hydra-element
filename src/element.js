@@ -152,6 +152,21 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
+   * Load external script (works in both global and non-global modes)
+   * @param {string} url - The URL of the script to load
+   * @returns {Promise<void>} Resolves when the script is loaded
+   */
+  loadScript(url) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script')
+      script.onload = () => resolve()
+      script.onerror = () => reject(new Error(`Failed to load ${url}`))
+      script.src = url
+      document.head.appendChild(script)
+    })
+  }
+
+  /**
    * Called when an observed attribute has been added, removed, updated, or replaced.
    * @param {string} attrName - The name of the attribute that was changed.
    * @param {string|null} oldValue - The previous value of the attribute, or null if it didn't exist before.
@@ -287,7 +302,11 @@ export class HydraElement extends HTMLElement {
       if (this._options.makeGlobal) {
         this._hydra.sandbox.eval(code)
       } else {
-        hydraEval(code, this._hydra.synth)
+        const context = {
+          ...this._hydra.synth,
+          loadScript: this.loadScript.bind(this)
+        }
+        hydraEval(code, context)
       }
     } catch (e) {
       console.warn('[hydra-element] eval error:', e)
