@@ -168,7 +168,7 @@ describe('<hydra-element>', () => {
       el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
     })
     el.code = `
-      synth.setFunction({
+      setFunction({
         name: 'customOsc',
         type: 'src',
         inputs: [
@@ -191,7 +191,7 @@ describe('<hydra-element>', () => {
       el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
     })
     // Use a data URL to load a simple script that adds a function
-    const scriptCode = 'window._testExtension = true; synth.setFunction({ name: "testFunc", type: "src", inputs: [], glsl: "return vec4(1.0, 0.0, 0.0, 1.0);" });'
+    const scriptCode = 'window._testExtension = true; setFunction({ name: "testFunc", type: "src", inputs: [], glsl: "return vec4(1.0, 0.0, 0.0, 1.0);" });'
     const scriptUrl = `data:text/javascript,${encodeURIComponent(scriptCode)}`
     el.code = `
       await loadScript('${scriptUrl}')

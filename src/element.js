@@ -177,6 +177,16 @@ export class HydraElement extends HTMLElement {
     if (this.hydraManager.hydra) {
       window._hydra = this.hydraManager.hydra
       window.synth = this.hydraManager.hydra.synth
+      
+      // Expose all synth functions globally for DSL compatibility
+      // This allows scripts to use setFunction(), osc(), etc. directly
+      const synthFunctions = Object.keys(this.hydraManager.hydra.synth)
+      synthFunctions.forEach(key => {
+        const value = this.hydraManager.hydra.synth[key]
+        if (typeof value === 'function') {
+          window[key] = value.bind(this.hydraManager.hydra.synth)
+        }
+      })
     }
     
     if (this._connected && this.attributeHandler.getOptions().autoLoop) {

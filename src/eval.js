@@ -49,7 +49,15 @@ function createScopeProxy(synth, scopeObj) {
     get(target, prop) {
       if (prop in target) return target[prop]
       if (prop === 'synth') return synth
-      if (typeof prop === 'string' && prop in synth) return synth[prop]
+      // Exponer todas las funciones del synth directamente (osc, solid, src, setFunction, etc.)
+      if (typeof prop === 'string' && prop in synth) {
+        const value = synth[prop]
+        // Si es una función, bindearla al synth para que 'this' funcione correctamente
+        if (typeof value === 'function') {
+          return value.bind(synth)
+        }
+        return value
+      }
       return globalThis[prop]
     },
     set(target, prop, value) {
