@@ -19,6 +19,6 @@ export function hydraEval(code, synth) {
       return window[prop]
     },
   })
-  const fn = new Function('ctx', `with(ctx){${code}}`)
-  fn(proxy)
+  const fn = new Function('ctx', `with(ctx){return ${code}}`)
+  return fn(proxy)
 }

@@ -45,57 +45,20 @@ describe('hydraEval', () => {
     expect(synth.prev).to.have.been.calledOnceWith()
   })
 
-  it('should init s0', () => {
-    const synth = { s0: { init: spy() }, src: spy() }
-    hydraEval('s0.init({}); src(s0)', synth)
-    expect(synth.s0.init).to.have.been.calledOnceWith({})
-    expect(synth.src).to.have.been.calledOnceWith(synth.s0)
-  })
+  for (const i of [0, 1, 2, 3]) {
+    it(`should init s${i}`, () => {
+      const synth = { [`s${i}`]: { init: spy() }, src: spy() }
+      hydraEval(`s${i}.init({}); src(s${i})`, synth)
+      expect(synth[`s${i}`].init).to.have.been.calledOnceWith({})
+      expect(synth.src).to.have.been.calledOnceWith(synth[`s${i}`])
+    })
 
-  it('should init s1', () => {
-    const synth = { s1: { init: spy() }, src: spy() }
-    hydraEval('s1.init({}); src(s1)', synth)
-    expect(synth.s1.init).to.have.been.calledOnceWith({})
-    expect(synth.src).to.have.been.calledOnceWith(synth.s1)
-  })
-
-  it('should init s2', () => {
-    const synth = { s2: { init: spy() }, src: spy() }
-    hydraEval('s2.init({}); src(s2)', synth)
-    expect(synth.s2.init).to.have.been.calledOnceWith({})
-    expect(synth.src).to.have.been.calledOnceWith(synth.s2)
-  })
-
-  it('should init s3', () => {
-    const synth = { s3: { init: spy() }, src: spy() }
-    hydraEval('s3.init({}); src(s3)', synth)
-    expect(synth.s3.init).to.have.been.calledOnceWith({})
-    expect(synth.src).to.have.been.calledOnceWith(synth.s3)
-  })
-
-  it('should render o0', () => {
-    const synth = { o0: spy(), render: spy() }
-    hydraEval('render(o0)', synth)
-    expect(synth.render).to.have.been.calledOnceWith(synth.o0)
-  })
-
-  it('should render o1', () => {
-    const synth = { o1: spy(), render: spy() }
-    hydraEval('render(o1)', synth)
-    expect(synth.render).to.have.been.calledOnceWith(synth.o1)
-  })
-
-  it('should render o2', () => {
-    const synth = { o2: spy(), render: spy() }
-    hydraEval('render(o2)', synth)
-    expect(synth.render).to.have.been.calledOnceWith(synth.o2)
-  })
-
-  it('should render o3', () => {
-    const synth = { o3: spy(), render: spy() }
-    hydraEval('render(o3)', synth)
-    expect(synth.render).to.have.been.calledOnceWith(synth.o3)
-  })
+    it(`should render o${i}`, () => {
+      const synth = { [`o${i}`]: spy(), render: spy() }
+      hydraEval(`render(o${i})`, synth)
+      expect(synth.render).to.have.been.calledOnceWith(synth[`o${i}`])
+    })
+  }
 
   it('should call audio setSmooth', () => {
     const synth = { a: { setSmooth: spy() } }

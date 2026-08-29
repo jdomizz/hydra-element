@@ -128,6 +128,7 @@ describe('<hydra-element>', () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     const promise = el.loadScript('https://example.com/test.js')
     expect(promise).to.be.a('promise')
+    await promise.catch(() => {})
   })
 
   it('should call hydra tick', async () => {

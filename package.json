@@ -1,7 +1,7 @@
 {
   "name": "hydra-element",
   "version": "0.6.0",
-  "description": "A custom element for wrapping the hydra-synth engine",
+  "description": "A custom element for embedding Hydra video synth scenes in HTML",
   "keywords": [
     "canvas",
     "creative-coding",

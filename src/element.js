@@ -20,8 +20,8 @@ import { hydraEval } from './eval'
  */
 const DEFAULT_OPTIONS = {
   canvas: null,
-  width: window.innerWidth,
-  height: window.innerHeight,
+  width: null,
+  height: null,
   autoLoop: true,
   makeGlobal: false,
   detectAudio: false,
@@ -40,10 +40,6 @@ const SYNTH_RECREATE_ATTRS = new Set(['global', 'audio', 'sources', 'outputs', '
  * @extends HTMLElement
  */
 export class HydraElement extends HTMLElement {
-  /**
-   * An array of attribute names to observe on the custom element.
-   * @returns {string[]}
-   */
   static get observedAttributes() {
     return [
       'width',
@@ -58,16 +54,17 @@ export class HydraElement extends HTMLElement {
     ]
   }
 
-  /**
-   * Creates an instance of Element.
-   * @constructor
-   */
   constructor() {
     super()
     this._code = ''
-    this._options = { ...DEFAULT_OPTIONS }
+    this._options = {
+      ...DEFAULT_OPTIONS,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    }
     this._rafId = null
     this._connected = false
+    this._loadedScripts = new Set()
     this.attachShadow({ mode: 'open' })
   }
 
@@ -166,10 +163,17 @@ export class HydraElement extends HTMLElement {
    * @returns {Promise<void>} Resolves when the script is loaded
    */
   loadScript(url) {
+    if (this._loadedScripts.has(url)) {
+      return Promise.resolve()
+    }
+    this._loadedScripts.add(url)
     return new Promise((resolve, reject) => {
       const script = document.createElement('script')
       script.addEventListener('load', () => resolve())
-      script.addEventListener('error', () => reject(new Error(`Failed to load ${url}`)))
+      script.addEventListener('error', () => {
+        this._loadedScripts.delete(url)
+        reject(new Error(`Failed to load ${url}`))
+      })
       script.src = url
       document.head.append(script)
     })
@@ -195,12 +199,6 @@ export class HydraElement extends HTMLElement {
     }
   }
 
-  /**
-   * Invoked each time the custom element is appended into a document-connected element.
-   * If the element has a code block in its textContent, it will be evaluated and rendered on the canvas.
-   * If the canvas or hydra instance are not initialized, they will be initialized.
-   * @returns {void}
-   */
   connectedCallback() {
     this._connected = true
     if (this._code === '' && this.textContent) {
@@ -261,7 +259,7 @@ export class HydraElement extends HTMLElement {
 
   _resizeCanvas() {
     const { canvas } = this._options
-    if (canvas && canvas.id === 'hydra-element-canvas') {
+    if (canvas) {
       canvas.width = this._options.width
       canvas.height = this._options.height
     }
@@ -292,9 +290,7 @@ export class HydraElement extends HTMLElement {
     this._hydra = new Hydra({ ...opts })
     this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))
     if (!this._options.useAudioAnalyzer) {
-      this.shadowRoot
-        ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
-        .forEach(canvas => canvas.remove())
+      this._removeAnalyzerCanvases()
     }
     if (this._connected && this._options.autoLoop) {
       this._startLoop()
@@ -313,23 +309,15 @@ export class HydraElement extends HTMLElement {
    */
   _evalCode() {
     const code = `(async () => { ${this._code} })()`
-    try {
-      if (this._options.makeGlobal) {
-        this._hydra.sandbox.eval(code)
-      } else {
-        const context = {
-          ...this._hydra.synth,
-          loadScript: this.loadScript.bind(this),
-        }
-        hydraEval(code, context)
-      }
+    const dispatchSuccess = () => {
       this.dispatchEvent(
         new CustomEvent('hydra-eval', {
           detail: { success: true },
           bubbles: true,
         })
       )
-    } catch (e) {
+    }
+    const dispatchError = e => {
       console.warn('[hydra-element] eval error:', e)
       this.dispatchEvent(
         new CustomEvent('hydra-eval', {
@@ -337,6 +325,25 @@ export class HydraElement extends HTMLElement {
           bubbles: true,
         })
       )
+    }
+    try {
+      let result
+      if (this._options.makeGlobal) {
+        result = this._hydra.sandbox.eval(code)
+      } else {
+        const context = {
+          ...this._hydra.synth,
+          loadScript: this.loadScript.bind(this),
+        }
+        result = hydraEval(code, context)
+      }
+      if (result && typeof result.catch === 'function') {
+        result.then(dispatchSuccess).catch(dispatchError)
+      } else {
+        dispatchSuccess()
+      }
+    } catch (e) {
+      dispatchError(e)
     }
   }
 
@@ -361,11 +368,19 @@ export class HydraElement extends HTMLElement {
    */
   _handleAnalyzerChange(newValue) {
     this._options = this._getNewOptions('analyzer', newValue)
-    if (this._hydra && !this._options.useAudioAnalyzer) {
-      this.shadowRoot
-        ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
-        .forEach(canvas => canvas.remove())
+    if (this._hydra) {
+      if (this._options.useAudioAnalyzer) {
+        this._initHydra()
+      } else {
+        this._removeAnalyzerCanvases()
+      }
     }
+  }
+
+  _removeAnalyzerCanvases() {
+    this.shadowRoot
+      ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
+      .forEach(canvas => canvas.remove())
   }
 
   /**
@@ -403,39 +418,20 @@ export class HydraElement extends HTMLElement {
    * @private
    */
   _getNewOptions(attrName, newValue) {
-    switch (attrName) {
-      case 'width':
-        return { ...this._options, width: parseNumber(newValue, DEFAULT_OPTIONS.width, 0) }
-      case 'height':
-        return { ...this._options, height: parseNumber(newValue, DEFAULT_OPTIONS.height, 0) }
-      case 'global':
-        return { ...this._options, makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) }
-      case 'analyzer':
-        return {
-          ...this._options,
-          useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer),
-        }
-      case 'audio':
-        return { ...this._options, detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) }
-      case 'sources':
-        return {
-          ...this._options,
-          numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0),
-        }
-      case 'outputs':
-        return {
-          ...this._options,
-          numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0),
-        }
-      case 'precision':
-        return {
-          ...this._options,
-          precision: parseOption(newValue, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']),
-        }
-      case 'loop':
-        return { ...this._options, autoLoop: parseJSON(newValue, DEFAULT_OPTIONS.autoLoop) }
-      default:
-        return { ...this._options }
+    const attrMap = {
+      width: () => ({ width: parseNumber(newValue, this._options.width, 0) }),
+      height: () => ({ height: parseNumber(newValue, this._options.height, 0) }),
+      global: () => ({ makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) }),
+      analyzer: () => ({ useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer) }),
+      audio: () => ({ detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) }),
+      sources: () => ({ numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) }),
+      outputs: () => ({ numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) }),
+      precision: () => ({
+        precision: parseOption(newValue, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']),
+      }),
+      loop: () => ({ autoLoop: parseJSON(newValue, DEFAULT_OPTIONS.autoLoop) }),
     }
+    const updater = attrMap[attrName]
+    return { ...this._options, ...(updater ? updater() : {}) }
   }
 }

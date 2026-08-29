@@ -8,7 +8,7 @@
  */
 export function parseNumber(value, defaultValue, min, max = Infinity) {
   const parsedValue = parseInt(value, 10)
-  return isNaN(parsedValue, min, max) ? defaultValue : parsedValue
+  return isOutOfRange(parsedValue, min, max) ? defaultValue : parsedValue
 }
 
 /**
@@ -18,15 +18,11 @@ export function parseNumber(value, defaultValue, min, max = Infinity) {
  * @returns {*} The resulting JavaScript value.
  */
 export function parseJSON(value, defaultValue) {
-  let result = defaultValue
-
   try {
-    result = JSON.parse(value)
+    return JSON.parse(value)
   } catch {
-    // console.log(error);
+    return defaultValue
   }
-
-  return result
 }
 
 /**
@@ -47,8 +43,6 @@ export function parseOption(value, defaultValue, options) {
  * @param {number} [max] - The maximum value of the range (inclusive).
  * @returns {boolean} - True if the value is NaN or outside of the range, false otherwise.
  */
-function isNaN(value, min, max) {
-  return max
-    ? Number.isNaN(value) || value < min || value > max
-    : Number.isNaN(value) || value < min
+function isOutOfRange(value, min, max) {
+  return Number.isNaN(value) || value < min || value > max
 }
