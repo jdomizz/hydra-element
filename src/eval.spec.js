@@ -176,6 +176,27 @@ describe('hydraEval', () => {
     expect(synth.osc).to.have.been.calledOnceWith(1350.55)
   })
 
+  it('should resolve time dynamically after synth.time changes', () => {
+    const synth = { time: 0, captured: null }
+    hydraEval('captured = () => time', synth)
+    synth.time = 42
+    expect(synth.captured()).to.equal(42)
+  })
+
+  it('should resolve speed dynamically after synth.speed changes', () => {
+    const synth = { speed: 1, captured: null }
+    hydraEval('captured = () => speed', synth)
+    synth.speed = 3
+    expect(synth.captured()).to.equal(3)
+  })
+
+  it('should resolve bpm dynamically after synth.bpm changes', () => {
+    const synth = { bpm: 30, captured: null }
+    hydraEval('captured = () => bpm', synth)
+    synth.bpm = 120
+    expect(synth.captured()).to.equal(120)
+  })
+
   it('should get stats', () => {
     const synth = { osc: spy(), stats: { fps: 60 } }
     hydraEval('osc(stats.fps)', synth)
