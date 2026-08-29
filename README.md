@@ -1,12 +1,10 @@
-# 🍬 \<hydra-element>
+# \<hydra-element>
 
 Create generative visuals with [Hydra](https://hydra.ojack.xyz/) directly in your web pages.
 
 `hydra-element` lets you embed Hydra scenes in HTML with a single tag. Each element runs independently, so you can have multiple visuals on the same page without conflicts.
 
 ## Quick Start
-
-The fastest way to get started:
 
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element"></script>
@@ -73,6 +71,12 @@ Enable the microphone with the `audio` attribute:
 <hydra-element audio="true"> osc(10, 0, () => a.fft[0] * 4).out() </hydra-element>
 ```
 
+If you don't want to see the audio analyzer, use `analyzer="false"`:
+
+```html
+<hydra-element audio="true" analyzer="false"></hydra-element>
+```
+
 ### Use camera and screen
 
 ```html
@@ -106,20 +110,6 @@ Or use the `width` and `height` attributes:
 
 ## Configuration
 
-### Audio
-
-Hydra can react to sound, but it needs microphone permission. Enable it with the `audio` attribute:
-
-```html
-<hydra-element audio="true"> a.show() osc(10, 0, () => a.fft[0] * 4).out() </hydra-element>
-```
-
-If you don't want to see the audio analyzer, use `analyzer="false"`:
-
-```html
-<hydra-element audio="true" analyzer="false"></hydra-element>
-```
-
 ### More buffers (sources and outputs)
 
 By default you get 4 source buffers (`s0`-`s3`) and 4 output buffers (`o0`-`o3`). If you need more:
@@ -129,23 +119,6 @@ By default you get 4 source buffers (`s0`-`s3`) and 4 output buffers (`o0`-`o3`)
   s0.initCam() s6.initImage('https://example.com/image.jpg')
   s7.initVideo('https://example.com/video.mp4') src(s0).blend(src(s6)).blend(src(s7)).out()
 </hydra-element>
-```
-
-### Manual render control
-
-If you want to control when the scene updates (useful for frame-by-frame animations):
-
-```html
-<hydra-element loop="false"></hydra-element>
-
-<script>
-  const el = document.querySelector('hydra-element')
-  function animate() {
-    el.tick(16) // 16ms = ~60fps
-    requestAnimationFrame(animate)
-  }
-  animate()
-</script>
 ```
 
 ### Global mode
@@ -161,30 +134,6 @@ By default, each element has its own isolated scope. If you want Hydra functions
 ```
 
 > **Warning:** You can only have one element with `global="true"` per page.
-
-### Custom GLSL functions
-
-You can create your own functions with JavaScript:
-
-```js
-document.querySelector('hydra-element').transforms = [
-  {
-    name: 'myNoise',
-    type: 'src',
-    inputs: [
-      { type: 'float', name: 'scale', default: 5 },
-      { type: 'float', name: 'offset', default: 0.5 },
-    ],
-    glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
-  },
-]
-```
-
-Then use it in your scene:
-
-```html
-<hydra-element> myNoise().out() </hydra-element>
-```
 
 ### Advanced synth access
 
@@ -205,6 +154,17 @@ console.log(el.synth.time)
 
 // Change resolution
 el.synth.setResolution(800, 600)
+
+// Add custom GLSL functions
+el.synth.setFunction({
+  name: 'myNoise',
+  type: 'src',
+  inputs: [
+    { type: 'float', name: 'scale', default: 5 },
+    { type: 'float', name: 'offset', default: 0.5 },
+  ],
+  glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
+})
 ```
 
 ### Events
@@ -250,14 +210,7 @@ el.addEventListener('hydra-eval', e => {
 | `code` | string | Get or set the scene code |
 | `canvas` | HTMLCanvasElement | Custom canvas element to render on |
 | `synth` | HydraSynth | Read-only access to the synth instance |
-| `transforms` | array | Custom GLSL functions |
 | `pb` | object | rtc-patch-bay instance for streaming |
-
-### Methods
-
-| Method | Description |
-|--------|-------------|
-| `tick(dt)` | Manual render update (when `loop="false"`) |
 
 ### Events
 
@@ -266,18 +219,19 @@ el.addEventListener('hydra-eval', e => {
 | `hydra-ready` | `{ synth }` | Fired when Hydra is initialized |
 | `hydra-eval` | `{ success, error? }` | Fired after code evaluation |
 
-## Using p5.js
+## Limitations
 
-Hydra can work alongside p5.js. Load p5 and create a canvas manually:
+### WebGL context limit
 
-```html
-<hydra-element>
-  await loadScript("https://cdn.jsdelivr.net/npm/p5@1.7.0/lib/p5.min.js") const p5Canvas =
-  document.createElement('canvas') document.body.appendChild(p5Canvas) new p5((p) => { p.setup = ()
-  => { p.createCanvas(400, 400, p.WEBGL, p5Canvas) } p.draw = () => { p.background(220) p.ellipse(0,
-  0, 100 * Math.sin(time), 100) } }) s0.init({ src: p5Canvas }) src(s0).out()
-</hydra-element>
-```
+Each `<hydra-element>` creates its own WebGL context. Browsers typically allow ~16 WebGL contexts before older ones are lost. If you need more than ~12 elements on a page, you may hit this limit. There's no workaround within this library — it's a browser constraint.
+
+### Audio isolation
+
+When using `audio="true"` on multiple elements, they share the same `AudioContext` internally. This usually works fine, but if you need truly isolated audio processing per element, you'll need to manage `AudioContext` instances manually via the `synth` property.
+
+### Eval security
+
+The code evaluation uses `new Function()` + `with(proxy)` to provide Hydra DSL syntax. **This is not a sandbox.** User code has full access to browser globals (`document`, `localStorage`, `fetch`, etc.). Only evaluate trusted code. If you need to run untrusted code, use a proper sandbox like an iframe with a separate origin.
 
 ## For developers
 
@@ -288,6 +242,8 @@ npm install
 npm run dev     # Dev server with hot reload
 npm test        # Run tests
 npm run build   # Generate distribution bundle
+npm run lint    # Lint code
+npm run format  # Format code
 ```
 
 ## Credits

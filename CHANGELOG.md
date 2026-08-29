@@ -12,9 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Public `synth` property to access hydra-synth instance for advanced use cases
 - `hydra-ready` event dispatched when synth is initialized
 - `hydra-eval` event dispatched after code evaluation (success or error)
-- `loadScript` method now works in non-global mode
 - `parseNumber` now accepts optional `max` parameter (defaults to Infinity)
 - **`hydraEval` is now exported as a standalone function** via `hydra-element/eval` subpath export, enabling isolated multi-instance hydra-synth usage without the custom element
+- Integration tests that verify actual rendering (canvas pixel output)
+- Multi-instance tests verifying behavior with multiple elements
 
 ### Fixed
 
@@ -30,6 +31,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `src/eval.js` now uses Proxy for better isolation (previously used destructuring + eval in 0.6.0)
 - Animation loop now managed by element itself (RAF) instead of delegating to hydra-synth's `autoLoop`
+- CI workflow now runs only on PRs to main (not on every push)
+- Web Test Runner config detects CI environment for sandbox flags
+
+### Removed
+
+- **BREAKING**: `tick()` method removed — use `el.synth.tick(dt)` directly
+- **BREAKING**: `loadScript()` method removed — use `el.synth.loadScript()` or load scripts manually
+- **BREAKING**: `transforms` property removed — use `el.synth.setFunction()` directly
+- `husky` and `lint-staged` dependencies (rely on CI for linting)
+- Redundant `.opencode/skills/` directory (generic principles not specific to this project)
 
 ## [0.6.0] - 2026-02-14
 
