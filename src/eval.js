@@ -48,6 +48,7 @@ function createScopeProxy(synth, scopeObj) {
     },
     get(target, prop) {
       if (prop in target) return target[prop]
+      if (prop === 'synth') return synth
       if (typeof prop === 'string' && prop in synth) return synth[prop]
       return globalThis[prop]
     },

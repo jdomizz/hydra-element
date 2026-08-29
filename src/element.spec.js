@@ -147,10 +147,62 @@ describe('<hydra-element>', () => {
     expect(synth).to.equal(el.synth)
   })
 
-  it('exposes window._hydra for community extensions compatibility', async () => {
+  it('exposes window._hydra and window.synth for community extensions compatibility', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     expect(window._hydra).to.exist
     expect(window._hydra).to.equal(el.hydraManager.hydra)
+    expect(window.synth).to.exist
+    expect(window.synth).to.equal(el.hydraManager.hydra.synth)
+    // Verify they have the properties extensions expect
+    expect(window._hydra.synth).to.exist
+    expect(window._hydra.canvas).to.exist
+    expect(window._hydra.sandbox).to.exist
+    expect(window._hydra.loadScript).to.be.a('function')
+    expect(window._hydra.setResolution).to.be.a('function')
+    expect(window.synth.setFunction).to.be.a('function')
+  })
+
+  it('allows setFunction inside code', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const promise = new Promise(resolve => {
+      el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
+    })
+    el.code = `
+      synth.setFunction({
+        name: 'customOsc',
+        type: 'src',
+        inputs: [
+          { type: 'float', name: 'freq', default: 10 },
+          { type: 'float', name: 'sync', default: 0.1 }
+        ],
+        glsl: \`return vec4(sin(freq*_st.x), cos(sync*_st.y), 0.5, 1.0);\`
+      })
+      customOsc(5, 0.2).out()
+    `
+    const detail = await promise
+    expect(detail.success).to.be.true
+    // Verify the function was added
+    expect(el.synth.customOsc).to.be.a('function')
+  })
+
+  it('supports loadScript inside code', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const promise = new Promise(resolve => {
+      el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
+    })
+    // Use a data URL to load a simple script that adds a function
+    const scriptCode = 'window._testExtension = true; synth.setFunction({ name: "testFunc", type: "src", inputs: [], glsl: "return vec4(1.0, 0.0, 0.0, 1.0);" });'
+    const scriptUrl = `data:text/javascript,${encodeURIComponent(scriptCode)}`
+    el.code = `
+      await loadScript('${scriptUrl}')
+      testFunc().out()
+    `
+    const detail = await promise
+    expect(detail.success).to.be.true
+    expect(window._testExtension).to.be.true
+    expect(el.synth.testFunc).to.be.a('function')
+    // Cleanup
+    delete window._testExtension
   })
 
   for (const [label, code, success] of EVAL_CASES) {

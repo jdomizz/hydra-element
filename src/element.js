@@ -173,9 +173,10 @@ export class HydraElement extends HTMLElement {
     
     // Expose hydra instance globally for community extensions compatibility
     // Note: With multiple elements, only the last initialized element's synth
-    // will be accessible via window._hydra
+    // will be accessible via window._hydra and window.synth
     if (this.hydraManager.hydra) {
       window._hydra = this.hydraManager.hydra
+      window.synth = this.hydraManager.hydra.synth
     }
     
     if (this._connected && this.attributeHandler.getOptions().autoLoop) {
