@@ -11,22 +11,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `ready` promise property — resolves with `{ synth }` when Hydra is initialized, safe to await even after connection
-- `loadScript()` now works in non-global mode — third-party libraries load without `global="true"`
-- Canvas resolution automatically follows element CSS size via ResizeObserver
-- CSS parts support — `::part(canvas)` and `::part(analyzer)` for styling internal canvases
-- Re-evaluation when `canvas` property changes — scene re-renders on custom canvas
-- Reconnection safety — moving element in DOM no longer re-initializes synth
+- `synth` property for direct access to hydra-synth instance
+- `hydra-ready` and `hydra-eval` events
+- `hydraEval` exported as standalone function via `hydra-element/eval` subpath
+- `ready` promise property — resolves with `{ synth }` when initialized
+- `loadScript()` now works in non-global mode
+- Canvas resolution follows element CSS size via ResizeObserver
+- CSS parts: `::part(canvas)` and `::part(analyzer)`
+- Re-evaluation when `canvas` property changes
+- Reconnection safety — moving element in DOM no longer re-initializes
+
+### Fixed
+
+- `time`, `speed`, `bpm` now resolve dynamically in non-global mode
+- Multi-element isolation (removed `globalThis._hydra` leak)
+- `loop` attribute now functional
 
 ### Changed
 
-- Default canvas size is now 0×0 (falls back to 1280×720) instead of `window.innerWidth × innerHeight`
+- **BREAKING**: `hydraEval` now returns a Promise (always `await` it)
+- Eval uses Proxy for better isolation
+- Animation loop managed by element (not hydra-synth's `autoLoop`)
+- Default canvas size is 0×0 (falls back to 1280×720)
 - Explicit `width`/`height` attributes take precedence over ResizeObserver
 
 ### Removed
 
-- **BREAKING**: `analyzer` attribute — use `::part(analyzer) { display: none }` CSS instead
-- **BREAKING**: `pb` option — access via `el.synth.pb` if needed
+- **BREAKING**: `tick()` method — use `el.synth.tick(dt)`
+- **BREAKING**: `transforms` property — use `el.synth.setFunction()`
+- **BREAKING**: `analyzer` attribute — use `::part(analyzer) { display: none }`
+- **BREAKING**: `pb` option — access via `el.synth.pb`
 
 ## [0.6.0] - 2026-02-14
 
