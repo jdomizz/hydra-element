@@ -3,7 +3,6 @@ import { spy } from 'sinon'
 import { HydraElement } from './element'
 
 describe('<hydra-element>', () => {
-
   window.customElements.define('hydra-element', HydraElement)
 
   it('should pass the a11y audit', async () => {
@@ -51,7 +50,7 @@ describe('<hydra-element>', () => {
     expect(el._options.precision).to.equal('lowp')
     expect(el._options.useAudioAnalyzer).to.be.false
   })
-  
+
   it('should get code from textContent', async () => {
     const el = await fixture(html`<hydra-element>osc(10).out()</hydra-element>`)
     expect(el.code).to.equal('osc(10).out()')
@@ -77,9 +76,9 @@ describe('<hydra-element>', () => {
       type: 'src',
       inputs: [
         { type: 'float', name: 'scale', default: 5 },
-        { type: 'float', name: 'offset', default: 0.5 }
+        { type: 'float', name: 'offset', default: 0.5 },
       ],
-      glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`
+      glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
     }
     el.transforms = [fn]
     expect(el.transforms).to.deep.equal([fn])
@@ -123,10 +122,9 @@ describe('<hydra-element>', () => {
 
   it('should resize canvas without recreating it', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
-    const canvas = el.canvas
+    const { canvas } = el
     el.setAttribute('width', '500')
     expect(el.canvas).to.equal(canvas)
     expect(canvas.width).to.equal(500)
   })
-
 })

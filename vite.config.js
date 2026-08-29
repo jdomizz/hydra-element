@@ -5,14 +5,14 @@ export default defineConfig({
     lib: {
       entry: 'index.js',
       formats: ['es'],
-      fileName: 'hydra-element'
-    }
+      fileName: 'hydra-element',
+    },
   },
   optimizeDeps: {
     esbuildOptions: {
       define: {
-        global: 'globalThis'
-      }
-    }
-  }
+        global: 'globalThis',
+      },
+    },
+  },
 })

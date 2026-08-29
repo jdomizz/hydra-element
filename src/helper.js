@@ -8,9 +8,7 @@
  */
 export function parseNumber(value, defaultValue, min, max) {
   const parsedValue = parseInt(value, 10)
-  return isNaN(parsedValue, min, max)
-    ? defaultValue
-    : parsedValue
+  return isNaN(parsedValue, min, max) ? defaultValue : parsedValue
 }
 
 /**
@@ -21,10 +19,10 @@ export function parseNumber(value, defaultValue, min, max) {
  */
 export function parseJSON(value, defaultValue) {
   let result = defaultValue
-  
+
   try {
     result = JSON.parse(value)
-  } catch (error) {
+  } catch {
     // console.log(error);
   }
 
@@ -39,9 +37,7 @@ export function parseJSON(value, defaultValue) {
  * @returns {*} - The parsed value or the default value.
  */
 export function parseOption(value, defaultValue, options) {
-  return options.includes(value)
-    ? value
-    : defaultValue
+  return options.includes(value) ? value : defaultValue
 }
 
 /**
@@ -53,9 +49,6 @@ export function parseOption(value, defaultValue, options) {
  */
 function isNaN(value, min, max) {
   return max
-    ? Number.isNaN(value)
-    || value < min
-    || value > max
-    : Number.isNaN(value)
-    || value < min
+    ? Number.isNaN(value) || value < min || value > max
+    : Number.isNaN(value) || value < min
 }

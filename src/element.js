@@ -40,7 +40,6 @@ const SYNTH_RECREATE_ATTRS = new Set(['global', 'audio', 'sources', 'outputs', '
  * @extends HTMLElement
  */
 export class HydraElement extends HTMLElement {
-
   /**
    * An array of attribute names to observe on the custom element.
    * @returns {string[]}
@@ -77,7 +76,7 @@ export class HydraElement extends HTMLElement {
    * @returns {HTMLCanvasElement} The canvas element.
    */
   get canvas() {
-    return this._options.canvas;
+    return this._options.canvas
   }
 
   /**
@@ -88,7 +87,7 @@ export class HydraElement extends HTMLElement {
     if (this._options.canvas) {
       this.shadowRoot?.getElementById('hydra-element-canvas')?.remove()
     }
-    this._options.canvas = value;
+    this._options.canvas = value
     if (this._hydra) {
       this._initHydra()
     }
@@ -99,7 +98,7 @@ export class HydraElement extends HTMLElement {
    * @returns {Array<Function>} The extended transforms.
    */
   get transforms() {
-    return this._options.extendTransforms;
+    return this._options.extendTransforms
   }
 
   /**
@@ -107,7 +106,7 @@ export class HydraElement extends HTMLElement {
    * @param {Array<Function>} value - An array of functions to extend the transforms.
    */
   set transforms(value) {
-    this._options.extendTransforms = value;
+    this._options.extendTransforms = value
     if (this._hydra) {
       this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))
     }
@@ -119,7 +118,7 @@ export class HydraElement extends HTMLElement {
    * @returns {Object} The value of pb.
    */
   get pb() {
-    return this._options.pb;
+    return this._options.pb
   }
 
   /**
@@ -127,7 +126,7 @@ export class HydraElement extends HTMLElement {
    * @param {Object} value - The value to set for pb.
    */
   set pb(value) {
-    this._options.pb = value;
+    this._options.pb = value
     if (this._hydra) {
       this._initHydra()
     }
@@ -138,7 +137,7 @@ export class HydraElement extends HTMLElement {
    * @returns {string} The code of the element.
    */
   get code() {
-    return this._code;
+    return this._code
   }
 
   /**
@@ -146,7 +145,7 @@ export class HydraElement extends HTMLElement {
    * @param {string} value - The code to be set.
    */
   set code(value) {
-    this._code = value;
+    this._code = value
     if (this._hydra) {
       this._evalCode()
     }
@@ -216,7 +215,7 @@ export class HydraElement extends HTMLElement {
   _startLoop() {
     if (this._rafId !== null) return
     let last = performance.now()
-    const step = (now) => {
+    const step = now => {
       const dt = now - last
       last = now
       this.tick(dt)
@@ -233,7 +232,7 @@ export class HydraElement extends HTMLElement {
   }
 
   _resizeCanvas() {
-    const canvas = this._options.canvas
+    const { canvas } = this._options
     if (canvas && canvas.id === 'hydra-element-canvas') {
       canvas.width = this._options.width
       canvas.height = this._options.height
@@ -245,14 +244,14 @@ export class HydraElement extends HTMLElement {
    * @private
    */
   _initCanvas() {
-    this.shadowRoot?.querySelectorAll('canvas').forEach(canvas => canvas.remove());
+    this.shadowRoot?.querySelectorAll('canvas').forEach(canvas => canvas.remove())
     this._options.canvas = document.createElement('canvas')
     this._options.canvas.id = 'hydra-element-canvas'
     this._options.canvas.width = this._options.width
     this._options.canvas.height = this._options.height
-    this._options.canvas.style.width = "100%"
-    this._options.canvas.style.height = "100%"
-    this.shadowRoot?.appendChild(this._options.canvas)
+    this._options.canvas.style.width = '100%'
+    this._options.canvas.style.height = '100%'
+    this.shadowRoot?.append(this._options.canvas)
   }
 
   /**
@@ -263,9 +262,11 @@ export class HydraElement extends HTMLElement {
     this._stopLoop()
     const opts = { ...this._options, autoLoop: false }
     this._hydra = new Hydra({ ...opts })
-    this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))    
+    this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))
     if (!this._options.useAudioAnalyzer) {
-      this.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => canvas.remove());
+      this.shadowRoot
+        ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
+        .forEach(canvas => canvas.remove())
     }
     if (this._connected && this._options.autoLoop) {
       this._startLoop()
@@ -311,7 +312,9 @@ export class HydraElement extends HTMLElement {
   _handleAnalyzerChange(newValue) {
     this._options = this._getNewOptions('analyzer', newValue)
     if (this._hydra && !this._options.useAudioAnalyzer) {
-      this.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => canvas.remove())
+      this.shadowRoot
+        ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
+        .forEach(canvas => canvas.remove())
     }
   }
 
@@ -349,19 +352,40 @@ export class HydraElement extends HTMLElement {
    * @returns {Object} - A new options object with the updated attribute value.
    * @private
    */
-  _getNewOptions(attrName, newValue) {    
+  _getNewOptions(attrName, newValue) {
     switch (attrName) {
-      case 'width': return { ...this._options, width: parseNumber(newValue, DEFAULT_OPTIONS.width, 0) }
-      case 'height': return { ...this._options, height: parseNumber(newValue, DEFAULT_OPTIONS.height, 0) }
-      case 'global': return { ...this._options, makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) }
-      case 'analyzer': return { ...this._options, useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer) }
-      case 'audio': return { ...this._options, detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) }
-      case 'sources': return { ...this._options, numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) }
-      case 'outputs': return { ...this._options, numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) }
-      case 'precision': return { ...this._options, precision: parseOption(newValue, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']) }
-      case 'loop': return { ...this._options, autoLoop: parseJSON(newValue, DEFAULT_OPTIONS.autoLoop) }
-      default: return { ...this._options }
+      case 'width':
+        return { ...this._options, width: parseNumber(newValue, DEFAULT_OPTIONS.width, 0) }
+      case 'height':
+        return { ...this._options, height: parseNumber(newValue, DEFAULT_OPTIONS.height, 0) }
+      case 'global':
+        return { ...this._options, makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) }
+      case 'analyzer':
+        return {
+          ...this._options,
+          useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer),
+        }
+      case 'audio':
+        return { ...this._options, detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) }
+      case 'sources':
+        return {
+          ...this._options,
+          numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0),
+        }
+      case 'outputs':
+        return {
+          ...this._options,
+          numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0),
+        }
+      case 'precision':
+        return {
+          ...this._options,
+          precision: parseOption(newValue, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']),
+        }
+      case 'loop':
+        return { ...this._options, autoLoop: parseJSON(newValue, DEFAULT_OPTIONS.autoLoop) }
+      default:
+        return { ...this._options }
     }
   }
-
 }

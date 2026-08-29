@@ -3,7 +3,6 @@ import { spy } from 'sinon'
 import { hydraEval } from './eval'
 
 describe('hydraEval', () => {
-
   it('should call noise', () => {
     const synth = { noise: spy() }
     hydraEval('noise(10, 0.1)', synth)
@@ -240,5 +239,4 @@ describe('hydraEval', () => {
     hydraEval('vidRecorder.stop()', synth)
     expect(synth.vidRecorder.stop).to.have.been.calledOnceWith()
   })
-
 })

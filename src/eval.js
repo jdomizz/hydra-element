@@ -7,6 +7,6 @@
  * @param {*} synth The instance of the hydra-synth
  */
 export function hydraEval(code, synth) {
-    const fn = new Function('synth', `with(synth){${code}}`)
-    fn(synth)
+  const fn = new Function('synth', `with(synth){${code}}`)
+  fn(synth)
 }

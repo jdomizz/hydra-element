@@ -1,4 +1,4 @@
-import { playwrightLauncher } from '@web/test-runner-playwright';
+import { playwrightLauncher } from '@web/test-runner-playwright'
 import { vitePlugin } from '@remcovaes/web-test-runner-vite-plugin'
 
 export default {
@@ -8,11 +8,8 @@ export default {
     playwrightLauncher({
       product: 'chromium',
       launchOptions: {
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-        ],
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
       },
     }),
   ],
-};
+}

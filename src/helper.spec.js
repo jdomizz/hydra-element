@@ -2,7 +2,6 @@ import { expect } from '@open-wc/testing'
 import { parseNumber, parseJSON, parseOption } from './helper'
 
 describe('parseNumber', () => {
-
   it('should return the parsed value if it is within the min and max range', () => {
     expect(parseNumber('10', 0, 5, 15)).to.equal(10)
   })
@@ -18,11 +17,9 @@ describe('parseNumber', () => {
   it('should return the default value if the input is not a valid number', () => {
     expect(parseNumber('abc', 10, 5, 15)).to.equal(10)
   })
-
 })
 
 describe('parseJSON', () => {
-
   it('should return the parsed value if the input is a valid JSON string', () => {
     expect(parseJSON('{"foo": "bar"}', {})).to.deep.equal({ foo: 'bar' })
   })
@@ -30,15 +27,13 @@ describe('parseJSON', () => {
   it('should return the default value if the input is not a valid JSON string', () => {
     expect(parseJSON('not a JSON string', { foo: 'bar' })).to.deep.equal({ foo: 'bar' })
   })
-  
+
   it('should return the default value if the input is an empty string', () => {
     expect(parseJSON('', { foo: 'bar' })).to.deep.equal({ foo: 'bar' })
   })
-
 })
 
 describe('parseOption', () => {
-  
   it('should return the value if it is included in the options', () => {
     expect(parseOption('foo', 'default', ['foo', 'bar', 'baz'])).to.equal('foo')
   })
@@ -50,5 +45,4 @@ describe('parseOption', () => {
   it('should return the default value if the options array is empty', () => {
     expect(parseOption('foo', 'default', [])).to.equal('default')
   })
-
 })
