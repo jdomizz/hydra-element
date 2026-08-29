@@ -20,9 +20,13 @@
 Single-package web component library wrapping `hydra-synth`.
 
 - Entry: `index.js` registers `<hydra-element>` from `src/element.js` and exports `HydraElement` + `hydraEval`
-- `src/element.js` — custom element that creates a canvas, instantiates Hydra, and evaluates user code
+- `src/element.js` — thin facade that wires together the managers
+- `src/canvas.js` — `CanvasManager`: canvas lifecycle, ResizeObserver, CSS parts
+- `src/hydra.js` — `HydraManager`: hydra-synth instance, code evaluation, events
+- `src/loop.js` — `LoopController`: requestAnimationFrame loop
+- `src/attributes.js` — `AttributeHandler` + `DEFAULT_OPTIONS`: attribute parsing
 - `src/eval.js` — evaluates user code using `new Function()` + `with(proxy)` to provide Hydra DSL syntax (not a security sandbox)
-- `src/helper.js` — pure parsing utilities (`parseNumber`, `parseJSON`, `parseOption`)
+- `src/parse.js` — pure parsing utilities (`parseNumber`, `parseJSON`, `parseOption`)
 - Build output: `dist/hydra-element.js` (from `index.js`) and `dist/eval.js` (from `src/eval.js`), ESM only, per `vite.config.js`
 
 ## Conventions

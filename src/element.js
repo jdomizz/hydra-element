@@ -1,40 +1,13 @@
-import Hydra from 'hydra-synth'
-import { parseJSON, parseNumber, parseOption } from './helper'
-import { hydraEval } from './eval'
-
-/**
- * Default options for Hydra Element.
- * @typedef {Object} DEFAULT_OPTIONS
- * @property {HTMLCanvasElement} canvas - The canvas element to render on.
- * @property {number} width - The width of the canvas.
- * @property {number} height - The height of the canvas.
- * @property {boolean} autoLoop - Whether to automatically loop the animation.
- * @property {boolean} makeGlobal - Whether to make the hydra instance global.
- * @property {boolean} detectAudio - Whether to detect audio input.
- * @property {number} numSources - The number of audio sources.
- * @property {number} numOutputs - The number of audio outputs.
- * @property {number} precision - The precision of the rendering.
- * @property {Object} pb - The instance of `rtc-patch-bay` for streaming.
- * @property {boolean} useAudioAnalyzer - Whether to use the Hydra audio analyzer UI.
- */
-const DEFAULT_OPTIONS = {
-  canvas: null,
-  width: null,
-  height: null,
-  autoLoop: true,
-  makeGlobal: false,
-  detectAudio: false,
-  numSources: 4,
-  numOutputs: 4,
-  precision: null,
-  pb: null,
-  useAudioAnalyzer: true,
-}
-
-const SYNTH_RECREATE_ATTRS = new Set(['global', 'audio', 'sources', 'outputs', 'precision'])
+import { CanvasManager } from './canvas'
+import { HydraManager } from './hydra'
+import { LoopController } from './loop'
+import { AttributeHandler, DEFAULT_OPTIONS } from './attributes'
 
 /**
  * A custom element that renders Hydra sketches.
+ *
+ * Thin facade that wires together the CanvasManager, HydraManager,
+ * LoopController, and AttributeHandler.
  * @extends HTMLElement
  */
 export class HydraElement extends HTMLElement {
@@ -43,7 +16,6 @@ export class HydraElement extends HTMLElement {
       'width',
       'height',
       'global',
-      'analyzer',
       'audio',
       'sources',
       'outputs',
@@ -55,15 +27,30 @@ export class HydraElement extends HTMLElement {
   constructor() {
     super()
     this._code = ''
-    this._options = {
-      ...DEFAULT_OPTIONS,
-      width: window.innerWidth,
-      height: window.innerHeight,
-    }
-    this._rafId = null
     this._connected = false
     this._scope = Object.create(null)
     this.attachShadow({ mode: 'open' })
+    this.canvasManager = new CanvasManager(this.shadowRoot)
+    this.attributeHandler = new AttributeHandler({
+      ...DEFAULT_OPTIONS,
+      width: 0,
+      height: 0,
+    })
+    this.hydraManager = null
+    this.loopController = null
+    this._readyPromise = new Promise(resolve => {
+      this._resolveReady = resolve
+    })
+    this._onResize = e => this.hydraManager?.setResolution(e.detail.width, e.detail.height)
+  }
+
+  /**
+   * Resolves with `{ synth }` once Hydra has been initialized.
+   * Always resolvable, even when accessed after the element is connected.
+   * @returns {Promise<{synth: Object}>} A promise that resolves when Hydra is ready.
+   */
+  get ready() {
+    return this._readyPromise
   }
 
   /**
@@ -71,7 +58,7 @@ export class HydraElement extends HTMLElement {
    * @returns {HTMLCanvasElement} The canvas element.
    */
   get canvas() {
-    return this._options.canvas
+    return this.canvasManager.canvas
   }
 
   /**
@@ -79,12 +66,12 @@ export class HydraElement extends HTMLElement {
    * @param {HTMLCanvasElement} value - The canvas element to set.
    */
   set canvas(value) {
-    if (this._options.canvas) {
-      this.shadowRoot?.getElementById('hydra-element-canvas')?.remove()
-    }
-    this._options.canvas = value
-    if (this._hydra) {
+    this.canvasManager.preserveCustomCanvas(value)
+    if (this.hydraManager) {
       this._initHydra()
+      if (this._code !== '') {
+        this.hydraManager.evaluate(this._code)
+      }
     }
   }
 
@@ -94,7 +81,7 @@ export class HydraElement extends HTMLElement {
    * @returns {Object|undefined} The synth object
    */
   get synth() {
-    return this._hydra?.synth
+    return this.hydraManager?.synth
   }
 
   /**
@@ -111,8 +98,8 @@ export class HydraElement extends HTMLElement {
    */
   set code(value) {
     this._code = value
-    if (this._hydra) {
-      this._evalCode()
+    if (this.hydraManager) {
+      this.hydraManager.evaluate(value)
     }
   }
 
@@ -127,197 +114,106 @@ export class HydraElement extends HTMLElement {
 
     if (attrName === 'width' || attrName === 'height') {
       this._handleSizeChange(attrName, newValue)
-    } else if (attrName === 'analyzer') {
-      this._handleAnalyzerChange(newValue)
     } else if (attrName === 'loop') {
       this._handleLoopChange(newValue)
-    } else if (SYNTH_RECREATE_ATTRS.has(attrName)) {
-      this._handleSynthRecreateChange(attrName, newValue)
+    } else if (this.attributeHandler.hasSynthResettingAttribute(attrName)) {
+      this._handleSynthResetAttribute(attrName, newValue)
     }
   }
 
   connectedCallback() {
     this._connected = true
-    if (this._code === '' && this.textContent.trim()) {
-      this._code = this.textContent
-      this.textContent = ''
+    this.addEventListener('hydra-element-resize', this._onResize)
+    if (!this._initialized) {
+      this._initialized = true
+      if (this._code === '' && this.textContent.trim()) {
+        this._code = this.textContent
+        this.textContent = ''
+      }
+      const options = this.attributeHandler.getOptions()
+      if (!this.canvasManager.canvas) {
+        this.canvasManager.init(options.width, options.height)
+      }
+      if (!this.hydraManager) {
+        this._initHydra()
+      }
     }
-    if (!this._options.canvas) {
-      this._initCanvas()
-    }
-    if (!this._hydra) {
-      this._initHydra()
-    }
-    if (this._options.autoLoop) {
+    if (this.attributeHandler.getOptions().autoLoop) {
       this._startLoop()
     }
     if (this._code !== '') {
-      this._evalCode()
+      this.hydraManager.evaluate(this._code)
     }
   }
 
   disconnectedCallback() {
     this._connected = false
+    this._initialized = false
+    this.removeEventListener('hydra-element-resize', this._onResize)
     this._stopLoop()
-    if (this._hydra) {
-      this._hydra.s?.forEach(s => s.clear?.())
-      this._hydra = null
-    }
-  }
-
-  _startLoop() {
-    if (this._rafId !== null) return
-    let last = performance.now()
-    const step = now => {
-      const dt = now - last
-      last = now
-      this._hydra?.tick(dt)
-      this._rafId = requestAnimationFrame(step)
-    }
-    this._rafId = requestAnimationFrame(step)
-  }
-
-  _stopLoop() {
-    if (this._rafId !== null) {
-      cancelAnimationFrame(this._rafId)
-      this._rafId = null
-    }
-  }
-
-  _resizeCanvas() {
-    const { canvas } = this._options
-    if (canvas) {
-      canvas.width = this._options.width
-      canvas.height = this._options.height
+    this.canvasManager.disconnect()
+    if (this.hydraManager) {
+      this.hydraManager.destroy()
+      this.hydraManager = null
     }
   }
 
   /**
-   * Initializes the canvas element for the element.
-   * @private
-   */
-  _initCanvas() {
-    if (this._options.canvas && this._options.canvas.id !== 'hydra-element-canvas') {
-      return
-    }
-    this.shadowRoot
-      ?.querySelectorAll('canvas#hydra-element-canvas')
-      .forEach(canvas => canvas.remove())
-    this._options.canvas = document.createElement('canvas')
-    this._options.canvas.id = 'hydra-element-canvas'
-    this._options.canvas.width = this._options.width
-    this._options.canvas.height = this._options.height
-    this._options.canvas.style.width = '100%'
-    this._options.canvas.style.height = '100%'
-    this.shadowRoot?.append(this._options.canvas)
-  }
-
-  /**
-   * Initializes the Hydra instance with the provided options and extends the transforms with the provided functions.
+   * Initializes the Hydra instance (via HydraManager) and restarts the loop.
    * @private
    */
   _initHydra() {
     this._stopLoop()
-    const opts = { ...this._options, autoLoop: false }
-    this._hydra = new Hydra({ ...opts })
-    if (!this._options.useAudioAnalyzer) {
-      this._removeAnalyzerCanvases()
-    }
-    if (this._connected && this._options.autoLoop) {
+    this.hydraManager = new HydraManager({
+      host: this,
+      options: this.attributeHandler.getOptions(),
+      scope: this._scope,
+    })
+    this.hydraManager.init()
+    if (this._connected && this.attributeHandler.getOptions().autoLoop) {
       this._startLoop()
     }
-    this.dispatchEvent(
-      new CustomEvent('hydra-ready', {
-        detail: { synth: this._hydra.synth },
-        bubbles: true,
-      })
-    )
+    this._resolveReady({ synth: this.hydraManager.synth })
   }
 
   /**
-   * Evaluates the code in a new async function and executes it.
+   * Starts the animation loop.
    * @private
    */
-  _evalCode() {
-    const dispatchSuccess = () => {
-      this.dispatchEvent(
-        new CustomEvent('hydra-eval', {
-          detail: { success: true },
-          bubbles: true,
-        })
-      )
+  _startLoop() {
+    if (!this.loopController) {
+      this.loopController = new LoopController(dt => this.hydraManager.tick(dt))
     }
-    const dispatchError = e => {
-      console.warn('[hydra-element] eval error:', e)
-      this.dispatchEvent(
-        new CustomEvent('hydra-eval', {
-          detail: { success: false, error: e },
-          bubbles: true,
-        })
-      )
-    }
-    try {
-      let result
-      if (this._options.makeGlobal) {
-        const code = `(async () => { ${this._code} })()`
-        result = this._hydra.sandbox.eval(code)
-      } else {
-        result = hydraEval(this._code, this._hydra.synth, this._scope)
-      }
-      if (result && typeof result.catch === 'function') {
-        result.then(dispatchSuccess).catch(dispatchError)
-      } else {
-        dispatchSuccess()
-      }
-    } catch (e) {
-      dispatchError(e)
-    }
+    this.loopController.start()
+  }
+
+  /**
+   * Stops the animation loop.
+   * @private
+   */
+  _stopLoop() {
+    this.loopController?.stop()
   }
 
   /**
    * Handles width/height attribute changes.
-   * @param {string} attrName - The attribute name ('width' or 'height').
-   * @param {string} newValue - The new attribute value.
    * @private
    */
   _handleSizeChange(attrName, newValue) {
-    this._options = this._getNewOptions(attrName, newValue)
-    this._resizeCanvas()
-    if (this._hydra) {
-      this._hydra.synth.setResolution(this._options.width, this._options.height)
+    const options = this.attributeHandler.update(attrName, newValue)
+    this.canvasManager.resize(options.width, options.height)
+    if (this.hydraManager) {
+      this.hydraManager.setResolution(options.width, options.height)
     }
-  }
-
-  /**
-   * Handles analyzer attribute changes.
-   * @param {string} newValue - The new attribute value.
-   * @private
-   */
-  _handleAnalyzerChange(newValue) {
-    this._options = this._getNewOptions('analyzer', newValue)
-    if (this._hydra) {
-      if (this._options.useAudioAnalyzer) {
-        this._initHydra()
-      } else {
-        this._removeAnalyzerCanvases()
-      }
-    }
-  }
-
-  _removeAnalyzerCanvases() {
-    this.shadowRoot
-      ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
-      .forEach(canvas => canvas.remove())
   }
 
   /**
    * Handles loop attribute changes.
-   * @param {string} newValue - The new attribute value.
    * @private
    */
   _handleLoopChange(newValue) {
-    this._options = this._getNewOptions('loop', newValue)
-    if (this._connected && this._options.autoLoop) {
+    const options = this.attributeHandler.update('loop', newValue)
+    if (this._connected && options.autoLoop) {
       this._startLoop()
     } else {
       this._stopLoop()
@@ -325,39 +221,13 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
-   * Handles attribute changes that require recreating the synth.
-   * @param {string} attrName - The attribute name.
-   * @param {string} newValue - The new attribute value.
+   * Handles attribute changes that require resetting (recreating) the synth.
    * @private
    */
-  _handleSynthRecreateChange(attrName, newValue) {
-    this._options = this._getNewOptions(attrName, newValue)
-    this._initCanvas()
+  _handleSynthResetAttribute(attrName, newValue) {
+    const options = this.attributeHandler.update(attrName, newValue)
+    this.canvasManager.init(options.width, options.height)
     this._initHydra()
-    this._evalCode()
-  }
-
-  /**
-   * Returns a new options object with the updated value for the specified attribute.
-   * @param {string} attrName - The name of the attribute to update.
-   * @param {any} newValue - The new value for the attribute.
-   * @returns {Object} - A new options object with the updated attribute value.
-   * @private
-   */
-  _getNewOptions(attrName, newValue) {
-    const updates = {
-      width: { width: parseNumber(newValue, this._options.width, 0) },
-      height: { height: parseNumber(newValue, this._options.height, 0) },
-      global: { makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) },
-      analyzer: { useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer) },
-      audio: { detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) },
-      sources: { numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) },
-      outputs: { numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) },
-      precision: {
-        precision: parseOption(newValue, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']),
-      },
-      loop: { autoLoop: parseJSON(newValue, DEFAULT_OPTIONS.autoLoop) },
-    }
-    return { ...this._options, ...updates[attrName] }
+    this.hydraManager.evaluate(this._code)
   }
 }

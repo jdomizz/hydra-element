@@ -20,29 +20,15 @@ describe('hydraEval', () => {
     await hydraEval('console.log("test")', synth)
   })
 
-  it('should resolve time dynamically after synth.time changes', async () => {
-    const synth = { time: 0 }
-    const scope = Object.create(null)
-    await hydraEval('captured = () => time', synth, scope)
-    synth.time = 42
-    expect(scope.captured()).to.equal(42)
-  })
-
-  it('should resolve speed dynamically after synth.speed changes', async () => {
-    const synth = { speed: 1 }
-    const scope = Object.create(null)
-    await hydraEval('captured = () => speed', synth, scope)
-    synth.speed = 3
-    expect(scope.captured()).to.equal(3)
-  })
-
-  it('should resolve bpm dynamically after synth.bpm changes', async () => {
-    const synth = { bpm: 30 }
-    const scope = Object.create(null)
-    await hydraEval('captured = () => bpm', synth, scope)
-    synth.bpm = 120
-    expect(scope.captured()).to.equal(120)
-  })
+  for (const prop of ['time', 'speed', 'bpm']) {
+    it(`should resolve ${prop} dynamically after synth.${prop} changes`, async () => {
+      const synth = { [prop]: 0 }
+      const scope = Object.create(null)
+      await hydraEval(`captured = () => ${prop}`, synth, scope)
+      synth[prop] = 42
+      expect(scope.captured()).to.equal(42)
+    })
+  }
 
   it('should call chained methods', async () => {
     const outSpy = spy()
@@ -113,17 +99,13 @@ describe('hydraEval', () => {
       expect(synth.osc).to.have.been.calledOnceWith(42)
     })
 
-    it('should sync speed assignment to synth', async () => {
-      const synth = { speed: 1 }
-      await hydraEval('speed = 2', synth)
-      expect(synth.speed).to.equal(2)
-    })
-
-    it('should sync bpm assignment to synth', async () => {
-      const synth = { bpm: 30 }
-      await hydraEval('bpm = 120', synth)
-      expect(synth.bpm).to.equal(120)
-    })
+    for (const prop of ['speed', 'bpm']) {
+      it(`should sync ${prop} assignment to synth`, async () => {
+        const synth = { [prop]: 1 }
+        await hydraEval(`${prop} = 2`, synth)
+        expect(synth[prop]).to.equal(2)
+      })
+    }
   })
 
   describe('persistent scope', () => {
@@ -150,20 +132,14 @@ describe('hydraEval', () => {
       expect(synth.osc).to.have.been.calledOnceWith(undefined)
     })
 
-    it('should not persist let declarations (block-scoped)', async () => {
-      const synth = { osc: spy() }
-      const scope = Object.create(null)
-      await hydraEval('let myLet = 42', synth, scope)
-      await hydraEval('osc(myLet)', synth, scope)
-      expect(synth.osc).to.have.been.calledOnceWith(undefined)
-    })
-
-    it('should not persist const declarations (block-scoped)', async () => {
-      const synth = { osc: spy() }
-      const scope = Object.create(null)
-      await hydraEval('const myConst = 42', synth, scope)
-      await hydraEval('osc(myConst)', synth, scope)
-      expect(synth.osc).to.have.been.calledOnceWith(undefined)
-    })
+    for (const keyword of ['let', 'const']) {
+      it(`should not persist ${keyword} declarations (block-scoped)`, async () => {
+        const synth = { osc: spy() }
+        const scope = Object.create(null)
+        await hydraEval(`${keyword} myVar = 42`, synth, scope)
+        await hydraEval('osc(myVar)', synth, scope)
+        expect(synth.osc).to.have.been.calledOnceWith(undefined)
+      })
+    }
   })
 })

@@ -71,10 +71,12 @@ Enable the microphone with the `audio` attribute:
 <hydra-element audio="true"> osc(10, 0, () => a.fft[0] * 4).out() </hydra-element>
 ```
 
-If you don't want to see the audio analyzer, use `analyzer="false"`:
+To hide the audio analyzer UI:
 
-```html
-<hydra-element audio="true" analyzer="false"></hydra-element>
+```css
+hydra-element::part(analyzer) {
+  display: none;
+}
 ```
 
 ### Use camera and screen
@@ -108,6 +110,27 @@ Or use the `width` and `height` attributes:
 <hydra-element width="400" height="400"></hydra-element>
 ```
 
+### Canvas sizing
+
+The canvas resolution automatically follows the element's CSS size via ResizeObserver. If you set explicit `width`/`height` attributes, those take precedence over the observer.
+
+### CSS parts
+
+Style internal canvases using CSS parts:
+
+```css
+/* Style the main canvas */
+hydra-element::part(canvas) {
+  border: 2px solid red;
+  image-rendering: pixelated;
+}
+
+/* Hide the audio analyzer */
+hydra-element::part(analyzer) {
+  display: none;
+}
+```
+
 ## Configuration
 
 ### More buffers (sources and outputs)
@@ -121,15 +144,26 @@ By default you get 4 source buffers (`s0`-`s3`) and 4 output buffers (`o0`-`o3`)
 </hydra-element>
 ```
 
+### Loading third-party libraries with `loadScript`
+
+`loadScript(url)` loads a third-party library so you can use it in your scene (e.g. p5, three, or custom shader libraries). It works in **both** global and isolated (non-global) modes:
+
+```html
+<hydra-element>
+  await loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
+  warp().out()
+</hydra-element>
+```
+
+> **Warning:** Loaded scripts run with full page privileges — they are not sandboxed. Only load scripts you trust. This is separate from the eval sandboxing note below.
+
 ### Global mode
 
 By default, each element has its own isolated scope. If you want Hydra functions available globally (like in the Hydra editor):
 
 ```html
 <hydra-element global="true">
-  await
-  loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
-  warp().out()
+  osc(10, 0.2, 0.5).out()
 </hydra-element>
 ```
 
@@ -187,29 +221,35 @@ el.addEventListener('hydra-eval', e => {
 })
 ```
 
+Or use the `ready` promise (safe to await even after connection):
+
+```js
+const { synth } = await el.ready
+```
+
 ## API Reference
 
 ### Attributes
 
 | Attribute   | Type    | Default       | Description                                     |
 | ----------- | ------- | ------------- | ----------------------------------------------- |
-| `width`     | number  | window width  | Canvas width in pixels                          |
-| `height`    | number  | window height | Canvas height in pixels                         |
+| `width`     | number  | CSS width     | Canvas width in pixels (takes precedence over ResizeObserver) |
+| `height`    | number  | CSS height    | Canvas height in pixels (takes precedence over ResizeObserver) |
 | `audio`     | boolean | `false`       | Enable microphone input                         |
-| `analyzer`  | boolean | `true`        | Show audio analyzer UI                          |
-| `loop`      | boolean | `true`        | Auto-render loop                                |
+| `loop`      | boolean | `true`        | Enable animation loop (the element manages its own RAF loop, not hydra-synth's) |
 | `global`    | boolean | `false`       | Make Hydra functions global                     |
 | `sources`   | number  | `4`           | Number of source buffers                        |
 | `outputs`   | number  | `4`           | Number of output buffers                        |
-| `precision` | string  | auto          | Shader precision: `highp`, `mediump`, or `lowp` |
+| `precision` | string  | `null`        | Shader precision: `highp`, `mediump`, or `lowp` (`null` = hydra-synth default) |
 
 ### Properties
 
 | Property | Type              | Description                            |
 | -------- | ----------------- | -------------------------------------- |
 | `code`   | string            | Get or set the scene code              |
-| `canvas` | HTMLCanvasElement | Custom canvas element to render on     |
+| `canvas` | HTMLCanvasElement | Custom canvas element to render on. **Note:** Setting this property recreates the Hydra instance and re-evaluates the code. |
 | `synth`  | HydraSynth        | Read-only access to the synth instance |
+| `ready`  | Promise           | Resolves with `{ synth }` when Hydra is initialized |
 
 ### Events
 

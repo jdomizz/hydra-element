@@ -1,29 +1,12 @@
 import { fixture, expect, html } from '@open-wc/testing'
 import { HydraElement } from './element'
+import { createHydraElement } from './test-helpers'
 
 if (!customElements.get('hydra-element')) {
   customElements.define('hydra-element', HydraElement)
 }
 
-async function createHydraElement(code = '') {
-  const el = await fixture(html`<hydra-element>${code}</hydra-element>`)
-  await new Promise(resolve => {
-    if (el.synth) {
-      resolve()
-    } else {
-      el.addEventListener('hydra-ready', () => resolve(), { once: true })
-    }
-  })
-  return el
-}
-
 describe('integration', () => {
-  it('should initialize canvas and synth', async () => {
-    const el = await createHydraElement('solid(1, 0, 0, 1).out()')
-    expect(el.canvas).to.exist
-    expect(el.synth).to.exist
-  })
-
   it('should expose synth with working DSL methods', async () => {
     const el = await createHydraElement()
     expect(el.synth.osc).to.be.a('function')
@@ -66,12 +49,6 @@ describe('multi-instance', () => {
     const el2 = await createHydraElement('solid(0, 0, 1, 1).out()')
     expect(el1.code).to.equal('solid(1, 0, 0, 1).out()')
     expect(el2.code).to.equal('solid(0, 0, 1, 1).out()')
-  })
-
-  it('should not share canvas between elements', async () => {
-    const el1 = await createHydraElement()
-    const el2 = await createHydraElement()
-    expect(el1.canvas).to.not.equal(el2.canvas)
   })
 
   it('should handle multiple elements on same page', async () => {

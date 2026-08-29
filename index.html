@@ -41,9 +41,10 @@
         }
       }
 
-      window.onload = () =>
-        (document.querySelector('hydra-element').transforms = [
-          {
+      window.onload = () => {
+        const el = document.querySelector('hydra-element')
+        el.addEventListener('hydra-ready', () => {
+          el.synth.setFunction({
             name: 'noixe',
             type: 'src',
             inputs: [
@@ -51,8 +52,9 @@
               { type: 'float', name: 'offset', default: 0.5 },
             ],
             glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
-          },
-        ])
+          })
+        })
+      }
     </script>
     <script type="module" src="./index.js"></script>
   </head>

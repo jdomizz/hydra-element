@@ -1,20 +1,14 @@
 import { expect } from '@open-wc/testing'
-import { parseNumber, parseJSON, parseOption } from './helper'
+import { parseNumber, parseJSON, parseOption } from './parse'
 
 describe('parseNumber', () => {
   it('should return the parsed value if it is within the min and max range', () => {
     expect(parseNumber('10', 0, 5, 15)).to.equal(10)
   })
 
-  it('should return the default value if the parsed value is less than the min range', () => {
+  it('should return the default value if out of range or invalid', () => {
     expect(parseNumber('3', 10, 5, 15)).to.equal(10)
-  })
-
-  it('should return the default value if the parsed value is greater than the max range', () => {
     expect(parseNumber('20', 10, 5, 15)).to.equal(10)
-  })
-
-  it('should return the default value if the input is not a valid number', () => {
     expect(parseNumber('abc', 10, 5, 15)).to.equal(10)
   })
 
@@ -27,11 +21,8 @@ describe('parseNumber', () => {
     expect(parseNumber('999999', 0, 0)).to.equal(999999)
   })
 
-  it('should reject partial number strings like "10abc"', () => {
+  it('should reject invalid number strings', () => {
     expect(parseNumber('10abc', 0, 0)).to.equal(0)
-  })
-
-  it('should reject strings with leading numbers like "5px"', () => {
     expect(parseNumber('5px', 0, 0)).to.equal(0)
   })
 
@@ -45,11 +36,8 @@ describe('parseJSON', () => {
     expect(parseJSON('{"foo": "bar"}', {})).to.deep.equal({ foo: 'bar' })
   })
 
-  it('should return the default value if the input is not a valid JSON string', () => {
+  it('should return the default value if the input is invalid or empty', () => {
     expect(parseJSON('not a JSON string', { foo: 'bar' })).to.deep.equal({ foo: 'bar' })
-  })
-
-  it('should return the default value if the input is an empty string', () => {
     expect(parseJSON('', { foo: 'bar' })).to.deep.equal({ foo: 'bar' })
   })
 })
@@ -59,11 +47,8 @@ describe('parseOption', () => {
     expect(parseOption('foo', 'default', ['foo', 'bar', 'baz'])).to.equal('foo')
   })
 
-  it('should return the default value if the value is not included in the options', () => {
+  it('should return the default value if not in options or options empty', () => {
     expect(parseOption('qux', 'default', ['foo', 'bar', 'baz'])).to.equal('default')
-  })
-
-  it('should return the default value if the options array is empty', () => {
     expect(parseOption('foo', 'default', [])).to.equal('default')
   })
 })

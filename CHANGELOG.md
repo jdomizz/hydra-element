@@ -43,6 +43,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `husky` and `lint-staged` dependencies (rely on CI for linting)
 - Redundant `.opencode/skills/` directory (generic principles not specific to this project)
 
+## [0.7.0] - 2026-08-29
+
+### Added
+
+- `ready` promise property — resolves with `{ synth }` when Hydra is initialized, safe to await even after connection
+- `loadScript()` now works in non-global mode — third-party libraries load without `global="true"`
+- ResizeObserver-based canvas sizing — canvas resolution automatically follows CSS size
+- CSS parts support — `::part(canvas)` and `::part(analyzer)` for styling internal canvases
+- Re-evaluation when `canvas` property changes — scene re-renders on custom canvas
+- Reconnection safety — moving element in DOM no longer re-initializes synth
+
+### Changed
+
+- **BREAKING**: Architecture refactored into modules — `element.js` is now a thin facade delegating to `CanvasManager`, `HydraManager`, `LoopController`, and `AttributeHandler`
+- `helper.js` renamed to `parse.js` (better describes its purpose)
+- Default canvas size is now 0×0 (falls back to 1280×720) instead of `window.innerWidth × innerHeight`
+- Explicit `width`/`height` attributes take precedence over ResizeObserver
+- Internal method renames: `SYNTH_RECREATE_ATTRS` → `ATTRS_REQUIRING_SYNTH_RESET`, `isSynthRecreate` → `hasSynthResettingAttribute`, `_handleSynthRecreateChange` → `_handleSynthResetAttribute`
+
+### Removed
+
+- **BREAKING**: `analyzer` attribute and `useAudioAnalyzer` option — use `::part(analyzer) { display: none }` CSS instead
+- **BREAKING**: `pb` option — access via `el.synth.pb` if needed
+- Duplicate `DEFAULT_OPTIONS` constant (now only in `attributes.js`)
+
 ## [0.6.0] - 2026-02-14
 
 ### Added
