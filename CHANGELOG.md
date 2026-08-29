@@ -7,66 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Public `synth` property to access hydra-synth instance for advanced use cases
-- `hydra-ready` event dispatched when synth is initialized
-- `hydra-eval` event dispatched after code evaluation (success or error)
-- `parseNumber` now accepts optional `max` parameter (defaults to Infinity)
-- **`hydraEval` is now exported as a standalone function** via `hydra-element/eval` subpath export, enabling isolated multi-instance hydra-synth usage without the custom element
-- Integration tests that verify actual rendering (canvas pixel output)
-- Multi-instance tests verifying behavior with multiple elements
-
-### Fixed
-
-- `time`, `speed`, `bpm`, `width`, `height` now resolve dynamically in non-global mode (README example now works)
-- Removed `globalThis._hydra` leak that broke multi-element isolation
-- `loop` attribute now properly observed and functional
-- `attributeChangedCallback` no longer recreates canvas/synth on every change (only for `global`, `audio`, `sources`, `outputs`, `precision`)
-- Added `disconnectedCallback` to prevent memory leaks when element is removed
-- Added error handling in `_evalCode` to catch user code errors
-- Hydra instance is now destroyed on disconnect to prevent memory leaks
-
-### Changed
-
-- `src/eval.js` now uses Proxy for better isolation (previously used destructuring + eval in 0.6.0)
-- `hydraEval` now always returns a Promise and supports `await` in user code — it merges the internal `hydraEvalAsync` into a single public function (BREAKING: the return value is now a Promise; `await` it)
-- Animation loop now managed by element itself (RAF) instead of delegating to hydra-synth's `autoLoop`
-- CI workflow now runs only on PRs to main (not on every push)
-- Web Test Runner config detects CI environment for sandbox flags
-
-### Removed
-
-- **BREAKING**: `tick()` method removed — use `el.synth.tick(dt)` directly
-- **BREAKING**: `loadScript()` method removed — use `el.synth.loadScript()` or load scripts manually
-- **BREAKING**: `transforms` property removed — use `el.synth.setFunction()` directly
-- `husky` and `lint-staged` dependencies (rely on CI for linting)
-- Redundant `.opencode/skills/` directory (generic principles not specific to this project)
-
 ## [0.7.0] - 2026-08-29
 
 ### Added
 
 - `ready` promise property — resolves with `{ synth }` when Hydra is initialized, safe to await even after connection
 - `loadScript()` now works in non-global mode — third-party libraries load without `global="true"`
-- ResizeObserver-based canvas sizing — canvas resolution automatically follows CSS size
+- Canvas resolution automatically follows element CSS size via ResizeObserver
 - CSS parts support — `::part(canvas)` and `::part(analyzer)` for styling internal canvases
 - Re-evaluation when `canvas` property changes — scene re-renders on custom canvas
 - Reconnection safety — moving element in DOM no longer re-initializes synth
 
 ### Changed
 
-- **BREAKING**: Architecture refactored into modules — `element.js` is now a thin facade delegating to `CanvasManager`, `HydraManager`, `LoopController`, and `AttributeHandler`
-- `helper.js` renamed to `parse.js` (better describes its purpose)
 - Default canvas size is now 0×0 (falls back to 1280×720) instead of `window.innerWidth × innerHeight`
 - Explicit `width`/`height` attributes take precedence over ResizeObserver
-- Internal method renames: `SYNTH_RECREATE_ATTRS` → `ATTRS_REQUIRING_SYNTH_RESET`, `isSynthRecreate` → `hasSynthResettingAttribute`, `_handleSynthRecreateChange` → `_handleSynthResetAttribute`
 
 ### Removed
 
-- **BREAKING**: `analyzer` attribute and `useAudioAnalyzer` option — use `::part(analyzer) { display: none }` CSS instead
+- **BREAKING**: `analyzer` attribute — use `::part(analyzer) { display: none }` CSS instead
 - **BREAKING**: `pb` option — access via `el.synth.pb` if needed
-- Duplicate `DEFAULT_OPTIONS` constant (now only in `attributes.js`)
 
 ## [0.6.0] - 2026-02-14
 
