@@ -210,7 +210,6 @@ el.addEventListener('hydra-eval', e => {
 | `code`   | string            | Get or set the scene code              |
 | `canvas` | HTMLCanvasElement | Custom canvas element to render on     |
 | `synth`  | HydraSynth        | Read-only access to the synth instance |
-| `pb`     | object            | rtc-patch-bay instance for streaming   |
 
 ### Events
 

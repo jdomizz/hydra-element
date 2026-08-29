@@ -98,26 +98,6 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
-   * Gets the value of pb.
-   *
-   * @returns {Object} The value of pb.
-   */
-  get pb() {
-    return this._options.pb
-  }
-
-  /**
-   * Sets the value of pb option.
-   * @param {Object} value - The value to set for pb.
-   */
-  set pb(value) {
-    this._options.pb = value
-    if (this._hydra) {
-      this._initHydra()
-    }
-  }
-
-  /**
    * Get the code of the element.
    * @returns {string} The code of the element.
    */

@@ -26,7 +26,6 @@ describe('<hydra-element>', () => {
     expect(el._options.numOutputs).to.equal(4)
     expect(el._options.precision).to.be.null
     expect(el._options.useAudioAnalyzer).to.be.true
-    expect(el.pb).to.be.null
   })
 
   it('should update options when attributes change', async () => {
@@ -101,12 +100,6 @@ describe('<hydra-element>', () => {
     el.code = 'osc().out()'
     const event = await eventPromise
     expect(event.detail.success).to.be.true
-  })
-
-  it('should set pb', async () => {
-    const el = await fixture(html`<hydra-element></hydra-element>`)
-    el.pb = undefined
-    expect(el.pb).to.equal(undefined)
   })
 
   it('should observe loop attribute', async () => {
