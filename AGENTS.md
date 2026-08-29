@@ -49,7 +49,15 @@ When implementing a spec:
 1. Move it from `backlog/` to `active/`
 2. Implement according to the spec's "Done when" criteria
 3. User reviews and approves
-4. Move to `archive/` and update README status with commit hash
+4. Move to `archive/`
+5. Update docs if needed: README status with commit hash, CHANGELOG entry, and AGENTS.md if the implementation changes commands, dependencies, architecture, or workflow
+
+When a spec (or any feature/fix) is finished and approved, **update the docs** before considering it done:
+
+- **README** — reflect any new/changed features, usage, or status
+- **CHANGELOG** — add an entry describing the change (follow its existing format)
+- **AGENTS.md** — amend if the change affects commands, dependencies, architecture, or workflow
+- Only update each doc if it's actually affected by the change; don't pad with noise
 
 **Important:** Specs can only move to `archive/` after explicit user approval, even if implementation is complete.
 
