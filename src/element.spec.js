@@ -69,6 +69,35 @@ describe('<hydra-element>', () => {
     expect(el.canvas).to.equal(canvas)
   })
 
+  it('should expose synth property', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    expect(el.synth).to.exist
+    expect(el.synth.time).to.be.a('number')
+    expect(el.synth.osc).to.be.a('function')
+  })
+
+  it('should dispatch hydra-ready event', async () => {
+    let readySynth = null
+    const el = document.createElement('hydra-element')
+    el.addEventListener('hydra-ready', (e) => {
+      readySynth = e.detail.synth
+    })
+    document.body.appendChild(el)
+    await new Promise(resolve => setTimeout(resolve, 10))
+    expect(readySynth).to.exist
+    el.remove()
+  })
+
+  it('should dispatch hydra-eval event on success', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const eventPromise = new Promise(resolve => {
+      el.addEventListener('hydra-eval', resolve)
+    })
+    el.code = 'osc().out()'
+    const event = await eventPromise
+    expect(event.detail.success).to.be.true
+  })
+
   it('should set transforms', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     const fn = {

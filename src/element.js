@@ -94,6 +94,15 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
+   * The hydra-synth instance (read-only)
+   * Provides access to DSL functions, sources, outputs for advanced use cases
+   * @returns {Object|undefined} The synth object
+   */
+  get synth() {
+    return this._hydra?.synth
+  }
+
+  /**
    * Get the transforms of the element.
    * @returns {Array<Function>} The extended transforms.
    */
@@ -290,6 +299,12 @@ export class HydraElement extends HTMLElement {
     if (this._connected && this._options.autoLoop) {
       this._startLoop()
     }
+    this.dispatchEvent(
+      new CustomEvent('hydra-ready', {
+        detail: { synth: this._hydra.synth },
+        bubbles: true
+      })
+    )
   }
 
   /**
@@ -308,8 +323,20 @@ export class HydraElement extends HTMLElement {
         }
         hydraEval(code, context)
       }
+      this.dispatchEvent(
+        new CustomEvent('hydra-eval', {
+          detail: { success: true },
+          bubbles: true
+        })
+      )
     } catch (e) {
       console.warn('[hydra-element] eval error:', e)
+      this.dispatchEvent(
+        new CustomEvent('hydra-eval', {
+          detail: { success: false, error: e },
+          bubbles: true
+        })
+      )
     }
   }
 
