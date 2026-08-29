@@ -147,6 +147,12 @@ describe('<hydra-element>', () => {
     expect(synth).to.equal(el.synth)
   })
 
+  it('exposes window._hydra for community extensions compatibility', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    expect(window._hydra).to.exist
+    expect(window._hydra).to.equal(el.hydraManager.hydra)
+  })
+
   for (const [label, code, success] of EVAL_CASES) {
     it(`dispatches hydra-eval for ${label}`, async () => {
       const el = await fixture(html`<hydra-element></hydra-element>`)

@@ -258,6 +258,19 @@ const { synth } = await el.ready
 | `hydra-ready` | `{ synth }`           | Fired when Hydra is initialized |
 | `hydra-eval`  | `{ success, error? }` | Fired after code evaluation     |
 
+## DOM manipulation
+
+You can move `<hydra-element>` around in the DOM without losing state. The element initializes once when first connected and won't re-initialize if moved:
+
+```js
+const el = document.querySelector('hydra-element')
+const newParent = document.createElement('div')
+document.body.appendChild(newParent)
+newParent.appendChild(el) // Safe — no re-initialization
+```
+
+If you completely remove the element from the DOM and reconnect it later, it will re-initialize fresh.
+
 ## Limitations
 
 ### WebGL context limit

@@ -170,6 +170,14 @@ export class HydraElement extends HTMLElement {
       scope: this._scope,
     })
     this.hydraManager.init()
+    
+    // Expose hydra instance globally for community extensions compatibility
+    // Note: With multiple elements, only the last initialized element's synth
+    // will be accessible via window._hydra
+    if (this.hydraManager.hydra) {
+      window._hydra = this.hydraManager.hydra
+    }
+    
     if (this._connected && this.attributeHandler.getOptions().autoLoop) {
       this._startLoop()
     }

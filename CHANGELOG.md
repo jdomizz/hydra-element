@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CSS parts: `::part(canvas)` and `::part(analyzer)`
 - Re-evaluation when `canvas` property changes
 - Reconnection safety — moving element in DOM no longer re-initializes
+- `window._hydra` exposed for community extensions compatibility (geikha/hyper-hydra, etc.)
 
 ### Fixed
 
@@ -41,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BREAKING**: `transforms` property — use `el.synth.setFunction()`
 - **BREAKING**: `analyzer` attribute — use `::part(analyzer) { display: none }`
 - **BREAKING**: `pb` option — access via `el.synth.pb`
+
+### Notes
+
+- `window._hydra` is re-exposed for community extensions compatibility. With multiple elements, only the last initialized element's synth will be accessible via `window._hydra`. For multi-element isolation, use `el.synth` instead.
 
 ## [0.6.0] - 2026-02-14
 
