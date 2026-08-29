@@ -19,7 +19,7 @@
 
 - Single-package web component library wrapping `hydra-synth`
 - Entry: `index.js` registers `<hydra-element>` from `src/element.js`
-- `src/eval.js` — uses `new Function` + `with(synth)` to eval user code with dynamic property resolution
+- `src/eval.js` — uses Proxy to eval user code with dynamic property resolution and better isolation
 - `src/helper.js` — pure parsing utilities (`parseNumber`, `parseJSON`, `parseOption`)
 - Build output: `dist/hydra-element.js` (ESM only, per `vite.config.js`)
 

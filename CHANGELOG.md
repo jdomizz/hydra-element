@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `src/eval.js` now uses Proxy for better isolation instead of raw `with(synth)`
+- `src/eval.js` now uses Proxy for better isolation (previously used destructuring + eval in 0.6.0)
 - Animation loop now managed by element itself (RAF) instead of delegating to hydra-synth's `autoLoop`
 
 ## [0.6.0] - 2026-02-14
