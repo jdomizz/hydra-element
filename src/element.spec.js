@@ -79,10 +79,10 @@ describe('<hydra-element>', () => {
   it('should dispatch hydra-ready event', async () => {
     let readySynth = null
     const el = document.createElement('hydra-element')
-    el.addEventListener('hydra-ready', (e) => {
+    el.addEventListener('hydra-ready', e => {
       readySynth = e.detail.synth
     })
-    document.body.appendChild(el)
+    document.body.append(el)
     await new Promise(resolve => setTimeout(resolve, 10))
     expect(readySynth).to.exist
     el.remove()

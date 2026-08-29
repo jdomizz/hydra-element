@@ -9,7 +9,7 @@
  */
 export function hydraEval(code, synth) {
   const proxy = new Proxy(synth, {
-    has(target, prop) {
+    has(_target, _prop) {
       return true
     },
     get(target, prop, receiver) {
@@ -17,7 +17,7 @@ export function hydraEval(code, synth) {
         return Reflect.get(target, prop, receiver)
       }
       return window[prop]
-    }
+    },
   })
   const fn = new Function('ctx', `with(ctx){${code}}`)
   fn(proxy)

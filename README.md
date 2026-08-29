@@ -120,7 +120,7 @@ document.querySelector('hydra-element').tick(dt)
 
 ### Attribute `global`
 
-If you set the `global` attribute to `true` all sources, functions and outputs of the synthesizer will be stored in the `window` object, so they will be directly available. You should use this option if you need to extend the functionality of the synthesizer by loading extensions or external libraries with `loadScript`.
+If you set the `global` attribute to `true` all sources, functions and outputs of the synthesizer will be stored in the `window` object, so they will be directly available.
 
 ```html
 <hydra-element global="true">
@@ -132,6 +132,50 @@ If you set the `global` attribute to `true` all sources, functions and outputs o
 
 > **Warning**
 > You must not use more than one `hydra-element` with `global` set to `true` in the same HTML document.
+
+**Note:** `loadScript` is now available in both global and non-global modes. You can load external libraries without polluting the global scope.
+
+### Property `synth`
+
+The `synth` property provides read-only access to the hydra-synth instance for advanced use cases:
+
+```js
+const el = document.querySelector('hydra-element')
+
+// Access sources and outputs
+el.synth.s0.initCam()
+el.synth.o1 // output buffer
+
+// Access dynamic properties
+el.synth.time
+el.synth.bpm = 120
+
+// Advanced methods
+el.synth.setFunction({ name: 'custom', type: 'src', ... })
+el.synth.setResolution(800, 600)
+```
+
+### Events
+
+The element dispatches custom events for lifecycle hooks:
+
+```js
+const el = document.querySelector('hydra-element')
+
+// Fired when hydra is initialized
+el.addEventListener('hydra-ready', e => {
+  console.log('Hydra initialized:', e.detail.synth)
+})
+
+// Fired after code evaluation
+el.addEventListener('hydra-eval', e => {
+  if (e.detail.success) {
+    console.log('Code evaluated successfully')
+  } else {
+    console.error('Eval failed:', e.detail.error)
+  }
+})
+```
 
 ### Attribute `audio`
 
@@ -215,8 +259,16 @@ document.querySelector('hydra-element').pb = yourRtcPatchBayInstance
 
 ## Limitations
 
-- The `loadScript` function is only available when `global` is `true`.
-- It is not possible to work with [p5.js](https://p5js.org) as in the Hydra web editor.
+- It is not possible to work with [p5.js](https://p5js.org) as in the Hydra web editor. However, you can load p5.js via `loadScript` and create a canvas manually:
+
+```html
+<hydra-element>
+  await loadScript("https://cdn.jsdelivr.net/npm/p5@1.7.0/lib/p5.min.js") const p5Canvas =
+  document.createElement('canvas') document.body.appendChild(p5Canvas) new p5((p) => { p.setup = ()
+  => p.createCanvas(400, 400, p.WEBGL, p5Canvas) p.draw = () => { p.background(220) p.ellipse(0, 0,
+  100, 100) } }) s0.init({ src: p5Canvas }) src(s0).out()
+</hydra-element>
+```
 
 ## Development
 

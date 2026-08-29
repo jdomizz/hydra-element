@@ -168,10 +168,10 @@ export class HydraElement extends HTMLElement {
   loadScript(url) {
     return new Promise((resolve, reject) => {
       const script = document.createElement('script')
-      script.onload = () => resolve()
-      script.onerror = () => reject(new Error(`Failed to load ${url}`))
+      script.addEventListener('load', () => resolve())
+      script.addEventListener('error', () => reject(new Error(`Failed to load ${url}`)))
       script.src = url
-      document.head.appendChild(script)
+      document.head.append(script)
     })
   }
 
@@ -302,7 +302,7 @@ export class HydraElement extends HTMLElement {
     this.dispatchEvent(
       new CustomEvent('hydra-ready', {
         detail: { synth: this._hydra.synth },
-        bubbles: true
+        bubbles: true,
       })
     )
   }
@@ -319,14 +319,14 @@ export class HydraElement extends HTMLElement {
       } else {
         const context = {
           ...this._hydra.synth,
-          loadScript: this.loadScript.bind(this)
+          loadScript: this.loadScript.bind(this),
         }
         hydraEval(code, context)
       }
       this.dispatchEvent(
         new CustomEvent('hydra-eval', {
           detail: { success: true },
-          bubbles: true
+          bubbles: true,
         })
       )
     } catch (e) {
@@ -334,7 +334,7 @@ export class HydraElement extends HTMLElement {
       this.dispatchEvent(
         new CustomEvent('hydra-eval', {
           detail: { success: false, error: e },
-          bubbles: true
+          bubbles: true,
         })
       )
     }
