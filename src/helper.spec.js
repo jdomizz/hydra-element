@@ -26,6 +26,18 @@ describe('parseNumber', () => {
   it('should use Infinity as default max', () => {
     expect(parseNumber('999999', 0, 0)).to.equal(999999)
   })
+
+  it('should reject partial number strings like "10abc"', () => {
+    expect(parseNumber('10abc', 0, 0)).to.equal(0)
+  })
+
+  it('should reject strings with leading numbers like "5px"', () => {
+    expect(parseNumber('5px', 0, 0)).to.equal(0)
+  })
+
+  it('should accept valid decimal numbers', () => {
+    expect(parseNumber('42', 0, 0)).to.equal(42)
+  })
 })
 
 describe('parseJSON', () => {

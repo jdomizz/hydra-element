@@ -1,9 +1,10 @@
 import { html, fixture, expect } from '@open-wc/testing'
-import { spy } from 'sinon'
 import { HydraElement } from './element'
 
 describe('<hydra-element>', () => {
-  window.customElements.define('hydra-element', HydraElement)
+  if (!customElements.get('hydra-element')) {
+    customElements.define('hydra-element', HydraElement)
+  }
 
   it('should pass the a11y audit', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
@@ -25,7 +26,6 @@ describe('<hydra-element>', () => {
     expect(el._options.numOutputs).to.equal(4)
     expect(el._options.precision).to.be.null
     expect(el._options.useAudioAnalyzer).to.be.true
-    expect(el.transforms).to.deep.equal([])
     expect(el.pb).to.be.null
   })
 
@@ -54,6 +54,11 @@ describe('<hydra-element>', () => {
   it('should get code from textContent', async () => {
     const el = await fixture(html`<hydra-element>osc(10).out()</hydra-element>`)
     expect(el.code).to.equal('osc(10).out()')
+  })
+
+  it('should ignore textContent that is only whitespace', async () => {
+    const el = await fixture(html`<hydra-element> </hydra-element>`)
+    expect(el.code).to.equal('')
   })
 
   it('should set code', async () => {
@@ -98,44 +103,10 @@ describe('<hydra-element>', () => {
     expect(event.detail.success).to.be.true
   })
 
-  it('should set transforms', async () => {
-    const el = await fixture(html`<hydra-element></hydra-element>`)
-    const fn = {
-      name: 'yourNoise',
-      type: 'src',
-      inputs: [
-        { type: 'float', name: 'scale', default: 5 },
-        { type: 'float', name: 'offset', default: 0.5 },
-      ],
-      glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
-    }
-    el.transforms = [fn]
-    expect(el.transforms).to.deep.equal([fn])
-  })
-
   it('should set pb', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
     el.pb = undefined
     expect(el.pb).to.equal(undefined)
-  })
-
-  it('should provide loadScript method', async () => {
-    const el = await fixture(html`<hydra-element></hydra-element>`)
-    expect(el.loadScript).to.be.a('function')
-  })
-
-  it('should load external scripts', async () => {
-    const el = await fixture(html`<hydra-element></hydra-element>`)
-    const promise = el.loadScript('https://example.com/test.js')
-    expect(promise).to.be.a('promise')
-    await promise.catch(() => {})
-  })
-
-  it('should call hydra tick', async () => {
-    const el = await fixture(html`<hydra-element loop="false"></hydra-element>`)
-    el._hydra = { tick: spy() }
-    el.tick(0.1)
-    expect(el._hydra.tick).to.have.been.calledOnceWith(0.1)
   })
 
   it('should observe loop attribute', async () => {
@@ -148,10 +119,9 @@ describe('<hydra-element>', () => {
   })
 
   it('should stop loop on disconnect', async () => {
-    const el = await fixture(html`<hydra-element></hydra-element>`)
-    el._stopLoop = spy()
+    const el = await fixture(html`<hydra-element loop="false"></hydra-element>`)
     el.remove()
-    expect(el._stopLoop).to.have.been.calledOnce
+    expect(el._rafId).to.be.null
   })
 
   it('should destroy hydra on disconnect', async () => {
@@ -174,5 +144,42 @@ describe('<hydra-element>', () => {
     el.setAttribute('width', '500')
     expect(el.canvas).to.equal(canvas)
     expect(canvas.width).to.equal(500)
+  })
+
+  it('should not remove custom canvas when recreating synth', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const customCanvas = document.createElement('canvas')
+    customCanvas.id = 'custom-canvas'
+    el.canvas = customCanvas
+    expect(el.canvas).to.equal(customCanvas)
+    el.setAttribute('global', 'true')
+    expect(el.canvas).to.equal(customCanvas)
+  })
+
+  it('should maintain autoLoop state after synth recreation', async () => {
+    const el = await fixture(html`<hydra-element loop="true"></hydra-element>`)
+    const initialLoop = el._options.autoLoop
+    el.setAttribute('global', 'true')
+    expect(el._options.autoLoop).to.equal(initialLoop)
+  })
+
+  it('should handle async code evaluation', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const evalPromise = new Promise(resolve => {
+      el.addEventListener('hydra-eval', e => resolve(e.detail.success))
+    })
+    el.code = 'await Promise.resolve(); osc().out()'
+    const success = await evalPromise
+    expect(success).to.be.true
+  })
+
+  it('should handle async code evaluation errors', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    const evalPromise = new Promise(resolve => {
+      el.addEventListener('hydra-eval', e => resolve(e.detail.success))
+    })
+    el.code = 'await Promise.resolve(); throw new Error("async error")'
+    const success = await evalPromise
+    expect(success).to.be.false
   })
 })

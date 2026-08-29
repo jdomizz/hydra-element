@@ -7,7 +7,7 @@
  * @returns {number} - The parsed number or the default value if the parsed value is not a number or is outside the specified range.
  */
 export function parseNumber(value, defaultValue, min, max = Infinity) {
-  const parsedValue = parseInt(value, 10)
+  const parsedValue = Number(value)
   return isOutOfRange(parsedValue, min, max) ? defaultValue : parsedValue
 }
 
