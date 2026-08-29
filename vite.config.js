@@ -3,9 +3,12 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   build: {
     lib: {
-      entry: 'index.js',
+      entry: {
+        'hydra-element': 'index.js',
+        eval: 'eval.js',
+      },
       formats: ['es'],
-      fileName: 'hydra-element',
+      fileName: (format, entryName) => `${entryName}.js`,
     },
   },
   optimizeDeps: {

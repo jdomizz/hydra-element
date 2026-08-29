@@ -31,7 +31,12 @@
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
   "exports": {
-    ".": "./dist/hydra-element.js"
+    ".": {
+      "import": "./dist/hydra-element.js"
+    },
+    "./eval": {
+      "import": "./dist/eval.js"
+    }
   },
   "scripts": {
     "dev": "vite --host",

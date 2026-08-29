@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `hydra-eval` event dispatched after code evaluation (success or error)
 - `loadScript` method now works in non-global mode
 - `parseNumber` now accepts optional `max` parameter (defaults to Infinity)
+- **`hydraEval` is now exported as a standalone function** via `hydra-element/eval` subpath export, enabling isolated multi-instance hydra-synth usage without the custom element
 
 ### Fixed
 

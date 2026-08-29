@@ -36,6 +36,16 @@ Once you’ve done that, import the custom element in your JavaScript module.
 import 'hydra-element'
 ```
 
+### Standalone eval (without custom element)
+
+If you only need isolated eval for multi-instance hydra-synth setups (without the custom element), import just the `hydraEval` function:
+
+```js
+import { hydraEval } from 'hydra-element/eval'
+```
+
+This is useful for projects that manage their own hydra-synth instances and need per-instance code isolation without polluting the global scope. See [Advanced usage](#advanced-usage) for examples.
+
 ## Usage
 
 Include your code between the element tags.
@@ -256,6 +266,50 @@ If you have access to an instance of `rtc-patch-bay` for streaming, you can assi
 ```js
 document.querySelector('hydra-element').pb = yourRtcPatchBayInstance
 ```
+
+## Advanced usage
+
+### Multi-instance hydra-synth with `hydraEval`
+
+If you're building a tool that needs multiple hydra-synth instances (e.g., a VJ app with multiple outputs, a split-screen visualizer, or a live coding environment with independent scenes), you can use `hydraEval` to evaluate code in an isolated scope per instance:
+
+```js
+import Hydra from 'hydra-synth'
+import { hydraEval } from 'hydra-element/eval'
+
+// Create multiple hydra instances, all with makeGlobal: false
+const canvas1 = document.getElementById('canvas1')
+const canvas2 = document.getElementById('canvas2')
+
+const hydra1 = new Hydra({ canvas: canvas1, makeGlobal: false, autoLoop: false })
+const hydra2 = new Hydra({ canvas: canvas2, makeGlobal: false, autoLoop: false })
+
+// Evaluate code in each instance's isolated scope
+hydraEval('osc(10, 0.5, 0.1).out()', hydra1.synth)
+hydraEval('noise(5, 0.3).out()', hydra2.synth)
+
+// Each instance has its own time, bpm, sources, outputs
+hydraEval('bpm = 120', hydra1.synth)
+hydraEval('bpm = 90', hydra2.synth)
+
+// Manual tick loop
+function loop() {
+  hydra1.tick(16)
+  hydra2.tick(16)
+  requestAnimationFrame(loop)
+}
+loop()
+```
+
+This approach:
+
+- **No global pollution**: each instance's `osc`, `noise`, `s0`, `o0`, etc. are isolated
+- **No `rebindSynthGlobals` hacks**: the Proxy-based eval resolves properties per-instance
+- **Works with `loadScript`**: inject it into the context if needed:
+  ```js
+  const context = { ...hydra.synth, loadScript: url => import(url) }
+  hydraEval(code, context)
+  ```
 
 ## Limitations
 
