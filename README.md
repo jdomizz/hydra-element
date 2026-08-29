@@ -6,7 +6,7 @@ A custom element for wrapping the [hydra-synth](https://github.com/hydra-synth/h
 
 [Hydra](https://hydra.ojack.xyz/) is a video synth and coding environment that runs in the browser. It stands out for its elegant DSL, modeled on a fluent interface.
 
-This project aims to simplify the render of Hydra scripts in HTML documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (Hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). 
+This project aims to simplify the render of Hydra scripts in HTML documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (Hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components).
 
 By default each `hydra-element` contains its own `hydra-synth` (with its own sources, functions and outputs). In this way, several elements can be used in the same HTML document without collisions.
 
@@ -33,7 +33,7 @@ npm install hydra-element
 Once you’ve done that, import the custom element in your JavaScript module.
 
 ```js
-import "hydra-element"
+import 'hydra-element'
 ```
 
 ## Usage
@@ -42,14 +42,10 @@ Include your code between the element tags.
 
 ```html
 <hydra-element>
-  s0.initImage("https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg")
-
-  osc(30,0.01,1)
-    .mult(osc(() => (100 * Math.sin(time * 0.1)),-0.1,1).modulate(noise(3,1)).rotate(0.7))
-    .blend(src(s0))
-    .posterize([3,10,2].fast(0.5).smooth(1))
-    .modulateRotate(o0, () => mouse.x * 0.003)
-    .out()
+  s0.initImage("https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg") osc(30,0.01,1)
+  .mult(osc(() => (100 * Math.sin(time * 0.1)),-0.1,1).modulate(noise(3,1)).rotate(0.7))
+  .blend(src(s0)) .posterize([3,10,2].fast(0.5).smooth(1)) .modulateRotate(o0, () => mouse.x *
+  0.003) .out()
 </hydra-element>
 ```
 
@@ -68,6 +64,7 @@ hydra-element {
   color: white;
 }
 ```
+
 You can see and remix a live example [here](https://glitch.com/edit/#!/hydra-element).
 
 ## Configuration
@@ -93,7 +90,7 @@ You can use the following attributes and properties to configure these options. 
 
 ### Attributes `width` and `height`
 
-In addition to the engine, the custom element also takes care of the canvas. By default it creates one the size of the window, which is useful for many cases. If this is not yours, you can use the `width` and `height` attributes to modify the canvas size. 
+In addition to the engine, the custom element also takes care of the canvas. By default it creates one the size of the window, which is useful for many cases. If this is not yours, you can use the `width` and `height` attributes to modify the canvas size.
 
 ```html
 <hydra-element width="250" height="250"></hydra-element>
@@ -127,8 +124,8 @@ If you set the `global` attribute to `true` all sources, functions and outputs o
 
 ```html
 <hydra-element global="true">
-  await loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
-  
+  await
+  loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
   warp().out()
 </hydra-element>
 ```
@@ -141,11 +138,7 @@ If you set the `global` attribute to `true` all sources, functions and outputs o
 Hydra's audio capabilities are disabled by default because they require requesting microphone permissions and not all scripts use them, so don't forget to set the `audio` attribute to `true` if you use the `a` object in your script.
 
 ```html
-<hydra-element audio="true">
-  a.show()
-
-  osc(10, 0, () => a.fft[0]*4).out()
-</hydra-element>
+<hydra-element audio="true"> a.show() osc(10, 0, () => a.fft[0]*4).out() </hydra-element>
 ```
 
 ### Attribute `analyzer`
@@ -162,18 +155,10 @@ You can use the `sources` attribute to set the number of source buffers availabl
 
 ```html
 <hydra-element sources="8">
-  const { s6, s7 } = synth
-
-  s0.initCam()
-  s1.initScreen()
+  const { s6, s7 } = synth s0.initCam() s1.initScreen()
   s6.initImage('https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg')
-  s7.initVideo('https://media.giphy.com/media/AS9LIFttYzkc0/giphy.mp4')
-
-  src(s0)
-    .blend(src(s1))
-    .blend(src(s6))
-    .blend(src(s7))
-    .out()
+  s7.initVideo('https://media.giphy.com/media/AS9LIFttYzkc0/giphy.mp4') src(s0) .blend(src(s1))
+  .blend(src(s6)) .blend(src(s7)) .out()
 </hydra-element>
 ```
 
@@ -182,13 +167,7 @@ You can use the `sources` attribute to set the number of source buffers availabl
 You can use the `outputs` attribute to set the number of output buffers to use. The default value is `4`. Extra buffers are available via the `synth` object.
 
 ```html
-<hydra-element outputs="8">
-  const { o7 } = synth
-
-  osc().out(o7)
-
-  render(o7)
-</hydra-element>
+<hydra-element outputs="8"> const { o7 } = synth osc().out(o7) render(o7) </hydra-element>
 ```
 
 > **Warning**
@@ -207,25 +186,23 @@ You can use the `precision` attribute to force precision of shaders. By default 
 You can add custom GLSL functions setting the `transforms` property with JavaScript.
 
 ```js
-document.querySelector('hydra-element').transforms = [{
-  name: 'yourNoise',
-  type: 'src',
-  inputs: [
-    { type: 'float', name: 'scale', default: 5 },
-    { type: 'float', name: 'offset', default: 0.5 }
-  ],
-  glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`
-}]
+document.querySelector('hydra-element').transforms = [
+  {
+    name: 'yourNoise',
+    type: 'src',
+    inputs: [
+      { type: 'float', name: 'scale', default: 5 },
+      { type: 'float', name: 'offset', default: 0.5 },
+    ],
+    glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
+  },
+]
 ```
 
 Once done, you can use the new functions in your script. Generator functions (those of type `src`) will be available via the `synth` object.
 
 ```html
-<hydra-element>
-  const { yourNoise } = synth
-
-  yourNoise().out()
-</hydra-element>
+<hydra-element> const { yourNoise } = synth yourNoise().out() </hydra-element>
 ```
 
 ### Property `pb`
