@@ -8,7 +8,6 @@ export default {
     playwrightLauncher({
       product: 'chromium',
       launchOptions: {
-        executablePath: '/usr/bin/chromium-browser',
         args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',

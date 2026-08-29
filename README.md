@@ -85,7 +85,8 @@ numSources: 4,
 numOutputs: 4,
 extendTransforms: [],
 precision: null,
-pb: null
+pb: null,
+useAudioAnalyzer: true
 ```
 
 You can use the following attributes and properties to configure these options. Read the `hydra-synth` [API](https://github.com/hydra-synth/hydra-synth#api) documentation for more information.

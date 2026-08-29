@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- `time`, `speed`, `bpm`, `width`, `height` now resolve dynamically in non-global mode (README example now works)
+- Removed `globalThis._hydra` leak that broke multi-element isolation
+- `loop` attribute now properly observed and functional
+- `attributeChangedCallback` no longer recreates canvas/synth on every change (only for `global`, `audio`, `sources`, `outputs`, `precision`)
+- Added `disconnectedCallback` to prevent memory leaks when element is removed
+- Added error handling in `_evalCode` to catch user code errors
+
+### Changed
+
+- `src/eval.js` now uses `new Function` + `with(synth)` for dynamic property resolution
+- Animation loop now managed by element itself (RAF) instead of delegating to hydra-synth's `autoLoop`
+
 ## [0.6.0] - 2026-02-14
 
 ### Added
