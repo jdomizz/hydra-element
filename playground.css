@@ -52,42 +52,16 @@ body {
 
 .app__center {
   grid-area: center;
-  background: var(--panel-bg);
-  padding: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.canvas__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.canvas__head h2 {
-  margin: 0;
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-}
-
-.canvas-wrap {
-  flex: 1 1 auto;
   background: #000;
-  border-radius: 4px;
-  overflow: hidden;
   display: flex;
   min-height: 0;
 }
 
-.canvas-wrap hydra-element {
+.app__center hydra-element {
   flex: 1 1 auto;
+  width: 100%;
   display: flex;
   min-height: 0;
-  width: 100%;
 }
 
 .app__right {
@@ -381,7 +355,7 @@ body {
     min-height: 12rem;
   }
 
-  .canvas-wrap {
+  .app__center {
     min-height: 50vh;
   }
 
