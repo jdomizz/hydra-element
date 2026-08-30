@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TypeScript declarations via `dist/hydra-element.d.ts` and `dist/eval.d.ts`
 - Internal canvas has `role="img"` and `aria-label="Hydra visual"`
 - Analyzer canvases are marked `aria-hidden="true"`
+- `ARCHITECTURE.md` describing modules, eval proxy, transient bridge, lifecycle, and build
+- `CONTRIBUTING.md` reorganized for maintainers (commands, tests, spec workflow, release process)
 
 ### Changed
 
@@ -24,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Multiple synth-reset attribute changes in one tick are coalesced into a single reset
 - Async evaluations are now serialized in submission order
 - Undefined identifiers in user code emit a one-time warning to `console.warn`
+- `loadScript` (and `el.loadScript`) now transiently publish the element's Hydra on `window` while a script loads and restore the prior state when it settles
+- Non-global elements no longer bind `_hydra`, `synth`, or DSL functions on `window`
+- README is now oriented at the creative coder; implementation details moved to `ARCHITECTURE.md`
 
 ### Fixed
 

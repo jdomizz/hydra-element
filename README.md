@@ -2,47 +2,25 @@
 
 Create generative visuals with [Hydra](https://hydra.ojack.xyz/) directly in your web pages.
 
-`hydra-element` lets you embed Hydra scenes in HTML with a single tag. Each element runs independently, so you can have multiple visuals on the same page without conflicts.
-
-## Quick Start
-
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element"></script>
 
 <hydra-element> osc(10, 0.2, 0.5).out() </hydra-element>
 ```
 
-That's it. Open that HTML in your browser and you'll see an oscillator running.
+That's it. Drop the tag in, write Hydra code between the tags, you're live.
 
-### Multiple visuals
+Multiple `<hydra-element>` on one page each run their own Hydra engine — no conflicts, no shared state.
 
-You can have several independent scenes on the same page:
+## Install
 
-```html
-<hydra-element style="width: 50%; height: 50vh; display: inline-block">
-  osc(30, 0.1, 1).out()
-</hydra-element>
-
-<hydra-element style="width: 50%; height: 50vh; display: inline-block">
-  noise(5, 0.3).out()
-</hydra-element>
-```
-
-Each `<hydra-element>` has its own Hydra engine, so there are no conflicts between them.
-
-## Installation
-
-### CDN (recommended)
-
-Add this line to your HTML and you're good to go:
+CDN (recommended for quick sketches):
 
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element"></script>
 ```
 
-### With npm
-
-If you're using a bundler or framework:
+With a bundler:
 
 ```sh
 npm install hydra-element
@@ -52,147 +30,67 @@ npm install hydra-element
 import 'hydra-element'
 ```
 
-## Examples
+## Write code
 
-### Load an image or video
-
-```html
-<hydra-element>
-  s0.initImage("https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg") src(s0).osc(10,
-  0.1, 0.5).out()
-</hydra-element>
-```
-
-### React to audio
-
-Enable the microphone with the `audio` attribute:
+The element runs any Hydra code you put between its tags. The full DSL works directly — `osc()`, `solid()`, `out()`, `setFunction()`, sources (`s0`–`s3`), outputs (`o0`–`o3`), `time`, `bpm`, `speed`. No `synth.` prefix needed.
 
 ```html
-<hydra-element audio="true"> osc(10, 0, () => a.fft[0] * 4).out() </hydra-element>
+<hydra-element> noise(3, 0.1).color(0.5, 0.5, 0.5).out() </hydra-element>
 ```
 
-To hide the audio analyzer UI:
-
-```css
-hydra-element::part(analyzer) {
-  display: none;
-}
-```
-
-### Use camera and screen
-
-```html
-<hydra-element> s0.initCam() s1.initScreen() src(s0).blend(src(s1)).out() </hydra-element>
-```
-
-### Update code dynamically
-
-If you need to change the scene from JavaScript:
+Update the scene from JavaScript by setting `code`:
 
 ```js
 document.querySelector('hydra-element').code = 'osc().out()'
 ```
 
-## Styling with CSS
+Or `await el.ready` to get the synth when initialization finishes:
 
-Use regular CSS to style the element:
-
-```css
-hydra-element {
-  width: 400px;
-  height: 400px;
-}
+```js
+const el = document.querySelector('hydra-element')
+const { synth } = await el.ready
+synth.s0.initCam()
+synth.bpm = 120
 ```
 
-Or use the `width` and `height` attributes:
+## Common patterns
+
+### Camera, screen, image, video
 
 ```html
-<hydra-element width="400" height="400"></hydra-element>
+<hydra-element> s0.initCam() s1.initScreen() src(s0).blend(src(s1)).out() </hydra-element>
 ```
 
-### Canvas sizing
+### Audio reactivity
 
-The canvas resolution automatically follows the element's CSS size via ResizeObserver. If you set explicit `width`/`height` attributes, those take precedence over the observer.
+```html
+<hydra-element audio="true"> osc(10, 0, () => a.fft[0] * 4).out() </hydra-element>
+```
 
-### CSS parts
-
-Style internal canvases using CSS parts:
+To hide the analyzer UI:
 
 ```css
-/* Style the main canvas */
-hydra-element::part(canvas) {
-  border: 2px solid red;
-  image-rendering: pixelated;
-}
-
-/* Hide the audio analyzer */
 hydra-element::part(analyzer) {
   display: none;
 }
 ```
 
-## Configuration
-
-### More buffers (sources and outputs)
-
-By default you get 4 source buffers (`s0`-`s3`) and 4 output buffers (`o0`-`o3`). If you need more:
-
-```html
-<hydra-element sources="8" outputs="8">
-  s0.initCam() s6.initImage('https://example.com/image.jpg')
-  s7.initVideo('https://example.com/video.mp4') src(s0).blend(src(s6)).blend(src(s7)).out()
-</hydra-element>
-```
-
-### Loading third-party libraries with `loadScript`
-
-`loadScript(url)` loads a third-party library so you can use it in your scene (e.g. p5, three, or custom shader libraries). It works in **both** global and isolated (non-global) modes:
+### Custom GLSL with `setFunction`
 
 ```html
 <hydra-element>
-  await
-  loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
-  warp().out()
+  setFunction({ name: 'myNoise', type: 'src', inputs: [{ type: 'float', name: 'scale', default: 5
+  }], glsl: `return vec4(vec3(_noise(vec3(_st*scale, time))), 0.5);` }) myNoise(10).out()
 </hydra-element>
 ```
 
-> **Warning:** Loaded scripts run with full page privileges — they are not sandboxed. Only load scripts you trust. This is separate from the eval sandboxing note below.
+### React + Vue + Svelte
 
-`loadScript` also transiently exposes this element's Hydra surface on `window` while the script loads, so extension scripts that assume the Hydra globals (bare `setFunction(...)`, `window._hydra`, `window.synth`) can self-register. The previous `window` state is restored once the script finishes loading. Outside of `loadScript` calls, the element never touches `window` in non-global mode — multiple `<hydra-element>` on one page stay isolated from each other.
+`<hydra-element>` is a standard custom element — use it like any HTML tag from any framework.
 
-### Community Extensions
+## Community extensions
 
-`hydra-element` is compatible with the [Hydra extensions ecosystem](https://github.com/hydra-synth/hydra-extensions). All DSL functions (`setFunction()`, `osc()`, `solid()`, etc.) work directly inside the code without needing the `synth.` prefix.
-
-#### metagrowing/extra-shaders-for-hydra
-
-Add noise, patterns, and color filters:
-
-```html
-<hydra-element>
-  await loadScript("https://metagrowing.org/extra-shaders-for-hydra/lib-noise.js") turb(3, 0, () =>
-  6 * ((0.5 * time) % 1.0)).out(o0)
-</hydra-element>
-```
-
-Other extensions: `lib-pattern.js`, `lib-color.js`, `lib-softpattern.js`, `lib-screen.js`
-
-#### geikha/hyper-hydra
-
-Extended source functions with aspect ratio handling:
-
-```html
-<hydra-element>
-  await loadScript("https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-src.js")
-  srcAbs(s0).out()
-</hydra-element>
-```
-
-Other extensions: `hydra-wrap.js`, `hydra-blend.js`, `hydra-arithmetics.js`, `hydra-text.js`
-
-#### arnoson/hydra-midi
-
-Control visuals with MIDI devices:
+Hydra has a rich ecosystem of extensions. Load any of them with `loadScript` inside the element's code:
 
 ```html
 <hydra-element>
@@ -201,190 +99,144 @@ Control visuals with MIDI devices:
 </hydra-element>
 ```
 
-#### atfornes/Hydra-strudel-extension
+Works in both global and isolated mode. `loadScript` transiently publishes this element's Hydra on `window` while the script loads, so scripts that call bare `setFunction(...)` or read `window._hydra` self-register on this element's synth — and `window` returns to its prior state when the load finishes. Multiple elements stay isolated.
 
-Synchronize visuals with Strudel audio patterns:
+A few popular extensions:
 
-```html
-<hydra-element>
-  await
-  loadScript("https://cdn.jsdelivr.net/gh/atfornes/Hydra-strudel-extension@latest/hydra-strudel.js")
-  await initHydraStrudel() shape(P("3 <4 5> 6 7>")).out(o0)
-</hydra-element>
+- [metagrowing/extra-shaders-for-hydra](https://github.com/metagrowing/extra-shaders-for-hydra) — `turb`, `warp`, `lib-noise`, `lib-pattern`, `lib-color`
+- [geikha/hyper-hydra](https://github.com/geikha/hyper-hydra) — `srcAbs`, aspect-ratio aware sources
+- [arnoson/hydra-midi](https://github.com/arnoson/hydra-midi) — MIDI control (`midi()`, `note()`, `cc()`)
+- [atfornes/Hydra-strudel-extension](https://github.com/atfornes/Hydra-strudel-extension) — sync with Strudel patterns
+- p5.js, three.js — any library that registers a global; access it via `window.p5` etc.
+
+> **Warning:** Loaded scripts run with full page privileges. Only load scripts you trust.
+
+## Styling
+
+### Canvas sizing
+
+The canvas automatically follows the element's CSS size. Set explicit dimensions with CSS or the `width`/`height` attributes — attributes win.
+
+```css
+hydra-element {
+  width: 400px;
+  height: 400px;
+}
 ```
 
-#### p5.js
-
-Use p5.js for creative coding alongside Hydra:
-
 ```html
-<hydra-element>
-  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js") // p5.js is now
-  available as window.p5 osc().out()
-</hydra-element>
+<hydra-element width="800" height="600"></hydra-element>
 ```
 
-#### Custom GLSL functions with `setFunction()`
+### CSS parts
 
-Add your own GLSL functions directly in the code:
+Style internal canvases:
 
-```html
-<hydra-element>
-  setFunction({ name: 'myNoise', type: 'src', inputs: [ { type: 'float', name: 'scale', default: 5
-  }, { type: 'float', name: 'offset', default: 0.5 } ], glsl: `return
-  vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);` }) myNoise(10, 0.2).out()
-</hydra-element>
+```css
+hydra-element::part(canvas) {
+  border: 2px solid red;
+  image-rendering: pixelated;
+}
+
+hydra-element::part(analyzer) {
+  display: none;
+}
 ```
 
-You can also access the synth instance via `synth.setFunction()` or `window.synth.setFunction()` if needed.
+## Configuration
+
+| Attribute   | Default | What it does                                       |
+| ----------- | ------- | -------------------------------------------------- |
+| `width`     | CSS     | Canvas width in pixels (wins over ResizeObserver)  |
+| `height`    | CSS     | Canvas height in pixels (wins over ResizeObserver) |
+| `audio`     | `false` | Enable microphone input                            |
+| `loop`      | `true`  | Run the animation loop                             |
+| `global`    | `false` | Keep Hydra globals on `window` permanently         |
+| `sources`   | `4`     | Number of source buffers (max 16)                  |
+| `outputs`   | `4`     | Number of output buffers (max 16)                  |
+| `precision` | auto    | Shader precision: `highp`, `mediump`, or `lowp`    |
+
+Need more than 4 sources/outputs?
+
+```html
+<hydra-element sources="8" outputs="8">
+  s0.initCam() s6.initImage('https://example.com/image.jpg') src(s0).blend(src(s6)).out()
+</hydra-element>
+```
 
 ### Global mode
 
-By default, each element has its own isolated scope. `loadScript` bridges the Hydra globals **transiently** while a script loads — that covers every extension in the Community Extensions section above. If you need the Hydra globals to stay on `window` permanently (e.g. extensions whose callbacks read `window._hydra` lazily after `loadScript` resolves, or page-level scripts that expect the globals to be there before any `loadScript` runs), opt into global mode:
+By default each element is isolated. `loadScript` already bridges the Hydra globals while a script loads — that's enough for every community extension above. Only opt into `global="true"` if you need the globals to stay on `window` permanently (extensions whose callbacks read `window._hydra` _after_ `loadScript` resolves, or page-level scripts that expect the globals before any `loadScript` runs):
 
 ```html
 <hydra-element global="true"> osc(10, 0.2, 0.5).out() </hydra-element>
 ```
 
-In global mode, `_hydra`, `synth`, and the DSL functions stay on `window` for the element's lifetime.
+> You can only have one element with `global="true"` per page. With multiple elements, the last one initialized wins.
 
-> **Warning:** You can only have one element with `global="true"` per page. With multiple elements, the last-initialized one wins.
-
-### Advanced synth access
-
-If you need full control over Hydra, access the synth instance:
-
-```js
-const el = document.querySelector('hydra-element')
-
-// Initialize sources
-el.synth.s0.initCam()
-el.synth.s1.initScreen()
-
-// Change BPM
-el.synth.bpm = 120
-
-// Access time
-console.log(el.synth.time)
-
-// Change resolution
-el.synth.setResolution(800, 600)
-
-// Add custom GLSL functions
-el.synth.setFunction({
-  name: 'myNoise',
-  type: 'src',
-  inputs: [
-    { type: 'float', name: 'scale', default: 5 },
-    { type: 'float', name: 'offset', default: 0.5 },
-  ],
-  glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
-})
-
-// Load an extension script from page JS (same transient-bridge behavior
-// as the in-code loadScript)
-await el.loadScript('https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-src.js')
-```
-
-### Events
-
-You can listen for when Hydra is ready or when code is evaluated:
-
-```js
-const el = document.querySelector('hydra-element')
-
-el.addEventListener('hydra-ready', e => {
-  console.log('Hydra initialized:', e.detail.synth)
-})
-
-el.addEventListener('hydra-eval', e => {
-  if (e.detail.success) {
-    console.log('Code executed successfully')
-  } else {
-    console.error('Error:', e.detail.error)
-  }
-})
-```
-
-Or use the `ready` promise (safe to await even after connection):
-
-```js
-const { synth } = await el.ready
-```
-
-## API Reference
-
-### Attributes
-
-| Attribute   | Type    | Default    | Description                                                                     |
-| ----------- | ------- | ---------- | ------------------------------------------------------------------------------- |
-| `width`     | number  | CSS width  | Canvas width in pixels (takes precedence over ResizeObserver)                   |
-| `height`    | number  | CSS height | Canvas height in pixels (takes precedence over ResizeObserver)                  |
-| `audio`     | boolean | `false`    | Enable microphone input                                                         |
-| `loop`      | boolean | `true`     | Enable animation loop (the element manages its own RAF loop, not hydra-synth's) |
-| `global`    | boolean | `false`    | Make Hydra functions global                                                     |
-| `sources`   | number  | `4`        | Number of source buffers                                                        |
-| `outputs`   | number  | `4`        | Number of output buffers                                                        |
-| `precision` | string  | `null`     | Shader precision: `highp`, `mediump`, or `lowp` (`null` = hydra-synth default)  |
+## API reference
 
 ### Properties
 
-| Property    | Type              | Description                                                                                                              |
-| ----------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `code`      | string            | Get or set the scene code                                                                                                |
-| `canvas`    | HTMLCanvasElement | Custom canvas element to render on. Setting this property recreates the Hydra instance and re-evaluates the code.        |
-| `synth`     | HydraSynth        | Read-only access to the synth instance                                                                                   |
-| `ready`     | Promise           | Resolves with `{ synth }` when Hydra is initialized; always reflects the live synth                                      |
-| `destroy()` | method            | Full teardown — stops the loop, destroys the synth, removes analyzer canvases. Element can be re-added to re-initialize. |
+| Property    | Type              | Description                                                                         |
+| ----------- | ----------------- | ----------------------------------------------------------------------------------- |
+| `code`      | string            | Get or set the scene code                                                           |
+| `canvas`    | HTMLCanvasElement | Adopt a custom canvas to render on                                                  |
+| `synth`     | HydraSynth        | Read-only access to the synth instance                                              |
+| `ready`     | Promise           | Resolves with `{ synth }` once Hydra is initialized; always reflects the live synth |
+| `destroy()` | method            | Tear the element down without removing it from the DOM (re-add to re-initialize)    |
 
-### Events
-
-| Event                  | Detail                | Description                                                  |
-| ---------------------- | --------------------- | ------------------------------------------------------------ |
-| `hydra-ready`          | `{ synth }`           | Fired when Hydra is initialized                              |
-| `hydra-eval`           | `{ success, error? }` | Fired after code evaluation                                  |
-| `hydra-element-resize` | `{ width, height }`   | Fired when the canvas backing-store resolution changes       |
-| `hydra-context-lost`   | —                     | Fired when the WebGL context for the internal canvas is lost |
-
-## DOM manipulation
-
-You can move `<hydra-element>` around in the DOM without losing state. The element initializes once when first connected and won't re-initialize if moved:
+For everything else, use the synth:
 
 ```js
 const el = document.querySelector('hydra-element')
-const newParent = document.createElement('div')
-document.body.appendChild(newParent)
-newParent.appendChild(el) // Safe — no re-initialization
+
+el.synth.s0.initCam() // init a source
+el.synth.bpm = 120 // change BPM
+el.synth.setResolution(800, 600) // change resolution
+el.synth.setFunction({
+  // add a custom GLSL function
+  name: 'myNoise',
+  type: 'src',
+  inputs: [{ type: 'float', name: 'scale', default: 5 }],
+  glsl: `return vec4(vec3(_noise(vec3(_st*scale, time))), 0.5);`,
+})
+
+await el.loadScript('https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-src.js')
+// load an extension from page JS — same transient-bridge behavior as in-code loadScript
 ```
 
-To tear down an element without removing it from the DOM, call `el.destroy()`. This stops the loop, destroys the Hydra instance, and removes analyzer canvases. If you re-add the element to the DOM afterward, it will re-initialize fresh.
+### Events
+
+| Event                  | Detail                | Description                                            |
+| ---------------------- | --------------------- | ------------------------------------------------------ |
+| `hydra-ready`          | `{ synth }`           | Fired when Hydra is initialized                        |
+| `hydra-eval`           | `{ success, error? }` | Fired after every code evaluation                      |
+| `hydra-element-resize` | `{ width, height }`   | Fired when the canvas backing-store resolution changes |
+| `hydra-context-lost`   | —                     | Fired when the WebGL context was lost and recovered    |
+
+```js
+el.addEventListener('hydra-eval', e => {
+  if (!e.detail.success) console.error('Eval error:', e.detail.error)
+})
+```
+
+### Moving elements in the DOM
+
+Moving `<hydra-element>` around in the DOM does **not** re-initialize it. To tear it down without removing it from the DOM, call `el.destroy()`. Re-add the element afterward to start fresh.
 
 ## Limitations
 
-### WebGL context limit
+- **WebGL context limit** — browsers allow ~16 WebGL contexts. With ~12+ elements on one page you may hit the limit. Browser constraint, no library workaround.
+- **Audio isolation** — `audio="true"` shares a single `AudioContext` across elements. For full per-element isolation, manage `AudioContext` yourself via `el.synth`.
+- **Eval security** — user code uses `new Function()` + a Proxy; it's **not a sandbox**. User code has full access to browser globals. Only evaluate code you trust. For untrusted code, use an iframe with a separate origin.
 
-Each `<hydra-element>` creates its own WebGL context. Browsers typically allow ~16 WebGL contexts before older ones are lost. If you need more than ~12 elements on a page, you may hit this limit. There's no workaround within this library — it's a browser constraint.
+## Where to go next
 
-### Audio isolation
-
-When using `audio="true"` on multiple elements, they share the same `AudioContext` internally. This usually works fine, but if you need truly isolated audio processing per element, you'll need to manage `AudioContext` instances manually via the `synth` property.
-
-### Eval security
-
-The code evaluation uses `new Function()` + `with(proxy)` to provide Hydra DSL syntax. **This is not a sandbox.** User code has full access to browser globals (`document`, `localStorage`, `fetch`, etc.). Only evaluate trusted code. If you need to run untrusted code, use a proper sandbox like an iframe with a separate origin.
-
-## For developers
-
-If you want to contribute or modify the project:
-
-```sh
-npm install
-npm run dev     # Dev server with hot reload
-npm test        # Run tests
-npm run build   # Generate distribution bundle
-npm run lint    # Lint code
-npm run format  # Format code
-```
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — module breakdown, eval proxy, transient bridge, lifecycle, build pipeline. For maintainers.
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** — dev setup, commands, test strategy, spec workflow, release process. For contributors.
+- **[CHANGELOG.md](./CHANGELOG.md)** — what changed in each release.
+- **[hydra-synth docs](https://hydra.ojack.xyz/)** — the underlying synth.
 
 ## Credits
 
