@@ -43,7 +43,7 @@ function warnOnce(msg) {
 export function hydraEval(code, synth, scope) {
   const proxy = createScopeProxy(synth, scope || Object.create(null))
   try {
-    const fn = new Function('__scope', `return (async function(){with(__scope){${code}}})()`)
+    const fn = new Function('__scope', `return (async function(){with(__scope){${code}\n}})()`)
     return fn(proxy)
   } catch (e) {
     return Promise.reject(e)

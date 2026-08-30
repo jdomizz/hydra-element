@@ -89,6 +89,15 @@ describe('hydraEval', () => {
       }
       expect(caught).to.be.instanceOf(SyntaxError)
     })
+
+    it('should not be fooled by a trailing line comment without newline', async () => {
+      const outSpy = spy()
+      const synth = { osc: () => ({ out: outSpy }) }
+      // code ends with `// ...` and no trailing newline; the wrapper must not
+      // let the comment swallow its closing braces.
+      await hydraEval('osc(1).out() // trailing comment', synth)
+      expect(outSpy).to.have.been.calledOnce
+    })
   })
 
   describe('scope isolation (trap set)', () => {
