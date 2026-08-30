@@ -11,6 +11,7 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 - `npm run build` — bundle to `dist/hydra-element.js` (ES module only)
 - `npm run lint` — lint with oxlint
 - `npm run format` — format with oxfmt
+- Pre-commit hook (husky + lint-staged) auto-fixes `*.{js,mjs}` with `oxlint --fix`, then runs `oxfmt` on staged JS and `*.md` files; bypass with `git commit --no-verify`
 
 ## Test runner quirks
 
