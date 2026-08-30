@@ -21,7 +21,7 @@ const PRESETS = [
   },
   {
     label: 'cam + blend',
-    code: 's0.initCam() s1.initScreen() src(s0).blend(src(s1)).out()',
+    code: 's0.initCam(); s1.initScreen(); src(s0).blend(src(s1)).out()',
     requires: { sources: 2 },
   },
   {
@@ -259,10 +259,12 @@ async function main() {
   wireClear(log)
   startStatsLoop(el, document.querySelector('#stat-time'), document.querySelector('#stat-fps'))
 
-  el.addEventListener('hydra-ready', e => {
-    const t = performance.now() - PAGE_LOAD
-    appendLog(log, 'success', 'hydra-ready', truncateSynth(e.detail?.synth), t)
-    el.synth.setFunction({
+  // Register noixe via el.ready (resolves whether hydra-ready has fired or not —
+  // connectedCallback dispatches hydra-ready synchronously, which can race the
+  // playground's own listener registration). The hydra-ready listener below
+  // is kept just for log entries.
+  el.ready.then(({ synth }) => {
+    synth.setFunction({
       name: 'noixe',
       type: 'src',
       inputs: [
@@ -271,6 +273,11 @@ async function main() {
       ],
       glsl: 'return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);',
     })
+  })
+
+  el.addEventListener('hydra-ready', e => {
+    const t = performance.now() - PAGE_LOAD
+    appendLog(log, 'success', 'hydra-ready', truncateSynth(e.detail?.synth), t)
   })
 
   el.addEventListener('hydra-element-resize', e => {
