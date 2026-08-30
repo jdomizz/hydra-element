@@ -31,29 +31,13 @@ body {
 .app {
   display: grid;
   grid-template-columns: 28fr 44fr 28fr;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: 1fr;
   grid-template-areas:
-    'header header header'
     'left center right';
   width: 100vw;
   height: 100vh;
   gap: 1px;
   background-color: var(--panel-border);
-}
-
-.app__header {
-  grid-area: header;
-  padding: 0.5rem 1rem;
-  background: var(--panel-bg);
-  color: var(--muted);
-  font-size: 0.85rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.app__header strong {
-  color: var(--fg);
 }
 
 .app__left {
@@ -69,17 +53,41 @@ body {
 .app__center {
   grid-area: center;
   position: relative;
-  background: #000;
+  background: var(--bg);
   display: flex;
   flex-direction: column;
+  padding: 0.75rem;
   min-height: 0;
 }
 
-.app__center hydra-element {
+.panel--canvas {
   flex: 1 1 auto;
-  width: 100%;
+  min-height: 0;
+  background: var(--panel-bg);
+  border-radius: 4px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel__title {
+  margin: 0 0 0.5rem 0;
+}
+
+.canvas-wrap {
+  flex: 1 1 auto;
   display: flex;
   min-height: 0;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.canvas-wrap hydra-element {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  width: 100%;
 }
 
 .app__right {
@@ -357,7 +365,6 @@ body {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto 50vh auto;
     grid-template-areas:
-      'header'
       'left'
       'center'
       'right';
@@ -372,6 +379,10 @@ body {
 
   .panel--editor {
     min-height: 12rem;
+  }
+
+  .panel--canvas {
+    min-height: 50vh;
   }
 
   .panel--log {

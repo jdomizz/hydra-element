@@ -11,11 +11,6 @@
   </head>
   <body>
     <main class="app">
-      <header class="app__header">
-        <strong>&lt;hydra-element&gt;</strong>
-        <span>dev playground — click a preset, toggle attributes, watch the log</span>
-      </header>
-
       <aside class="app__left">
         <section class="panel panel--editor">
           <header class="editor__head">
@@ -35,7 +30,12 @@
       </aside>
 
       <section class="app__center">
-        <hydra-element></hydra-element>
+        <section class="panel panel--canvas">
+          <h2 class="panel__title">hydra-element</h2>
+          <div class="canvas-wrap">
+            <hydra-element></hydra-element>
+          </div>
+        </section>
       </section>
 
       <aside class="app__right">
