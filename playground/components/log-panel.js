@@ -3,14 +3,15 @@
  * events plus filtered `console.warn` capture.
  *
  * Attributes:
- *   target — selector for the `<hydra-element>` to observe
- *   limit  — max rendered lines (default 50, oldest dropped first)
+ *   limit — max rendered lines (default 50, oldest dropped first)
  *
- * Subscribes via `target.addEventListener` AND resolves `target.ready`
- * to handle the race where `hydra-ready` already fired before the
- * listener attached (mirrors the contract used in the old playground.js).
+ * Property:
+ *   target — the `<hydra-element>` reference. Must be set by the
+ *            orchestrator (`playground/main.js`), not via a global
+ *            selector. Subscribes via `target.addEventListener` AND
+ *            resolves `target.ready` to handle the race where
+ *            `hydra-ready` already fired before the listener attached.
  */
-const PAGE_LOAD = performance.now()
 const DEFAULT_LIMIT = 50
 
 const styles = new CSSStyleSheet()
@@ -73,6 +74,8 @@ styles.replaceSync(`
   .name--info    { color: var(--hydra-log-info); }
 `)
 
+const PAGE_LOAD = performance.now()
+
 function fmtMs(ms) {
   return ms.toFixed(0).padStart(6, ' ')
 }
@@ -118,23 +121,12 @@ class LogPanel extends HTMLElement {
     const limitAttr = parseInt(this.getAttribute('limit') || '', 10)
     if (Number.isFinite(limitAttr) && limitAttr > 0) this.#limit = limitAttr
 
-    const target = this.#resolveTarget()
-    if (!target) return
-    this.#target = target
-
+    if (this.#target) this.#bindTarget()
     this.#installWarnCapture()
-    this.#bindHydraEvents()
   }
 
   disconnectedCallback() {
-    const t = this.#target
-    if (t) {
-      t.removeEventListener('hydra-ready', this.#onReady)
-      t.removeEventListener('hydra-eval', this.#onEval)
-      t.removeEventListener('hydra-element-resize', this.#onResize)
-      t.removeEventListener('hydra-context-lost', this.#onContextLost)
-    }
-    this.#target = null
+    this.#unbindTarget()
   }
 
   clear() {
@@ -145,13 +137,21 @@ class LogPanel extends HTMLElement {
     this.#list.append(empty)
   }
 
-  #resolveTarget() {
-    const sel = this.getAttribute('target')
-    if (!sel) return null
-    return document.querySelector(sel)
+  get target() {
+    return this.#target
   }
 
-  #bindHydraEvents() {
+  set target(el) {
+    if (this.#target === el) return
+    if (this.isConnected) this.#unbindTarget()
+    this.#target = el
+    if (this.isConnected) this.#bindTarget()
+  }
+
+  #bindTarget() {
+    const t = this.#target
+    if (!t) return
+
     this.#onReady = (e) => this.#append('success', 'hydra-ready', truncateSynth(e.detail?.synth))
     this.#onEval = (e) => {
       if (e.detail?.success) {
@@ -167,7 +167,6 @@ class LogPanel extends HTMLElement {
     }
     this.#onContextLost = () => this.#append('warn', 'hydra-context-lost', '(recovered)')
 
-    const t = this.#target
     t.addEventListener('hydra-ready', this.#onReady)
     t.addEventListener('hydra-eval', this.#onEval)
     t.addEventListener('hydra-element-resize', this.#onResize)
@@ -178,6 +177,19 @@ class LogPanel extends HTMLElement {
         this.#append('success', 'hydra-ready', truncateSynth(synth))
       })
     }
+  }
+
+  #unbindTarget() {
+    const t = this.#target
+    if (!t) return
+    t.removeEventListener('hydra-ready', this.#onReady)
+    t.removeEventListener('hydra-eval', this.#onEval)
+    t.removeEventListener('hydra-element-resize', this.#onResize)
+    t.removeEventListener('hydra-context-lost', this.#onContextLost)
+    this.#onReady = null
+    this.#onEval = null
+    this.#onResize = null
+    this.#onContextLost = null
   }
 
   #installWarnCapture() {

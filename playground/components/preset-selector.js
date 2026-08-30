@@ -3,12 +3,12 @@
  * option shows `title — description`. On change, dispatches
  * `preset-change` and sets `target.code` (the `<hydra-element>`).
  *
- * Attributes:
- *   target      — selector for the `<hydra-element>`
- *
  * Property:
- *   presets     — array of `{ title, description, code }`. Reassigning
- *                 rebuilds the option list (current selection is lost).
+ *   presets — array of `{ title, description, code }`. Reassigning
+ *             rebuilds the option list (current selection is lost).
+ *   target  — the `<hydra-element>` reference. Must be set by the
+ *             orchestrator (`playground/main.js`), not via a global
+ *             selector. Setting after connect re-binds immediately.
  *
  * Events:
  *   preset-change — detail: `{ title, code }`. Bubbling + composed so
@@ -75,9 +75,7 @@ class PresetSelector extends HTMLElement {
     this.#select.addEventListener('change', () => this.#onChange())
   }
 
-  connectedCallback() {
-    this.#target = this.#resolveTarget()
-  }
+  connectedCallback() {}
 
   disconnectedCallback() {
     this.#target = null
@@ -92,10 +90,12 @@ class PresetSelector extends HTMLElement {
     this.#rebuildOptions()
   }
 
-  #resolveTarget() {
-    const sel = this.getAttribute('target')
-    if (!sel) return null
-    return document.querySelector(sel)
+  get target() {
+    return this.#target
+  }
+
+  set target(el) {
+    this.#target = el
   }
 
   #rebuildOptions() {
@@ -116,8 +116,7 @@ class PresetSelector extends HTMLElement {
     const title = this.#select.options[this.#select.selectedIndex]?.dataset?.title || ''
     const detail = { title, code: value }
 
-    const target = this.#target
-    if (target) target.code = value
+    if (this.#target) this.#target.code = value
 
     this.#select.value = ''
 

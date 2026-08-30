@@ -4,8 +4,11 @@
  * `outputs`. Bidirectional sync: changing a control reflects onto the
  * element, and changing the element programmatically reflects here.
  *
- * Attributes:
- *   target — selector for the `<hydra-element>`
+ * Property:
+ *   target — the `<hydra-element>` reference. Must be set by the
+ *            orchestrator (`playground/main.js`), not via a global
+ *            selector. A `MutationObserver` is attached when target
+ *            is bound so attribute changes flow back into the form.
  *
  * Why hardcoded schema (not `schema` property): these are exactly the
  * attributes the playground exposes; there's no second consumer. Adding
@@ -94,27 +97,23 @@ class CfgForm extends HTMLElement {
   }
 
   connectedCallback() {
-    this.#target = this.#resolveTarget()
-    if (!this.#target) return
-    this.#syncFromTarget()
-    this.#updateGlobalAvailability()
-    this.#observer = new MutationObserver(() => this.#syncFromTarget())
-    this.#observer.observe(this.#target, {
-      attributes: true,
-      attributeFilter: ['audio', 'global', 'loop', 'sources', 'outputs'],
-    })
+    if (this.#target) this.#bindTarget()
   }
 
   disconnectedCallback() {
-    this.#observer?.disconnect()
-    this.#observer = null
+    this.#unbindTarget()
     this.#target = null
   }
 
-  #resolveTarget() {
-    const sel = this.getAttribute('target')
-    if (!sel) return null
-    return document.querySelector(sel)
+  get target() {
+    return this.#target
+  }
+
+  set target(el) {
+    if (this.#target === el) return
+    if (this.isConnected) this.#unbindTarget()
+    this.#target = el
+    if (this.isConnected) this.#bindTarget()
   }
 
   #render() {
@@ -145,6 +144,21 @@ class CfgForm extends HTMLElement {
     }
 
     form.addEventListener('change', (e) => this.#onChange(e))
+  }
+
+  #bindTarget() {
+    this.#syncFromTarget()
+    this.#updateGlobalAvailability()
+    this.#observer = new MutationObserver(() => this.#syncFromTarget())
+    this.#observer.observe(this.#target, {
+      attributes: true,
+      attributeFilter: ['audio', 'global', 'loop', 'sources', 'outputs'],
+    })
+  }
+
+  #unbindTarget() {
+    this.#observer?.disconnect()
+    this.#observer = null
   }
 
   #onChange(e) {

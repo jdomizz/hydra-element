@@ -2,8 +2,11 @@
  * <stats-strip> — renders `synth.time` and `synth.stats.fps` from a
  * `<hydra-element>` target. Single responsibility: read + display.
  *
- * Attributes:
- *   target — selector for the `<hydra-element>` to observe
+ * Property:
+ *   target — the `<hydra-element>` reference. Must be set by the
+ *            orchestrator (`playground/main.js`), not via a global
+ *            selector. The rAF loop starts as soon as the target is
+ *            bound (whether via setter or pre-connect assignment).
  *
  * Cleans up the rAF loop in `disconnectedCallback`. Throttled to ~4 Hz
  * to keep main-thread pressure low; sub-frame updates are noise.
@@ -60,9 +63,27 @@ class StatsStrip extends HTMLElement {
   }
 
   connectedCallback() {
-    const target = this.#resolveTarget()
-    if (!target) return
-    this.#target = target
+    this.#start()
+  }
+
+  disconnectedCallback() {
+    this.#stop()
+  }
+
+  get target() {
+    return this.#target
+  }
+
+  set target(el) {
+    this.#target = el
+    if (this.isConnected) {
+      this.#stop()
+      this.#start()
+    }
+  }
+
+  #start() {
+    if (!this.#target || this.#timer !== null) return
     const tick = () => {
       const now = performance.now()
       if (now - this.#lastTick >= TICK_MS) {
@@ -74,18 +95,11 @@ class StatsStrip extends HTMLElement {
     this.#timer = requestAnimationFrame(tick)
   }
 
-  disconnectedCallback() {
+  #stop() {
     if (this.#timer !== null) {
       cancelAnimationFrame(this.#timer)
       this.#timer = null
     }
-    this.#target = null
-  }
-
-  #resolveTarget() {
-    const sel = this.getAttribute('target')
-    if (!sel) return null
-    return document.querySelector(sel)
   }
 
   #render() {

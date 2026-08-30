@@ -3,8 +3,12 @@
  * `localStorage` persistence.
  *
  * Attributes:
- *   target      — selector for the `<hydra-element>`
  *   storage-key — `localStorage` key (default `hydra-element:editor`)
+ *
+ * Property:
+ *   target — the `<hydra-element>` reference. Must be set by the
+ *            orchestrator (`playground/main.js`), not via a global
+ *            selector.
  *
  * Persistence model:
  *   - On connect, restore from `localStorage` if the key is set.
@@ -112,7 +116,6 @@ class EditorPanel extends HTMLElement {
       if (saved !== null) this.#textarea.value = saved
     } catch {}
 
-    this.#target = this.#resolveTarget()
     document.addEventListener('preset-change', this.#onPresetChange)
   }
 
@@ -130,10 +133,12 @@ class EditorPanel extends HTMLElement {
     this.#persist()
   }
 
-  #resolveTarget() {
-    const sel = this.getAttribute('target')
-    if (!sel) return null
-    return document.querySelector(sel)
+  get target() {
+    return this.#target
+  }
+
+  set target(el) {
+    this.#target = el
   }
 
   #onKeydown(e) {
@@ -144,9 +149,8 @@ class EditorPanel extends HTMLElement {
   }
 
   #eval() {
-    const target = this.#target
-    if (!target) return
-    target.code = this.#textarea.value
+    if (!this.#target) return
+    this.#target.code = this.#textarea.value
   }
 
   #persist() {

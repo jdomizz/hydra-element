@@ -1,11 +1,13 @@
 /**
  * Playground bootstrap. Imports every component (each `define`s itself
- * on import), wires the PRESETS list into <preset-selector>, registers
- * the `noixe` extension via the hydra-element `ready` promise, and
- * hydrates the editor from `?code=` when the URL carries a sketch.
+ * on import), resolves the single `<hydra-element>` reference once,
+ * wires it to each controller via the `target` property, decodes
+ * `?code=` URL hydration into the editor, and registers the `noixe`
+ * extension via the hydra-element `ready` promise.
  *
- * This file is intentionally tiny — every component owns its own
- * concern. Do not put DOM logic here; push it into the element.
+ * The components never reach into the DOM for their target — that's
+ * this file's job, done once. Each component owns its concern; main.js
+ * owns the wiring.
  */
 import './components/stats-strip.js'
 import './components/log-panel.js'
@@ -21,8 +23,7 @@ function decodeUrlCode() {
   try {
     const raw = new URLSearchParams(location.search).get('code')
     if (!raw) return null
-    const decoded = Buffer.from(raw, 'base64').toString('utf-8')
-    return decodeURIComponent(decoded)
+    return decodeURIComponent(Buffer.from(raw, 'base64').toString('utf-8'))
   } catch {
     return null
   }
@@ -38,6 +39,27 @@ function ready() {
   })
 }
 
+function wire(el) {
+  const editor = document.querySelector('editor-panel')
+  const cfg = document.querySelector('cfg-form')
+  const log = document.querySelector('log-panel')
+  const selector = document.querySelector('preset-selector')
+  const stats = document.querySelector('stats-strip')
+
+  if (editor) editor.target = el
+  if (cfg) cfg.target = el
+  if (log) {
+    log.target = el
+    if (stats) {
+      stats.target = el
+      log.append(stats)
+    }
+  }
+  if (selector) selector.target = el
+
+  return { editor }
+}
+
 async function main() {
   await ready()
 
@@ -50,6 +72,8 @@ async function main() {
   const selector = document.querySelector('preset-selector')
   if (selector) selector.presets = PRESETS
 
+  const { editor } = wire(el)
+
   // URL `?code=<base64>` wins over localStorage on hydration; we
   // persist the URL payload so subsequent reloads get the same code
   // via the editor's own restore path.
@@ -58,7 +82,6 @@ async function main() {
     try {
       localStorage.setItem(STORAGE_KEY, urlCode)
     } catch {}
-    const editor = document.querySelector('editor-panel')
     if (editor) editor.value = urlCode
   }
 
