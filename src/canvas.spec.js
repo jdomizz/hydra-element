@@ -178,7 +178,10 @@ describe('CanvasManager', () => {
     manager.init(0, 0)
     const eventSpy = sinon.spy(host, 'dispatchEvent')
     fire(manager, { width: 400, height: 300 })
-    const resizeEvent = eventSpy.getCalls().map(c => c.args[0]).find(e => e.type === 'hydra-element-resize')
+    const resizeEvent = eventSpy
+      .getCalls()
+      .map(c => c.args[0])
+      .find(e => e.type === 'hydra-element-resize')
     expect(resizeEvent).to.exist
     expect(resizeEvent.detail).to.deep.equal({ width: 400, height: 300 })
   })

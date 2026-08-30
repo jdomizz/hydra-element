@@ -150,7 +150,8 @@ By default you get 4 source buffers (`s0`-`s3`) and 4 output buffers (`o0`-`o3`)
 
 ```html
 <hydra-element>
-  await loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
+  await
+  loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
   warp().out()
 </hydra-element>
 ```
@@ -167,8 +168,8 @@ Add noise, patterns, and color filters:
 
 ```html
 <hydra-element>
-  await loadScript("https://metagrowing.org/extra-shaders-for-hydra/lib-noise.js")
-  turb(3, 0, () => 6 * ((0.5 * time) % 1.0)).out(o0)
+  await loadScript("https://metagrowing.org/extra-shaders-for-hydra/lib-noise.js") turb(3, 0, () =>
+  6 * ((0.5 * time) % 1.0)).out(o0)
 </hydra-element>
 ```
 
@@ -193,9 +194,8 @@ Control visuals with MIDI devices:
 
 ```html
 <hydra-element>
-  await loadScript("https://cdn.jsdelivr.net/npm/hydra-midi@latest/dist/index.js")
-  await midi.start()
-  osc(30, .01).invert(note('C4')).out()
+  await loadScript("https://cdn.jsdelivr.net/npm/hydra-midi@latest/dist/index.js") await
+  midi.start() osc(30, .01).invert(note('C4')).out()
 </hydra-element>
 ```
 
@@ -205,9 +205,9 @@ Synchronize visuals with Strudel audio patterns:
 
 ```html
 <hydra-element>
-  await loadScript("https://cdn.jsdelivr.net/gh/atfornes/Hydra-strudel-extension@latest/hydra-strudel.js")
-  await initHydraStrudel()
-  shape(P("3 <4 5> 6 7>")).out(o0)
+  await
+  loadScript("https://cdn.jsdelivr.net/gh/atfornes/Hydra-strudel-extension@latest/hydra-strudel.js")
+  await initHydraStrudel() shape(P("3 <4 5> 6 7>")).out(o0)
 </hydra-element>
 ```
 
@@ -217,9 +217,8 @@ Use p5.js for creative coding alongside Hydra:
 
 ```html
 <hydra-element>
-  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js")
-  // p5.js is now available as window.p5
-  osc().out()
+  await loadScript("https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.7.0/p5.min.js") // p5.js is now
+  available as window.p5 osc().out()
 </hydra-element>
 ```
 
@@ -229,16 +228,9 @@ Add your own GLSL functions directly in the code:
 
 ```html
 <hydra-element>
-  setFunction({
-    name: 'myNoise',
-    type: 'src',
-    inputs: [
-      { type: 'float', name: 'scale', default: 5 },
-      { type: 'float', name: 'offset', default: 0.5 }
-    ],
-    glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`
-  })
-  myNoise(10, 0.2).out()
+  setFunction({ name: 'myNoise', type: 'src', inputs: [ { type: 'float', name: 'scale', default: 5
+  }, { type: 'float', name: 'offset', default: 0.5 } ], glsl: `return
+  vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);` }) myNoise(10, 0.2).out()
 </hydra-element>
 ```
 
@@ -249,9 +241,7 @@ You can also access the synth instance via `synth.setFunction()` or `window.synt
 By default, each element has its own isolated scope. If you want Hydra functions available globally (like in the Hydra editor):
 
 ```html
-<hydra-element global="true">
-  osc(10, 0.2, 0.5).out()
-</hydra-element>
+<hydra-element global="true"> osc(10, 0.2, 0.5).out() </hydra-element>
 ```
 
 > **Warning:** You can only have one element with `global="true"` per page.
@@ -318,25 +308,25 @@ const { synth } = await el.ready
 
 ### Attributes
 
-| Attribute   | Type    | Default       | Description                                     |
-| ----------- | ------- | ------------- | ----------------------------------------------- |
-| `width`     | number  | CSS width     | Canvas width in pixels (takes precedence over ResizeObserver) |
-| `height`    | number  | CSS height    | Canvas height in pixels (takes precedence over ResizeObserver) |
-| `audio`     | boolean | `false`       | Enable microphone input                         |
-| `loop`      | boolean | `true`        | Enable animation loop (the element manages its own RAF loop, not hydra-synth's) |
-| `global`    | boolean | `false`       | Make Hydra functions global                     |
-| `sources`   | number  | `4`           | Number of source buffers                        |
-| `outputs`   | number  | `4`           | Number of output buffers                        |
-| `precision` | string  | `null`        | Shader precision: `highp`, `mediump`, or `lowp` (`null` = hydra-synth default) |
+| Attribute   | Type    | Default    | Description                                                                     |
+| ----------- | ------- | ---------- | ------------------------------------------------------------------------------- |
+| `width`     | number  | CSS width  | Canvas width in pixels (takes precedence over ResizeObserver)                   |
+| `height`    | number  | CSS height | Canvas height in pixels (takes precedence over ResizeObserver)                  |
+| `audio`     | boolean | `false`    | Enable microphone input                                                         |
+| `loop`      | boolean | `true`     | Enable animation loop (the element manages its own RAF loop, not hydra-synth's) |
+| `global`    | boolean | `false`    | Make Hydra functions global                                                     |
+| `sources`   | number  | `4`        | Number of source buffers                                                        |
+| `outputs`   | number  | `4`        | Number of output buffers                                                        |
+| `precision` | string  | `null`     | Shader precision: `highp`, `mediump`, or `lowp` (`null` = hydra-synth default)  |
 
 ### Properties
 
-| Property | Type              | Description                            |
-| -------- | ----------------- | -------------------------------------- |
-| `code`   | string            | Get or set the scene code              |
+| Property | Type              | Description                                                                                                                 |
+| -------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `code`   | string            | Get or set the scene code                                                                                                   |
 | `canvas` | HTMLCanvasElement | Custom canvas element to render on. **Note:** Setting this property recreates the Hydra instance and re-evaluates the code. |
-| `synth`  | HydraSynth        | Read-only access to the synth instance |
-| `ready`  | Promise           | Resolves with `{ synth }` when Hydra is initialized |
+| `synth`  | HydraSynth        | Read-only access to the synth instance                                                                                      |
+| `ready`  | Promise           | Resolves with `{ synth }` when Hydra is initialized                                                                         |
 
 ### Events
 

@@ -78,9 +78,7 @@ export class HydraManager {
    */
   _handleEvalResult(result) {
     if (result && typeof result.catch === 'function') {
-      result
-        .then(() => this._dispatchEvalSuccess())
-        .catch(error => this._dispatchEvalError(error))
+      result.then(() => this._dispatchEvalSuccess()).catch(error => this._dispatchEvalError(error))
     } else {
       this._dispatchEvalSuccess()
     }

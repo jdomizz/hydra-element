@@ -55,5 +55,4 @@ describe('AttributeHandler', () => {
     expect(handler.hasSynthResettingAttribute('width')).to.be.false
     expect(handler.hasSynthResettingAttribute('loop')).to.be.false
   })
-
 })

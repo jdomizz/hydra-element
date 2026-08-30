@@ -6,7 +6,6 @@ if (!customElements.get('hydra-element')) {
 }
 
 describe('Community extensions compatibility', () => {
-  
   // Pattern 1: loadScript + setFunction (metagrowing, geikha)
   describe('Pattern 1: loadScript + setFunction', () => {
     it('simulated extension with setFunction', async () => {
@@ -14,7 +13,7 @@ describe('Community extensions compatibility', () => {
       const promise = new Promise(resolve => {
         el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
       })
-      
+
       // Simulate what metagrowing/geikha extensions do
       const extensionCode = `
         setFunction({
@@ -27,12 +26,12 @@ describe('Community extensions compatibility', () => {
           glsl: \`return vec4(sin(freq*_st.x + offset), cos(freq*_st.y), 0.5, 1.0);\`
         })
       `
-      
+
       el.code = `
         ${extensionCode}
         turb(3, 0).out(o0)
       `
-      
+
       const detail = await promise
       expect(detail.success).to.be.true
       expect(el.synth.turb).to.be.a('function')
@@ -46,7 +45,7 @@ describe('Community extensions compatibility', () => {
       const promise = new Promise(resolve => {
         el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
       })
-      
+
       // Simulate what hydra-strudel does
       el.code = `
         window.initMyExtension = async () => {
@@ -60,7 +59,7 @@ describe('Community extensions compatibility', () => {
         await initMyExtension()
         myFunc().out()
       `
-      
+
       const detail = await promise
       expect(detail.success).to.be.true
       expect(window.initMyExtension).to.be.a('function')
@@ -75,7 +74,7 @@ describe('Community extensions compatibility', () => {
       const promise = new Promise(resolve => {
         el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
       })
-      
+
       // Simulate what hydra-midi does
       el.code = `
         window.midi = () => 0.5
@@ -83,7 +82,7 @@ describe('Community extensions compatibility', () => {
         window.note = () => 0.7
         osc().out()
       `
-      
+
       const detail = await promise
       expect(detail.success).to.be.true
       expect(window.midi).to.be.a('function')
@@ -96,7 +95,7 @@ describe('Community extensions compatibility', () => {
   describe('Pattern 4: loadScript + window._hydra access', () => {
     it('extensions can access window._hydra', async () => {
       const _el = await fixture(html`<hydra-element></hydra-element>`)
-      
+
       // Verify window._hydra is available
       expect(window._hydra).to.exist
       expect(window._hydra.synth).to.exist
@@ -112,13 +111,13 @@ describe('Community extensions compatibility', () => {
       const promise = new Promise(resolve => {
         el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
       })
-      
+
       // Simulate loading a library that exposes a global
       el.code = `
         window.p5 = { version: '1.7.0' }
         osc().out()
       `
-      
+
       const detail = await promise
       expect(detail.success).to.be.true
       expect(window.p5).to.exist
@@ -132,7 +131,7 @@ describe('Community extensions compatibility', () => {
       const promise = new Promise(resolve => {
         el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
       })
-      
+
       el.code = `
         setFunction({
           name: 'myCustomFunc',
@@ -144,7 +143,7 @@ describe('Community extensions compatibility', () => {
         })
         myCustomFunc(5).out()
       `
-      
+
       const detail = await promise
       expect(detail.success).to.be.true
       expect(el.synth.myCustomFunc).to.be.a('function')
@@ -158,7 +157,7 @@ describe('Community extensions compatibility', () => {
       const promise = new Promise(resolve => {
         el.addEventListener('hydra-eval', e => resolve(e.detail), { once: true })
       })
-      
+
       el.code = `
         synth.setFunction({
           name: 'anotherFunc',
@@ -168,7 +167,7 @@ describe('Community extensions compatibility', () => {
         })
         anotherFunc().out()
       `
-      
+
       const detail = await promise
       expect(detail.success).to.be.true
       expect(el.synth.anotherFunc).to.be.a('function')
@@ -176,14 +175,14 @@ describe('Community extensions compatibility', () => {
 
     it('window.synth.setFunction works', async () => {
       const el = await fixture(html`<hydra-element></hydra-element>`)
-      
+
       window.synth.setFunction({
         name: 'globalFunc',
         type: 'src',
         inputs: [],
-        glsl: 'return vec4(0.0, 1.0, 0.0, 1.0);'
+        glsl: 'return vec4(0.0, 1.0, 0.0, 1.0);',
       })
-      
+
       expect(el.synth.globalFunc).to.be.a('function')
     })
   })

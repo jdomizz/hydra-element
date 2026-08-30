@@ -13,16 +13,7 @@ import { DEFAULT_OPTIONS } from './defaults'
  */
 export class HydraElement extends HTMLElement {
   static get observedAttributes() {
-    return [
-      'width',
-      'height',
-      'global',
-      'audio',
-      'sources',
-      'outputs',
-      'precision',
-      'loop',
-    ]
+    return ['width', 'height', 'global', 'audio', 'sources', 'outputs', 'precision', 'loop']
   }
 
   constructor() {
@@ -172,14 +163,14 @@ export class HydraElement extends HTMLElement {
     })
     this.hydraManager.init()
     this.canvasManager.tagAnalyzerCanvases()
-    
+
     // Expose hydra instance globally for community extensions compatibility
     // Note: With multiple elements, only the last initialized element's synth
     // will be accessible via window._hydra and window.synth
     if (this.hydraManager.hydra) {
       window._hydra = this.hydraManager.hydra
       window.synth = this.hydraManager.hydra.synth
-      
+
       // Expose all synth functions globally for DSL compatibility
       // This allows scripts to use setFunction(), osc(), etc. directly
       const synthFunctions = Object.keys(this.hydraManager.hydra.synth)
@@ -190,7 +181,7 @@ export class HydraElement extends HTMLElement {
         }
       })
     }
-    
+
     if (this._connected && this.attributeHandler.getOptions().autoLoop) {
       this._startLoop()
     }

@@ -60,7 +60,6 @@ describe('connected-callback-reentry', () => {
     expect(el.synth).to.not.equal(synth1)
     el.remove()
   })
-
 })
 
 describe('refactor-names', () => {
