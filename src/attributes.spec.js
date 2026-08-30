@@ -26,6 +26,14 @@ describe('AttributeHandler', () => {
     expect(handler.parse('outputs', '0')).to.deep.equal({ numOutputs: 0 })
   })
 
+  it('clamps sources/outputs to the maximum bound of 16', () => {
+    const handler = new AttributeHandler({ numSources: 4, numOutputs: 4 })
+    expect(handler.parse('sources', '1000')).to.deep.equal({ numSources: 4 })
+    expect(handler.parse('outputs', '1000')).to.deep.equal({ numOutputs: 4 })
+    expect(handler.parse('sources', '20')).to.deep.equal({ numSources: 4 })
+    expect(handler.parse('outputs', '20')).to.deep.equal({ numOutputs: 4 })
+  })
+
   it('parses precision to a valid value only', () => {
     const handler = new AttributeHandler({ precision: null })
     expect(handler.parse('precision', 'lowp')).to.deep.equal({ precision: 'lowp' })

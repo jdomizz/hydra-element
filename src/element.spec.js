@@ -249,4 +249,12 @@ describe('<hydra-element>', () => {
     expect(el.synth).to.not.equal(s1)
     el.remove()
   })
+
+  it('restores the default loop when the attribute is removed', async () => {
+    const el = await fixture(html`<hydra-element loop="false"></hydra-element>`)
+    const t0 = el.synth.time
+    el.removeAttribute('loop')
+    await wait(60)
+    expect(el.synth.time).to.be.greaterThan(t0)
+  })
 })

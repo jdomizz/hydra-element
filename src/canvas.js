@@ -117,6 +117,27 @@ export class CanvasManager {
   }
 
   /**
+   * Re-evaluates the canvas size from the current CSS layout.
+   * Used when width/height attributes are removed to hand control
+   * back to the ResizeObserver.
+   */
+  refreshFromCss() {
+    if (!this.canvas || !this.host) return
+    const rect = this.host.getBoundingClientRect?.() || { width: 0, height: 0 }
+    const cssWidth = Math.round(rect.width || 0)
+    const cssHeight = Math.round(rect.height || 0)
+    const nextWidth = cssWidth || FALLBACK_WIDTH
+    const nextHeight = cssHeight || FALLBACK_HEIGHT
+    if (nextWidth === this.width && nextHeight === this.height) return
+    this.resize(nextWidth, nextHeight)
+    this.host.dispatchEvent(
+      new CustomEvent('hydra-element-resize', {
+        detail: { width: nextWidth, height: nextHeight },
+      })
+    )
+  }
+
+  /**
    * Stops observing the canvas for CSS size changes. Call on teardown.
    */
   disconnect() {

@@ -233,7 +233,12 @@ export class HydraElement extends HTMLElement {
    * @private
    */
   _handleSizeChange(attrName, newValue) {
-    const options = this.attributeHandler.update(attrName, newValue)
+    this.attributeHandler.update(attrName, newValue)
+    if (newValue === null) {
+      this.canvasManager.refreshFromCss()
+      return
+    }
+    const options = this.attributeHandler.getOptions()
     this.canvasManager.resize(options.width, options.height)
     if (this.hydraManager) {
       this.hydraManager.setResolution(options.width, options.height)

@@ -35,9 +35,9 @@ export class AttributeHandler {
       case 'audio':
         return { detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) }
       case 'sources':
-        return { numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) }
+        return { numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0, 16) }
       case 'outputs':
-        return { numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) }
+        return { numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0, 16) }
       case 'precision':
         return { precision: parseOption(newValue, DEFAULT_OPTIONS.precision, PRECISION_VALUES) }
       case 'loop':

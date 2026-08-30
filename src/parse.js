@@ -18,6 +18,7 @@ export function parseNumber(value, defaultValue, min, max = Infinity) {
  * @returns {*} The resulting JavaScript value.
  */
 export function parseJSON(value, defaultValue) {
+  if (value === null || value === undefined || value === '') return defaultValue
   try {
     return JSON.parse(value)
   } catch {

@@ -40,6 +40,17 @@ describe('parseJSON', () => {
     expect(parseJSON('not a JSON string', { foo: 'bar' })).to.deep.equal({ foo: 'bar' })
     expect(parseJSON('', { foo: 'bar' })).to.deep.equal({ foo: 'bar' })
   })
+
+  it('should return the default for null, undefined, and empty string', () => {
+    expect(parseJSON(null, true)).to.equal(true)
+    expect(parseJSON(undefined, true)).to.equal(true)
+    expect(parseJSON('', true)).to.equal(true)
+  })
+
+  it('should parse valid boolean strings', () => {
+    expect(parseJSON('true', false)).to.equal(true)
+    expect(parseJSON('false', true)).to.equal(false)
+  })
 })
 
 describe('parseOption', () => {
