@@ -9,11 +9,17 @@
  * Persistence model:
  *   - On connect, restore from `localStorage` if the key is set.
  *   - On every input, save to `localStorage`.
- *   - URL `?code=` is NOT handled here — that's `<preset-selector>`'s job.
+ *   - Programmatic `value` setters (including `?code=` hydration and
+ *     `<preset-selector>` events) also persist.
+ *   - URL `?code=` hydration is performed by `playground/main.js`,
+ *     which sets `editor.value` directly after connect.
  *
  * Eval flow:
  *   - Cmd/Ctrl+Enter OR clicking the eval button → `target.code = value`.
  *   - The hydra-element's own setter then dispatches `hydra-eval`.
+ *
+ * Reflects `preset-change` events (bubbling + composed) so that picking
+ * a preset updates the textarea alongside evaluating the code.
  */
 const styles = new CSSStyleSheet()
 styles.replaceSync(`
@@ -69,6 +75,9 @@ class EditorPanel extends HTMLElement {
   #target = null
   #textarea
   #storageKey = DEFAULT_STORAGE_KEY
+  #onPresetChange = (e) => {
+    this.value = e.detail.code
+  }
 
   constructor() {
     super()
@@ -104,9 +113,11 @@ class EditorPanel extends HTMLElement {
     } catch {}
 
     this.#target = this.#resolveTarget()
+    document.addEventListener('preset-change', this.#onPresetChange)
   }
 
   disconnectedCallback() {
+    document.removeEventListener('preset-change', this.#onPresetChange)
     this.#target = null
   }
 
@@ -116,6 +127,7 @@ class EditorPanel extends HTMLElement {
 
   set value(v) {
     this.#textarea.value = String(v)
+    this.#persist()
   }
 
   #resolveTarget() {
