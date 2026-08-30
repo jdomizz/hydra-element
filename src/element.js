@@ -34,6 +34,11 @@ export class HydraElement extends HTMLElement {
       this._resolveReady = resolve
     })
     this._onResize = e => this.hydraManager?.setResolution(e.detail.width, e.detail.height)
+    this._onContextLost = () => {
+      if (this._connected && this.hydraManager) {
+        this._initHydra()
+      }
+    }
   }
 
   /**
@@ -118,6 +123,7 @@ export class HydraElement extends HTMLElement {
   connectedCallback() {
     this._connected = true
     this.addEventListener('hydra-element-resize', this._onResize)
+    this.addEventListener('hydra-context-lost', this._onContextLost)
     if (!this._initialized) {
       this._initialized = true
       if (this._code === '' && this.textContent.trim()) {
@@ -140,6 +146,7 @@ export class HydraElement extends HTMLElement {
   disconnectedCallback() {
     this._connected = false
     this.removeEventListener('hydra-element-resize', this._onResize)
+    this.removeEventListener('hydra-context-lost', this._onContextLost)
     this._stopLoop()
     this.canvasManager.disconnect()
   }
@@ -191,6 +198,7 @@ export class HydraElement extends HTMLElement {
   destroy() {
     this._stopLoop()
     this.removeEventListener('hydra-element-resize', this._onResize)
+    this.removeEventListener('hydra-context-lost', this._onContextLost)
     this.canvasManager.disconnect()
     this.canvasManager.removeAnalyzerCanvases()
     this.hydraManager?.destroy()

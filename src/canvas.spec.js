@@ -83,7 +83,7 @@ describe('CanvasManager', () => {
     const custom = document.createElement('canvas')
     manager.preserveCustomCanvas(custom)
     expect(manager.canvas).to.equal(custom)
-    expect(custom.getAttribute('part')).to.be.null
+    expect(custom.getAttribute('part')).to.equal('canvas')
   })
 
   it('resizes the canvas dimensions', () => {
@@ -104,7 +104,8 @@ describe('CanvasManager', () => {
     const custom = document.createElement('canvas')
     manager.preserveCustomCanvas(custom)
     expect(manager.canvas).to.equal(custom)
-    expect(shadowRoot.querySelector('canvas')).to.equal(null)
+    expect(shadowRoot.querySelector('canvas#hydra-element-canvas')).to.equal(null)
+    expect(shadowRoot.contains(custom)).to.be.true
   })
 
   it('keeps a supplied custom canvas untouched during init', () => {
@@ -207,5 +208,27 @@ describe('CanvasManager', () => {
     manager.removeAnalyzerCanvases()
     expect(shadowRoot.contains(analyzer)).to.be.false
     expect(manager.canvas).to.exist
+  })
+
+  it('adopts a custom canvas into the shadow root', () => {
+    const { shadowRoot, host } = makeHost()
+    trackCleanup({ host })
+    const manager = new CanvasManager(shadowRoot)
+    manager.init(640, 480)
+    const custom = document.createElement('canvas')
+    manager.preserveCustomCanvas(custom)
+    expect(shadowRoot.contains(custom)).to.be.true
+    expect(manager.canvas).to.equal(custom)
+  })
+
+  it('does not duplicate an already-adopted custom canvas', () => {
+    const { shadowRoot, host } = makeHost()
+    trackCleanup({ host })
+    const manager = new CanvasManager(shadowRoot)
+    manager.init(640, 480)
+    const custom = document.createElement('canvas')
+    manager.preserveCustomCanvas(custom)
+    manager.preserveCustomCanvas(custom)
+    expect(shadowRoot.querySelectorAll('canvas')).to.have.length(1)
   })
 })

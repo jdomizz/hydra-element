@@ -39,12 +39,15 @@ export class CanvasManager {
     this.canvas = document.createElement('canvas')
     this.canvas.id = 'hydra-element-canvas'
     this.canvas.setAttribute('part', 'canvas')
+    this.canvas.setAttribute('role', 'img')
+    this.canvas.setAttribute('aria-label', 'Hydra visual')
     this.canvas.width = this.width
     this.canvas.height = this.height
     this.canvas.style.width = '100%'
     this.canvas.style.height = '100%'
     this.shadowRoot.append(this.canvas)
     this._observeResize()
+    this._attachContextLossHandler()
   }
 
   /**
@@ -63,12 +66,23 @@ export class CanvasManager {
 
   /**
    * Replaces the current canvas with an externally supplied one, removing any
-   * internal canvas. The custom canvas is adopted as-is.
+   * internal canvas. The custom canvas is adopted into the shadow root,
+   * marked with part="canvas", and observed for CSS size changes unless it
+   * has explicit width/height attributes.
    * @param {HTMLCanvasElement} canvas
    */
   preserveCustomCanvas(canvas) {
     this.removeInternalCanvas()
     this.canvas = canvas
+    if (!this.shadowRoot.contains(canvas)) {
+      this.shadowRoot.append(canvas)
+    }
+    canvas.setAttribute('part', 'canvas')
+    if (!canvas.hasAttribute('width') && !canvas.hasAttribute('height')) {
+      canvas.style.width = '100%'
+      canvas.style.height = '100%'
+      this._observeResize()
+    }
   }
 
   /**
@@ -122,6 +136,24 @@ export class CanvasManager {
       entries.forEach(entry => this._handleResize(entry))
     })
     this.resizeObserver.observe(this.host)
+  }
+
+  /**
+   * Attaches a one-shot webglcontextlost listener to the internal canvas.
+   * Dispatches a hydra-context-lost event on the host so HydraElement can
+   * re-initialize. Only for internal canvases — custom canvases are user-owned.
+   * @private
+   */
+  _attachContextLossHandler() {
+    if (!this.canvas) return
+    this.canvas.addEventListener(
+      'webglcontextlost',
+      e => {
+        e.preventDefault()
+        this.host?.dispatchEvent(new CustomEvent('hydra-context-lost'))
+      },
+      { once: true }
+    )
   }
 
   /**
