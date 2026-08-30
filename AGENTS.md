@@ -1,5 +1,9 @@
 # AGENTS.md
 
+Quick reference for agent workflows in this repo. The full developer
+guide is [CONTRIBUTING.md](./CONTRIBUTING.md); the implementation map
+is [ARCHITECTURE.md](./ARCHITECTURE.md).
+
 ## Commands
 
 - `npm run dev` — serve `index.html` with Vite (HMR)
@@ -15,20 +19,6 @@
 - `wtr.config.js` uses Playwright's bundled Chromium — install with `node node_modules/playwright/cli.js install chromium` if tests fail to launch
 - Tests register the custom element themselves via `window.customElements.define`
 
-## Architecture
-
-Single-package web component library wrapping `hydra-synth`.
-
-- Entry: `index.js` registers `<hydra-element>` from `src/element.js` and exports `HydraElement` + `hydraEval`
-- `src/element.js` — thin facade that wires together the managers
-- `src/canvas.js` — `CanvasManager`: canvas lifecycle, ResizeObserver, CSS parts
-- `src/hydra.js` — `HydraManager`: hydra-synth instance, code evaluation, events
-- `src/loop.js` — `LoopController`: requestAnimationFrame loop
-- `src/attributes.js` — `AttributeHandler` + `DEFAULT_OPTIONS`: attribute parsing
-- `src/eval.js` — evaluates user code using `new Function()` + `with(proxy)` to provide Hydra DSL syntax (not a security sandbox)
-- `src/parse.js` — pure parsing utilities (`parseNumber`, `parseJSON`, `parseOption`)
-- Build output: `dist/hydra-element.js` (from `index.js`) and `dist/eval.js` (from `src/eval.js`), ESM only, per `vite.config.js`
-
 ## Conventions
 
 - No TypeScript — follow existing JSDoc + plain JS style
@@ -37,37 +27,46 @@ Single-package web component library wrapping `hydra-synth`.
 - `hydra-synth` is the sole runtime dependency; keep it that way
 - `index.html` is a dev playground, not part of the library — don't import from it
 
-## Workflow
+## Spec workflow
 
-Specs live in `.opencode/specs/` (spec index in `roadmap.md`):
+Specs live in `.opencode/specs/` (index in `roadmap.md`):
 
 ```
 backlog/ → active/ → archive/
 ```
-
-- **backlog/** — Specs pending implementation
-- **active/** — Specs being implemented (multiple allowed)
-- **archive/** — Specs completed with user approval
 
 When implementing a spec:
 
 1. Move it from `backlog/` to `active/`
 2. Implement according to the spec's "Done when" criteria
 3. User reviews and approves
-4. Move to `archive/`
-5. Update docs if needed: README status with commit hash, CHANGELOG entry, and AGENTS.md if the implementation changes commands, dependencies, architecture, or workflow
+4. Move to `archive/`, append `## Status: accepted` with the commit hash
+5. Update docs:
+   - **README** — reflect any new/changed features
+   - **CHANGELOG** — add an entry under `## [Unreleased]`
+   - **ARCHITECTURE.md** — amend if the implementation shape changed
+   - **CONTRIBUTING.md** — amend if commands, dependencies, or workflow changed
 
-When a spec (or any feature/fix) is finished and approved, **update the docs** before considering it done:
+Specs can only move to `archive/` after explicit user approval, even if
+implementation is complete.
 
-- **README** — reflect any new/changed features, usage, or status
-- **CHANGELOG** — add an entry describing the change (follow its existing format)
-- **AGENTS.md** — amend if the change affects commands, dependencies, architecture, or workflow
-- Only update each doc if it's actually affected by the change; don't pad with noise
-
-**Important:** Specs can only move to `archive/` after explicit user approval, even if implementation is complete.
+See [CONTRIBUTING.md → Spec workflow](./CONTRIBUTING.md#spec-workflow)
+for the full process.
 
 ## Language conventions
 
-- **Project language: English** — All code, specs, docs, and commits are in English
-- **Agent responses**: Respond in the user's language when chatting
-- **Code artifacts**: Always in English (variable names, comments, commit messages, spec documents)
+- **Project language: English** — all code, specs, docs, and commits in English
+- **Agent responses**: respond in the user's language when chatting
+- **Code artifacts**: always in English (variable names, comments, commit messages, spec documents)
+
+## Commit conventions
+
+Conventional commit prefixes:
+
+- `feat(scope): …` — new user-visible feature
+- `fix(scope): …` — bug fix
+- `refactor(scope): …` — internal change, no behavior delta
+- `docs(scope): …` — docs only
+- `test(scope): …` — tests only
+
+One spec per commit. Don't batch unrelated specs.

@@ -1,54 +1,123 @@
-# Contributing to hydra-element
+# Contributing
 
-Thanks for your interest in contributing! This document will help you get started.
+Thanks for your interest in contributing! This document is for
+maintainers and contributors. End users don't need to read this —
+[README.md](./README.md) is enough.
+
+For how the library is put together, read
+[ARCHITECTURE.md](./ARCHITECTURE.md) instead.
 
 ## How to contribute
 
-- **Report bugs**: Open an [issue](https://github.com/jdomizz/hydra-element/issues) with a clear description and steps to reproduce
-- **Suggest features**: Open an issue to discuss your idea first
-- **Submit code**: Fork the repo, create a branch, and open a pull request
+- **Report bugs** — open an [issue](https://github.com/jdomizz/hydra-element/issues) with a clear description and steps to reproduce
+- **Suggest features** — open an issue to discuss the idea first; check the existing [specs](./.opencode/specs/roadmap.md) to see if it's already in flight
+- **Submit code** — fork the repo, create a branch off `dev`, and open a pull request
 
 ## Development setup
 
-1. Fork and clone the repository
-2. Install dependencies:
-   ```sh
-   npm install
-   ```
-3. Start the dev server:
-   ```sh
-   npm run dev
-   ```
-4. Open `http://localhost:5173` in your browser
-
-## Code conventions
-
-This project uses **ox-standard** for linting and formatting (JavaScript Standard Style). Before committing, your code will be automatically checked via pre-commit hooks.
-
-You can also run linting manually:
-
 ```sh
-npm run lint
+npm install
+npm run dev     # vite dev server with HMR — http://localhost:5173
 ```
 
-## Testing
-
-Tests run in a real browser using Web Test Runner and Playwright.
+If `npm test` fails to launch Chromium, install the bundled browser:
 
 ```sh
-npm test
+node node_modules/playwright/cli.js install chromium
 ```
 
-Tests are located alongside source files in `src/**/*.spec.js` and use `@open-wc/testing` + `sinon`.
+## Commands
+
+| Command          | What it does                                                    |
+| ---------------- | --------------------------------------------------------------- |
+| `npm run dev`    | Serve `index.html` with Vite (HMR)                              |
+| `npm test`       | Run all tests via Web Test Runner (headless Chromium)           |
+| `npm run build`  | Bundle to `dist/hydra-element.js` and `dist/eval.js` (ESM only) |
+| `npm run lint`   | Lint with oxlint (auto-fixes where safe)                        |
+| `npm run format` | Format with oxfmt                                               |
+
+## Conventions
+
+- **Plain JavaScript** with JSDoc — no TypeScript source
+- Linting: oxlint (config in `.oxlintrc.json`)
+- Formatting: oxfmt (config in `.oxfmtrc.json`); run before committing
+- `hydra-synth` is the sole runtime dependency — keep it that way
+- `index.html` is the dev playground, not part of the library — don't import from it
+- Source modules are `src/*.js`, tests live next to them as `src/*.spec.js`
+
+## Test strategy
+
+Tests are colocated with source (`src/**/*.spec.js`), use
+`@open-wc/testing` + `sinon`, and assert with Chai style
+(`.to.equal`, `.to.be.a('function')`).
+
+Each spec registers the custom element itself:
+
+```js
+if (!customElements.get('hydra-element')) {
+  customElements.define('hydra-element', HydraElement)
+}
+```
+
+WTR uses Playwright's bundled Chromium. Tests run headless by default
+(`wtr.config.js`); for debugging, open `http://localhost:8000` after
+running `npm run test -- --watch`.
+
+See [AGENTS.md](./AGENTS.md) for the test-runner quirks the agent
+workflow relies on (Playwright install path, etc.).
+
+## Spec workflow
+
+Specs live in `.opencode/specs/` (see [roadmap](./.opencode/specs/roadmap.md)):
+
+```
+backlog/ → active/ → archive/
+```
+
+- **backlog/** — pending implementation
+- **active/** — work in progress (multiple allowed)
+- **archive/** — shipped, with a `Status: accepted` footer
+
+When implementing a spec:
+
+1. Move it from `backlog/` to `active/`
+2. Implement per the spec's "Done when" criteria
+3. Get user approval (a spec only moves to `archive/` after explicit approval)
+4. Move to `archive/`, append `## Status` with the commit hash
+5. Update docs:
+   - **README** — reflect any new/changed features
+   - **CHANGELOG** — add an entry (Keep a Changelog format)
+   - **AGENTS.md** — amend if commands, dependencies, or architecture changed
+   - **ARCHITECTURE.md** — amend if the implementation shape changed
+
+Each spec ships as **its own commit** (no batching unrelated specs).
+Conventional commit prefixes:
+
+- `feat(scope): …` — new user-visible feature
+- `fix(scope): …` — bug fix
+- `refactor(scope): …` — internal change, no behavior delta
+- `docs(scope): …` — docs only
+- `test(scope): …` — tests only
 
 ## Pull request process
 
-1. Create a branch for your changes: `git checkout -b my-feature`
-2. Make your changes and commit them (pre-commit hooks will run automatically)
-3. Ensure all tests pass: `npm test`
-4. Push to your fork and open a pull request against the `dev` branch
-5. Wait for review and address any feedback
+1. Branch off `dev`: `git checkout -b my-feature`
+2. Make focused commits with the conventional prefix
+3. Run `npm run lint && npm test && npm run build` before pushing — they must be green
+4. Push to your fork and open a PR against `dev`
+5. Address review feedback; the spec's "Done when" list is the acceptance criteria
+
+## Release process
+
+1. Pick the spec(s) shipped since the last release — verify `npm test` is green on `dev`
+2. Update **CHANGELOG** under `## [Unreleased]`, then bump the heading to the new version + date
+3. Update `version` in `package.json`
+4. Update **README** and **ARCHITECTURE** if user-visible behavior or internals changed
+5. Move specs from `active/` to `archive/`
+6. Commit everything as `docs(release): vX.Y.Z …`
+7. Tag the commit and push the tag
 
 ## Questions?
 
-Open a [discussion](https://github.com/jdomizz/hydra-element/discussions) or an issue.
+Open a [discussion](https://github.com/jdomizz/hydra-element/discussions)
+or an issue.
