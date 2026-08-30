@@ -38,7 +38,6 @@
     "unicorn/prefer-array-flat-map": "warn",
     "unicorn/prefer-object-from-entries": "warn",
     "unicorn/prefer-optional-catch-binding": "error",
-    "unicorn/prefer-global-this": "warn",
     "unicorn/prefer-negative-index": "warn",
     "unicorn/prefer-set-size": "warn",
     "unicorn/prefer-structured-clone": "warn",
