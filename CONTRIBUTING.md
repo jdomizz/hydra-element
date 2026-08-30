@@ -15,6 +15,11 @@ For how the library is put together, read
 
 ## Development setup
 
+The repo pins Node 20 via `.nvmrc` — run `nvm use` (or let your version
+manager auto-switch) before `npm install` to match CI. `.editorconfig`
+mirrors `oxfmt`'s whitespace rules (LF, 2-space indent, final newline),
+so editors without an `oxfmt` plugin still produce conformant files.
+
 ```sh
 npm install
 npm run dev     # vite dev server with HMR — http://localhost:5173
