@@ -20,7 +20,10 @@
         <section class="panel panel--editor">
           <header class="editor__head">
             <h2>Editor</h2>
-            <span class="editor__hint">Cmd / Ctrl + Enter</span>
+            <div class="editor__head-actions">
+              <span class="editor__hint">Cmd / Ctrl + Enter</span>
+              <button type="button" id="eval-btn">eval</button>
+            </div>
           </header>
           <textarea
             name="editor"
@@ -28,9 +31,6 @@
             spellcheck="false"
             placeholder="osc(10, 0.2, 0.5).out()"
           ></textarea>
-          <footer class="editor__foot">
-            <button type="button" id="eval-btn">eval</button>
-          </footer>
         </section>
       </aside>
 
@@ -39,9 +39,17 @@
       </section>
 
       <aside class="app__right">
-        <section class="panel">
-          <h2>Presets</h2>
-          <div class="presets"></div>
+        <section class="panel panel--stats">
+          <div class="stats">
+            <div class="stats__cell">
+              <span class="stats__label">time</span>
+              <span class="stats__value" id="stat-time">–</span>
+            </div>
+            <div class="stats__cell">
+              <span class="stats__label">fps</span>
+              <span class="stats__value" id="stat-fps">–</span>
+            </div>
+          </div>
         </section>
         <section class="panel">
           <h2>Attributes</h2>
@@ -75,17 +83,9 @@
             </div>
           </form>
         </section>
-        <section class="panel panel--stats">
-          <div class="stats">
-            <div class="stats__cell">
-              <span class="stats__label">time</span>
-              <span class="stats__value" id="stat-time">–</span>
-            </div>
-            <div class="stats__cell">
-              <span class="stats__label">fps</span>
-              <span class="stats__value" id="stat-fps">–</span>
-            </div>
-          </div>
+        <section class="panel">
+          <h2>Presets</h2>
+          <div class="presets"></div>
         </section>
         <section class="panel panel--log">
           <header class="log__head">

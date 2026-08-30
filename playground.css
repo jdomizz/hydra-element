@@ -123,18 +123,42 @@ body {
 
 .editor__head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   margin-bottom: 0.5rem;
+  gap: 0.5rem;
 }
 
 .editor__head h2 {
   margin: 0;
 }
 
+.editor__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .editor__hint {
   font-size: 0.7rem;
   color: var(--muted);
+}
+
+.editor__head-actions button,
+.log__head button {
+  font-family: inherit;
+  font-size: 0.75rem;
+  color: var(--fg);
+  background: #2a2a30;
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+.editor__head-actions button:hover,
+.log__head button:hover {
+  border-color: var(--accent);
 }
 
 .editor__area {
@@ -153,29 +177,6 @@ body {
 }
 
 .editor__area:focus {
-  border-color: var(--accent);
-}
-
-.editor__foot {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 0.5rem;
-}
-
-.editor__foot button,
-.log__head button {
-  font-family: inherit;
-  font-size: 0.75rem;
-  color: var(--fg);
-  background: #2a2a30;
-  border: 1px solid var(--panel-border);
-  border-radius: 3px;
-  padding: 0.3rem 0.6rem;
-  cursor: pointer;
-}
-
-.editor__foot button:hover,
-.log__head button:hover {
   border-color: var(--accent);
 }
 
