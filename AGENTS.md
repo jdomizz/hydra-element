@@ -39,7 +39,7 @@ Single-package web component library wrapping `hydra-synth`.
 
 ## Workflow
 
-Specs live in `dev/roadmap/`:
+Specs live in `.opencode/specs/` (spec index in `roadmap.md`):
 
 ```
 backlog/ → active/ → archive/
@@ -50,6 +50,7 @@ backlog/ → active/ → archive/
 - **archive/** — Specs completed with user approval
 
 When implementing a spec:
+
 1. Move it from `backlog/` to `active/`
 2. Implement according to the spec's "Done when" criteria
 3. User reviews and approves
