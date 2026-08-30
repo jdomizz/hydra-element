@@ -13,6 +13,13 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 - `npm run format` — format with oxfmt
 - Pre-commit hook (husky + lint-staged) auto-fixes `*.{js,mjs}` with `oxlint --fix`, then runs `oxfmt` on staged JS and `*.md` files; bypass with `git commit --no-verify`
 
+## Agents
+
+- Default `build` and `plan` agents are pinned to `opencode-go/minimax-m3`
+  via `.opencode/agents/{build,plan}.md`. Fallback chain:
+  `mimo-v2.5 → qwen3.6-plus` (see `~/.config/opencode/model-fallback.json`).
+- `/fix` delegates to the `build` agent. No dedicated `coder` agent.
+
 ## Test runner quirks
 
 - Tests are `src/**/*.spec.js`, colocated with source (not in a `test/` dir)

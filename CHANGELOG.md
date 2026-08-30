@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - **BREAKING**: `hydraEval` now returns a Promise — always `await` it
+- `build` and `plan` agents pinned to `opencode-go/minimax-m3` via project overrides
+- `/fix` command now delegates to the default `build` agent
+- Removed custom `coder` agent; defaults are sufficient
 - **BREAKING**: animation loop is managed by the element, not hydra-synth's `autoLoop`
 - **BREAKING**: default canvas size is 0×0 (falls back to 1280×720)
 - Eval uses a Proxy for scoped DSL access; identifier-level lookups resolve scope → synth → `globalThis`
