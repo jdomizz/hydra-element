@@ -1,4 +1,5 @@
 import { html, fixture, expect } from '@open-wc/testing'
+import sinon from 'sinon'
 import { HydraElement } from './element'
 import { wait } from './test-helpers'
 
@@ -227,5 +228,25 @@ describe('<hydra-element>', () => {
     await wait(10)
     expect(details).to.have.length(1)
     expect(details[0].success).to.be.true
+  })
+
+  it('destroy tears down the synth and resets state', async () => {
+    const el = await fixture(html`<hydra-element>osc().out()</hydra-element>`)
+    const s1 = el.synth
+    expect(s1).to.exist
+    el.destroy()
+    expect(el.synth).to.be.undefined
+    expect(el.hydraManager).to.be.null
+  })
+
+  it('destroy allows a fresh reconnect', async () => {
+    const el = await fixture(html`<hydra-element>osc().out()</hydra-element>`)
+    const s1 = el.synth
+    el.destroy()
+    document.body.append(el)
+    await wait(10)
+    expect(el.synth).to.exist
+    expect(el.synth).to.not.equal(s1)
+    el.remove()
   })
 })

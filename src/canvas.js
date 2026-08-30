@@ -81,14 +81,25 @@ export class CanvasManager {
   }
 
   /**
-   * Tags any non-internal canvases in the shadow root with `part="analyzer"`.
+   * Removes any non-internal canvases from the shadow root.
    * These are canvases created by Hydra's analyzer sources (e.g. audio FFT).
+   */
+  removeAnalyzerCanvases() {
+    this.shadowRoot
+      ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
+      .forEach(canvas => canvas.remove())
+  }
+
+  /**
+   * Tags any non-internal canvases in the shadow root with `part="analyzer"`
+   * and marks them hidden from the accessibility tree.
    * @private
    */
   tagAnalyzerCanvases() {
-    this.shadowRoot
-      ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
-      .forEach(canvas => canvas.setAttribute('part', 'analyzer'))
+    this.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => {
+      canvas.setAttribute('part', 'analyzer')
+      canvas.setAttribute('aria-hidden', 'true')
+    })
   }
 
   /**

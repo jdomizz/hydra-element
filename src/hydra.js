@@ -34,11 +34,16 @@ export class HydraManager {
   }
 
   /**
-   * Clears all sources and drops the Hydra instance.
+   * Clears all sources, stops audio, and drops the Hydra instance.
    */
   destroy() {
     if (this.hydra) {
       this.hydra.s?.forEach(source => source.clear?.())
+      try {
+        this.hydra.getAudio?.().stop?.()
+      } catch {
+        // Audio may not be started or already stopped
+      }
       this.hydra = null
     }
   }

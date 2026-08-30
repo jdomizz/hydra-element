@@ -39,10 +39,11 @@ export class HydraElement extends HTMLElement {
   /**
    * Resolves with `{ synth }` once Hydra has been initialized.
    * Always resolvable, even when accessed after the element is connected.
+   * Returns the live synth when the manager is active.
    * @returns {Promise<{synth: Object}>} A promise that resolves when Hydra is ready.
    */
   get ready() {
-    return this._readyPromise
+    return this.hydraManager ? Promise.resolve({ synth: this.synth }) : this._readyPromise
   }
 
   /**
@@ -60,6 +61,7 @@ export class HydraElement extends HTMLElement {
   set canvas(value) {
     this.canvasManager.preserveCustomCanvas(value)
     if (this.hydraManager) {
+      this.hydraManager.destroy()
       this._initHydra()
       if (this._code !== '') {
         this.hydraManager.evaluate(this._code)
@@ -133,21 +135,13 @@ export class HydraElement extends HTMLElement {
     if (this.attributeHandler.getOptions().autoLoop) {
       this._startLoop()
     }
-    if (this._code !== '') {
-      this.hydraManager.evaluate(this._code)
-    }
   }
 
   disconnectedCallback() {
     this._connected = false
-    this._initialized = false
     this.removeEventListener('hydra-element-resize', this._onResize)
     this._stopLoop()
     this.canvasManager.disconnect()
-    if (this.hydraManager) {
-      this.hydraManager.destroy()
-      this.hydraManager = null
-    }
   }
 
   /**
@@ -156,6 +150,7 @@ export class HydraElement extends HTMLElement {
    */
   _initHydra() {
     this._stopLoop()
+    this.hydraManager?.destroy()
     this.hydraManager = new HydraManager({
       host: this,
       options: this.attributeHandler.getOptions(),
@@ -186,6 +181,24 @@ export class HydraElement extends HTMLElement {
       this._startLoop()
     }
     this._resolveReady({ synth: this.hydraManager.synth })
+  }
+
+  /**
+   * Performs full teardown: stops the loop, destroys the HydraManager,
+   * removes analyzer canvases, and resets initialization state so a later
+   * reconnect initializes fresh.
+   */
+  destroy() {
+    this._stopLoop()
+    this.removeEventListener('hydra-element-resize', this._onResize)
+    this.canvasManager.disconnect()
+    this.canvasManager.removeAnalyzerCanvases()
+    this.hydraManager?.destroy()
+    this.hydraManager = null
+    this._initialized = false
+    this._readyPromise = new Promise(resolve => {
+      this._resolveReady = resolve
+    })
   }
 
   /**

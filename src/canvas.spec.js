@@ -196,4 +196,16 @@ describe('CanvasManager', () => {
     expect(disconnectSpy).to.have.been.calledOnce
     expect(manager.resizeObserver).to.equal(null)
   })
+
+  it('removes analyzer canvases from the shadow root', () => {
+    const { shadowRoot, host } = makeHost()
+    trackCleanup({ host })
+    const manager = new CanvasManager(shadowRoot)
+    manager.init(640, 480)
+    const analyzer = document.createElement('canvas')
+    shadowRoot.append(analyzer)
+    manager.removeAnalyzerCanvases()
+    expect(shadowRoot.contains(analyzer)).to.be.false
+    expect(manager.canvas).to.exist
+  })
 })
