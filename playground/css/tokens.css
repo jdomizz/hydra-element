@@ -1,0 +1,38 @@
+:root {
+  --hydra-bg:           #16161a;
+  --hydra-bg-elevated:  #1a1a1d;
+  --hydra-bg-input:     #16161a;
+  --hydra-bg-hover:     #232328;
+  --hydra-fg:           #e6e6e6;
+  --hydra-fg-muted:     #8a8a90;
+  --hydra-fg-subtle:    #6e6e75;
+  --hydra-border:       #2e2e33;
+  --hydra-border-strong:#3e3e44;
+  --hydra-accent:       #d6bb21;
+  --hydra-accent-fg:    #16161a;
+  --hydra-log-success:  #6dca6d;
+  --hydra-log-error:    #e57373;
+  --hydra-log-warn:     #e0a547;
+  --hydra-log-info:     #6fa8dc;
+
+  --hydra-space-xs:  0.25rem;
+  --hydra-space-s:   0.5rem;
+  --hydra-space-m:   0.75rem;
+  --hydra-space-l:   1rem;
+  --hydra-space-xl:  1.5rem;
+
+  --hydra-font-mono: ui-monospace, 'JetBrains Mono', 'Cascadia Mono', Menlo, monospace;
+  --hydra-text-xs:   0.7rem;
+  --hydra-text-s:    0.8rem;
+  --hydra-text-base: 0.9rem;
+  --hydra-text-l:    1rem;
+
+  --hydra-duration-fast:   120ms;
+  --hydra-duration-normal: 200ms;
+  --hydra-easing: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --hydra-radius-s: 3px;
+  --hydra-radius-m: 6px;
+
+  color-scheme: dark;
+}

@@ -7,92 +7,27 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍬</text></svg>"
     />
-    <link rel="stylesheet" href="./playground.css" />
+    <link rel="stylesheet" href="./playground/style.css" />
+    <script type="module" src="./index.js"></script>
+    <script type="module" src="./playground/main.js"></script>
   </head>
   <body>
     <main class="app">
       <aside class="app__left">
-        <section class="panel panel--editor">
-          <header class="editor__head">
-            <h2>Editor</h2>
-            <div class="editor__head-actions">
-              <span class="editor__hint">Cmd / Ctrl + Enter</span>
-              <button type="button" id="eval-btn">eval</button>
-            </div>
-          </header>
-          <textarea
-            name="editor"
-            class="editor__area"
-            spellcheck="false"
-            placeholder="osc(10, 0.2, 0.5).out()"
-          ></textarea>
-        </section>
+        <preset-selector target="#hydra"></preset-selector>
+        <editor-panel target="#hydra"></editor-panel>
       </aside>
 
       <section class="app__center">
-        <hydra-element></hydra-element>
+        <hydra-element id="hydra"></hydra-element>
       </section>
 
       <aside class="app__right">
-        <section class="panel panel--stats">
-          <div class="stats">
-            <div class="stats__cell">
-              <span class="stats__label">time</span>
-              <span class="stats__value" id="stat-time">–</span>
-            </div>
-            <div class="stats__cell">
-              <span class="stats__label">fps</span>
-              <span class="stats__value" id="stat-fps">–</span>
-            </div>
-          </div>
-        </section>
-        <section class="panel">
-          <h2>Attributes</h2>
-          <form class="toggles" onsubmit="event.preventDefault()">
-            <div class="toggle">
-              <label>
-                <input type="checkbox" id="toggle-audio" />
-                <span>audio</span>
-              </label>
-            </div>
-            <div class="toggle">
-              <label>
-                <input type="checkbox" id="toggle-global" />
-                <span>global</span>
-              </label>
-              <span class="toggle__hint">publish on window._hydra</span>
-            </div>
-            <div class="toggle">
-              <label>
-                <input type="checkbox" id="toggle-loop" />
-                <span>loop</span>
-              </label>
-            </div>
-            <div class="toggle">
-              <label for="toggle-sources">sources</label>
-              <input type="number" id="toggle-sources" min="1" max="16" step="1" value="4" />
-            </div>
-            <div class="toggle">
-              <label for="toggle-outputs">outputs</label>
-              <input type="number" id="toggle-outputs" min="1" max="16" step="1" value="4" />
-            </div>
-          </form>
-        </section>
-        <section class="panel">
-          <h2>Presets</h2>
-          <div class="presets"></div>
-        </section>
-        <section class="panel panel--log">
-          <header class="log__head">
-            <h2>Log</h2>
-            <button type="button" class="log__clear" id="log-clear">clear</button>
-          </header>
-          <pre class="log" id="log" aria-live="polite"></pre>
-        </section>
+        <cfg-form target="#hydra"></cfg-form>
+        <log-panel target="#hydra" limit="50">
+          <stats-strip slot="stats" target="#hydra"></stats-strip>
+        </log-panel>
       </aside>
     </main>
-
-    <script type="module" src="./index.js"></script>
-    <script type="module" src="./playground.js"></script>
   </body>
 </html>

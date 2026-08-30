@@ -1,0 +1,95 @@
+.panel-title {
+  margin: 0 0 var(--hydra-space-s) 0;
+  font-size: var(--hydra-text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hydra-fg-muted);
+}
+
+.btn {
+  font-family: inherit;
+  font-size: var(--hydra-text-s);
+  color: var(--hydra-fg);
+  background: var(--hydra-bg-input);
+  border: 1px solid var(--hydra-border);
+  border-radius: var(--hydra-radius-s);
+  padding: var(--hydra-space-xs) var(--hydra-space-s);
+  cursor: pointer;
+  transition:
+    border-color var(--hydra-duration-fast) var(--hydra-easing),
+    background-color var(--hydra-duration-fast) var(--hydra-easing),
+    color var(--hydra-duration-fast) var(--hydra-easing);
+}
+
+.btn:hover {
+  border-color: var(--hydra-accent);
+  background: var(--hydra-bg-hover);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn--primary {
+  background: var(--hydra-accent);
+  color: var(--hydra-accent-fg);
+  border-color: var(--hydra-accent);
+  font-weight: 700;
+}
+
+.btn--primary:hover {
+  background: color-mix(in oklab, var(--hydra-accent) 88%, white);
+  border-color: color-mix(in oklab, var(--hydra-accent) 88%, white);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: transparent;
+  color: var(--hydra-fg-muted);
+}
+
+.btn--ghost:hover {
+  color: var(--hydra-fg);
+  background: var(--hydra-bg-hover);
+  border-color: var(--hydra-border);
+}
+
+select,
+input[type='text'],
+input[type='number'] {
+  font-family: inherit;
+  font-size: var(--hydra-text-s);
+  color: var(--hydra-fg);
+  background: var(--hydra-bg-input);
+  border: 1px solid var(--hydra-border);
+  border-radius: var(--hydra-radius-s);
+  padding: var(--hydra-space-xs) var(--hydra-space-s);
+  transition: border-color var(--hydra-duration-fast) var(--hydra-easing);
+}
+
+select:hover,
+input[type='text']:hover,
+input[type='number']:hover {
+  border-color: var(--hydra-border-strong);
+}
+
+input[type='checkbox'] {
+  accent-color: var(--hydra-accent);
+  cursor: pointer;
+}
+
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.hint {
+  font-size: var(--hydra-text-xs);
+  color: var(--hydra-fg-muted);
+}
