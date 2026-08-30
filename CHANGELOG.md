@@ -9,14 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `window.synth` global reference for extension compatibility
-- `synth` variable available inside code for `setFunction()` and other synth methods
+- `destroy()` method for explicit teardown without removing from DOM
+- `hydra-element-resize` event when the canvas backing-store resolution changes
+- `hydra-context-lost` event for internal canvas context loss
+- Custom canvases are now adopted into the shadow root with `part="canvas"`
+- TypeScript declarations via `dist/hydra-element.d.ts` and `dist/eval.d.ts`
+- Internal canvas has `role="img"` and `aria-label="Hydra visual"`
+- Analyzer canvases are marked `aria-hidden="true"`
+
+### Changed
+
+- Disconnecting the element no longer destroys the synth — moving in the DOM preserves state
+- `sources`/`outputs` attributes are bounded to 16 (values above revert to default)
+- Multiple synth-reset attribute changes in one tick are coalesced into a single reset
+- Async evaluations are now serialized in submission order
+- Undefined identifiers in user code emit a one-time warning to `console.warn`
 
 ### Fixed
 
-- `setFunction()` now works inside code (previously only worked in global mode)
-- External scripts loaded via `loadScript()` can now access `synth` methods
-- Full compatibility with ojack editor scripts and community extensions (geikha/hyper-hydra, etc.)
+- Removing `loop` attribute now restores the default `loop="true"` instead of stopping the loop
+- Removing `width`/`height` attributes now returns the canvas to CSS-based sizing
+- `ready` always resolves to the live synth, even after a synth reset
+- Old Hydra instances are destroyed before creating a new one (no more WebGL context leaks)
+- WebGL context loss on internal canvases now triggers automatic re-initialization
 
 ## [0.7.0] - 2026-08-29
 

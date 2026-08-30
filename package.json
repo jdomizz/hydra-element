@@ -1,6 +1,6 @@
 {
   "name": "hydra-element",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "A custom element for embedding Hydra video synth scenes in HTML",
   "keywords": [
     "canvas",
@@ -27,16 +27,29 @@
     "url": "https://opencollective.com/hydra-synth"
   },
   "qna": "https://github.com/jdomizz/hydra-element/discussions",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "type": "module",
+  "sideEffects": [
+    "./dist/hydra-element.js",
+    "./dist/eval.js"
+  ],
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
+  "types": "dist/hydra-element.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/hydra-element.d.ts",
       "import": "./dist/hydra-element.js"
     },
     "./eval": {
+      "types": "./dist/eval.d.ts",
       "import": "./dist/eval.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "dev": "vite --host",

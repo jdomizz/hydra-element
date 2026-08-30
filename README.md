@@ -158,6 +158,8 @@ By default you get 4 source buffers (`s0`-`s3`) and 4 output buffers (`o0`-`o3`)
 
 > **Warning:** Loaded scripts run with full page privileges — they are not sandboxed. Only load scripts you trust. This is separate from the eval sandboxing note below.
 
+`loadScript` also transiently exposes this element's Hydra surface on `window` while the script loads, so extension scripts that assume the Hydra globals (bare `setFunction(...)`, `window._hydra`, `window.synth`) can self-register. The previous `window` state is restored once the script finishes loading. Outside of `loadScript` calls, the element never touches `window` in non-global mode — multiple `<hydra-element>` on one page stay isolated from each other.
+
 ### Community Extensions
 
 `hydra-element` is compatible with the [Hydra extensions ecosystem](https://github.com/hydra-synth/hydra-extensions). All DSL functions (`setFunction()`, `osc()`, `solid()`, etc.) work directly inside the code without needing the `synth.` prefix.
@@ -238,13 +240,15 @@ You can also access the synth instance via `synth.setFunction()` or `window.synt
 
 ### Global mode
 
-By default, each element has its own isolated scope. If you want Hydra functions available globally (like in the Hydra editor):
+By default, each element has its own isolated scope. `loadScript` bridges the Hydra globals **transiently** while a script loads — that covers every extension in the Community Extensions section above. If you need the Hydra globals to stay on `window` permanently (e.g. extensions whose callbacks read `window._hydra` lazily after `loadScript` resolves, or page-level scripts that expect the globals to be there before any `loadScript` runs), opt into global mode:
 
 ```html
 <hydra-element global="true"> osc(10, 0.2, 0.5).out() </hydra-element>
 ```
 
-> **Warning:** You can only have one element with `global="true"` per page.
+In global mode, `_hydra`, `synth`, and the DSL functions stay on `window` for the element's lifetime.
+
+> **Warning:** You can only have one element with `global="true"` per page. With multiple elements, the last-initialized one wins.
 
 ### Advanced synth access
 
@@ -276,6 +280,10 @@ el.synth.setFunction({
   ],
   glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
 })
+
+// Load an extension script from page JS (same transient-bridge behavior
+// as the in-code loadScript)
+await el.loadScript('https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-src.js')
 ```
 
 ### Events
@@ -321,19 +329,22 @@ const { synth } = await el.ready
 
 ### Properties
 
-| Property | Type              | Description                                                                                                                 |
-| -------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `code`   | string            | Get or set the scene code                                                                                                   |
-| `canvas` | HTMLCanvasElement | Custom canvas element to render on. **Note:** Setting this property recreates the Hydra instance and re-evaluates the code. |
-| `synth`  | HydraSynth        | Read-only access to the synth instance                                                                                      |
-| `ready`  | Promise           | Resolves with `{ synth }` when Hydra is initialized                                                                         |
+| Property    | Type              | Description                                                                                                              |
+| ----------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `code`      | string            | Get or set the scene code                                                                                                |
+| `canvas`    | HTMLCanvasElement | Custom canvas element to render on. Setting this property recreates the Hydra instance and re-evaluates the code.        |
+| `synth`     | HydraSynth        | Read-only access to the synth instance                                                                                   |
+| `ready`     | Promise           | Resolves with `{ synth }` when Hydra is initialized; always reflects the live synth                                      |
+| `destroy()` | method            | Full teardown — stops the loop, destroys the synth, removes analyzer canvases. Element can be re-added to re-initialize. |
 
 ### Events
 
-| Event         | Detail                | Description                     |
-| ------------- | --------------------- | ------------------------------- |
-| `hydra-ready` | `{ synth }`           | Fired when Hydra is initialized |
-| `hydra-eval`  | `{ success, error? }` | Fired after code evaluation     |
+| Event                  | Detail                | Description                                                  |
+| ---------------------- | --------------------- | ------------------------------------------------------------ |
+| `hydra-ready`          | `{ synth }`           | Fired when Hydra is initialized                              |
+| `hydra-eval`           | `{ success, error? }` | Fired after code evaluation                                  |
+| `hydra-element-resize` | `{ width, height }`   | Fired when the canvas backing-store resolution changes       |
+| `hydra-context-lost`   | —                     | Fired when the WebGL context for the internal canvas is lost |
 
 ## DOM manipulation
 
@@ -346,7 +357,7 @@ document.body.appendChild(newParent)
 newParent.appendChild(el) // Safe — no re-initialization
 ```
 
-If you completely remove the element from the DOM and reconnect it later, it will re-initialize fresh.
+To tear down an element without removing it from the DOM, call `el.destroy()`. This stops the loop, destroys the Hydra instance, and removes analyzer canvases. If you re-add the element to the DOM afterward, it will re-initialize fresh.
 
 ## Limitations
 
