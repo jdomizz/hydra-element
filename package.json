@@ -56,6 +56,7 @@
     "test": "wtr --config wtr.config.js",
     "build": "vite build",
     "lint": "oxlint --fix .",
+    "check": "npm run lint && npm test && npm run build",
     "format": "oxfmt ."
   },
   "dependencies": {
