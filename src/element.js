@@ -39,6 +39,7 @@ export class HydraElement extends HTMLElement {
         this._initHydra()
       }
     }
+    this._pendingResetAttrs = null
   }
 
   /**
@@ -116,7 +117,9 @@ export class HydraElement extends HTMLElement {
     } else if (attrName === 'loop') {
       this._handleLoopChange(newValue)
     } else if (this.attributeHandler.hasSynthResettingAttribute(attrName)) {
-      this._handleSynthResetAttribute(attrName, newValue)
+      this._pendingResetAttrs = this._pendingResetAttrs || new Map()
+      this._pendingResetAttrs.set(attrName, newValue)
+      queueMicrotask(() => this._flushSynthReset())
     }
   }
 
@@ -259,11 +262,20 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
-   * Handles attribute changes that require resetting (recreating) the synth.
+   * Flushes all pending synth-reset attribute changes in one batch.
+   * Applies all option updates, then performs a single synth reset.
    * @private
    */
-  _handleSynthResetAttribute(attrName, newValue) {
-    const options = this.attributeHandler.update(attrName, newValue)
+  _flushSynthReset() {
+    if (!this._pendingResetAttrs) return
+    const pending = this._pendingResetAttrs
+    this._pendingResetAttrs = null
+
+    for (const [attrName, newValue] of pending) {
+      this.attributeHandler.update(attrName, newValue)
+    }
+
+    const options = this.attributeHandler.getOptions()
     this.canvasManager.init(options.width, options.height)
     this._initHydra()
     this.hydraManager.evaluate(this._code)

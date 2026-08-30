@@ -1,5 +1,14 @@
 const USER_PROPS = ['speed', 'bpm', 'update', 'afterUpdate', 'fps']
 
+const _warnedIdentifiers = new Set()
+
+function warnOnce(msg) {
+  if (!_warnedIdentifiers.has(msg)) {
+    _warnedIdentifiers.add(msg)
+    console.warn(msg)
+  }
+}
+
 /**
  * Evaluates code using a hydra-synth instance as scope.
  *
@@ -57,6 +66,9 @@ function createScopeProxy(synth, scopeObj) {
           return value.bind(synth)
         }
         return value
+      }
+      if (!(prop in globalThis) && typeof prop === 'string') {
+        warnOnce(`[hydra-element] identifier '${prop}' is undefined (scope, synth, and globals)`)
       }
       return globalThis[prop]
     },

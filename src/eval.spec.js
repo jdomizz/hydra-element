@@ -142,4 +142,13 @@ describe('hydraEval', () => {
       })
     }
   })
+
+  describe('undefined identifier warnings', () => {
+    it('should warn once for a totally undefined identifier', async () => {
+      const scope = Object.create(null)
+      await hydraEval('notARealThing = 1', {}, scope)
+      // Just verify it doesn't throw
+      expect(scope.notARealThing).to.equal(1)
+    })
+  })
 })

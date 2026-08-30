@@ -20,6 +20,7 @@ export class HydraManager {
     this.options = options
     this.scope = scope || Object.create(null)
     this.hydra = null
+    this._evalQueue = Promise.resolve()
   }
 
   /**
@@ -50,15 +51,16 @@ export class HydraManager {
 
   /**
    * Evaluates user code, dispatching `hydra-eval` with the outcome.
+   * Evaluations are serialized: each runs after the previous one resolves.
    * @param {string} code
    */
   evaluate(code) {
-    try {
-      const result = this._evaluate(code)
-      this._handleEvalResult(result)
-    } catch (error) {
-      this._dispatchEvalError(error)
-    }
+    this._evalQueue = this._evalQueue
+      .then(() => this._evaluate(code))
+      .then(
+        result => this._handleEvalResult(result),
+        error => this._dispatchEvalError(error)
+      )
   }
 
   /**

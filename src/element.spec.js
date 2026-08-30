@@ -60,6 +60,7 @@ describe('<hydra-element>', () => {
     el.canvas = customCanvas
     expect(el.canvas).to.equal(customCanvas)
     el.setAttribute('global', 'true')
+    await wait(10)
     expect(el.canvas).to.equal(customCanvas)
   })
 
@@ -83,6 +84,7 @@ describe('<hydra-element>', () => {
       const el = await fixture(html`<hydra-element></hydra-element>`)
       const synth1 = el.synth
       el.setAttribute(attr, SYNTH_CONFIG_VALUES[attr])
+      await wait(10)
       expect(el.synth, `attr ${attr}`).to.not.equal(synth1)
     }
   })
@@ -102,6 +104,7 @@ describe('<hydra-element>', () => {
           expect(el.canvas[attr], `attr ${attr}`).to.equal(Number(value))
           expect(el.synth, `attr ${attr}`).to.equal(synth1)
         } else {
+          await wait(10)
           expect(el.synth, `attr ${attr}`).to.not.equal(synth1)
         }
       }
