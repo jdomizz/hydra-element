@@ -20,6 +20,16 @@ npm install
 npm run dev     # vite dev server with HMR — http://localhost:5173
 ```
 
+The dev server serves `index.html`, the manual playground for
+`<hydra-element>`. It exposes preset sketches (osc, noise, cam+blend,
+custom GLSL, plus a deliberate-typo preset to exercise the eval error
+path), toggles for the element's `audio` / `global` / `loop` /
+`sources` / `outputs` attributes, and a live log of every event the
+element dispatches (`hydra-ready`, `hydra-eval`, `hydra-element-resize`,
+`hydra-context-lost`). The playground wires itself up in
+`playground.js` / `playground.css` and does not import anything from
+`src/` — it talks to `<hydra-element>` purely through its public API.
+
 If `npm test` fails to launch Chromium, install the bundled browser:
 
 ```sh

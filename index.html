@@ -2,64 +2,94 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>&lt;hydra-element&gt;</title>
+    <title>&lt;hydra-element&gt; playground</title>
     <link
       rel="icon"
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍬</text></svg>"
     />
-    <style>
-      body {
-        margin: 0;
-        font-family: monospace;
-        background-color: #242427;
-      }
-
-      textarea {
-        width: 100%;
-        height: 100%;
-        z-index: 1;
-        position: fixed;
-        color: #d6bb21;
-        background: transparent;
-        border: 0;
-      }
-
-      textarea:focus {
-        outline: none;
-      }
-
-      hydra-element {
-        width: 100%;
-        height: 100vh;
-        display: flex;
-      }
-    </style>
-    <script defer>
-      const keypressHandler = event => {
-        if (event.key === '\n') {
-          document.querySelector('hydra-element').code = document.querySelector('textarea').value
-        }
-      }
-
-      window.onload = () => {
-        const el = document.querySelector('hydra-element')
-        el.addEventListener('hydra-ready', () => {
-          el.synth.setFunction({
-            name: 'noixe',
-            type: 'src',
-            inputs: [
-              { type: 'float', name: 'scale', default: 5 },
-              { type: 'float', name: 'offset', default: 0.5 },
-            ],
-            glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`,
-          })
-        })
-      }
-    </script>
-    <script type="module" src="./index.js"></script>
+    <link rel="stylesheet" href="./playground.css" />
   </head>
-  <body onkeypress="keypressHandler(event)">
-    <textarea name="editor" spellcheck="false"></textarea>
-    <hydra-element audio="true"></hydra-element>
+  <body>
+    <main class="app">
+      <header class="app__header">
+        <strong>&lt;hydra-element&gt;</strong>
+        <span>dev playground — click a preset, toggle attributes, watch the log</span>
+      </header>
+
+      <aside class="app__left">
+        <section class="panel">
+          <h2>Presets</h2>
+          <div class="presets"></div>
+        </section>
+        <section class="panel">
+          <h2>Attributes</h2>
+          <form class="toggles" onsubmit="event.preventDefault()">
+            <div class="toggle">
+              <label>
+                <input type="checkbox" id="toggle-audio" />
+                <span>audio</span>
+              </label>
+            </div>
+            <div class="toggle">
+              <label>
+                <input type="checkbox" id="toggle-global" />
+                <span>global</span>
+              </label>
+              <span class="toggle__hint">publish on window._hydra</span>
+            </div>
+            <div class="toggle">
+              <label>
+                <input type="checkbox" id="toggle-loop" />
+                <span>loop</span>
+              </label>
+            </div>
+            <div class="toggle">
+              <label for="toggle-sources">sources</label>
+              <input type="number" id="toggle-sources" min="1" max="16" step="1" value="4" />
+            </div>
+            <div class="toggle">
+              <label for="toggle-outputs">outputs</label>
+              <input type="number" id="toggle-outputs" min="1" max="16" step="1" value="4" />
+            </div>
+          </form>
+        </section>
+      </aside>
+
+      <section class="app__center">
+        <hydra-element></hydra-element>
+        <div class="drawer is-collapsed">
+          <div class="drawer__head">
+            <span>editor — Cmd/Ctrl+Enter to eval</span>
+            <span>
+              <button type="button" id="eval-btn">eval</button>
+              <button type="button" id="drawer-toggle">expand</button>
+            </span>
+          </div>
+          <textarea
+            name="editor"
+            spellcheck="false"
+            placeholder="osc(10, 0.2, 0.5).out()"
+          ></textarea>
+        </div>
+      </section>
+
+      <aside class="app__right">
+        <div class="stats">
+          <div class="stats__cell">
+            <span class="stats__label">time</span>
+            <span class="stats__value" id="stat-time">–</span>
+          </div>
+          <div class="stats__cell">
+            <span class="stats__label">fps</span>
+            <span class="stats__value" id="stat-fps">–</span>
+          </div>
+        </div>
+        <button type="button" class="log__clear" id="log-clear">clear log</button>
+        <pre class="log" id="log" aria-live="polite"></pre>
+      </aside>
+    </main>
+
+    <script type="module" src="./index.js"></script>
+    <script type="module" src="./playground.js"></script>
   </body>
 </html>
