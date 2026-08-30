@@ -28,9 +28,18 @@ export class HydraManager {
 
   /**
    * Creates the Hydra instance and dispatches `hydra-ready`.
+   *
+   * When the host exposes a `canvas` (the normal case for HydraElement),
+   * that canvas is handed to hydra-synth so it renders there — without
+   * it, hydra-synth appends a fresh `<canvas>` to `document.body`,
+   * which puts the rendered output outside the element's layout.
    */
   init() {
-    this.hydra = new Hydra({ ...this.options, autoLoop: false })
+    const opts = { ...this.options, autoLoop: false }
+    if (this.host?.canvas) {
+      opts.canvas = this.host.canvas
+    }
+    this.hydra = new Hydra(opts)
     if (this.hydra.loadScript) {
       this.scope.loadScript = url => this.loadScript(url)
     }
