@@ -33,6 +33,10 @@ export class HydraManager {
    * that canvas is handed to hydra-synth so it renders there — without
    * it, hydra-synth appends a fresh `<canvas>` to `document.body`,
    * which puts the rendered output outside the element's layout.
+   *
+   * Also exposes the sources (`s`) and outputs (`o`) arrays on the synth
+   * so user code can iterate them (`s.length`, `o[i].clear()`, ...) without
+   * requiring `global="true"` — non-global mode otherwise hides them.
    */
   init() {
     const opts = { ...this.options, autoLoop: false }
@@ -40,6 +44,18 @@ export class HydraManager {
       opts.canvas = this.host.canvas
     }
     this.hydra = new Hydra(opts)
+    if (this.hydra.synth) {
+      Object.defineProperty(this.hydra.synth, 's', {
+        value: this.hydra.s,
+        enumerable: false,
+        configurable: true,
+      })
+      Object.defineProperty(this.hydra.synth, 'o', {
+        value: this.hydra.o,
+        enumerable: false,
+        configurable: true,
+      })
+    }
     if (this.hydra.loadScript) {
       this.scope.loadScript = url => this.loadScript(url)
     }

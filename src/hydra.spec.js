@@ -78,4 +78,15 @@ describe('HydraManager', () => {
     expect(manager.synth.width).to.equal(640)
     expect(manager.synth.height).to.equal(480)
   })
+
+  it('exposes the sources array as `s` and outputs as `o` on the synth', () => {
+    const manager = makeManager()
+    manager.init()
+    expect(manager.synth.s).to.be.an('array')
+    expect(manager.synth.s.length).to.equal(4)
+    expect(manager.synth.s[0]).to.equal(manager.synth.s0)
+    expect(manager.synth.o).to.be.an('array')
+    expect(manager.synth.o.length).to.equal(4)
+    expect(manager.synth.o[0]).to.equal(manager.synth.o0)
+  })
 })
