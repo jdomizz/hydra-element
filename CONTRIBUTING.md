@@ -50,7 +50,7 @@ node node_modules/playwright/cli.js install chromium
 
 - **Plain JavaScript** with JSDoc — no TypeScript source
 - Linting: oxlint (config in `.oxlintrc.json`)
-- Formatting: oxfmt (config in `.oxfmtrc.json`); run before committing
+- Formatting: oxfmt (config in `.oxfmtrc.json`); a pre-commit hook runs `oxlint --fix` and `oxfmt` on staged files automatically (bypass with `git commit --no-verify`)
 - `hydra-synth` is the sole runtime dependency — keep it that way
 - `index.html` is the dev playground, not part of the library — don't import from it
 - Source modules are `src/*.js`, tests live next to them as `src/*.spec.js`

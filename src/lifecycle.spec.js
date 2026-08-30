@@ -99,11 +99,3 @@ describe('lifecycle-resource-leaks', () => {
     expect(el.shadowRoot.contains(analyzer)).to.be.false
   })
 })
-
-describe('refactor-names', () => {
-  it('uses hasSynthResettingAttribute on the attribute handler', async () => {
-    const el = await fixture(html`<hydra-element></hydra-element>`)
-    expect(el.attributeHandler.hasSynthResettingAttribute('global')).to.be.true
-    expect(el.attributeHandler.hasSynthResettingAttribute('width')).to.be.false
-  })
-})

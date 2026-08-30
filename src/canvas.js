@@ -11,6 +11,15 @@
 const FALLBACK_WIDTH = 1280
 const FALLBACK_HEIGHT = 720
 
+const warnedMessages = new Set()
+
+function warnOnce(msg) {
+  if (!warnedMessages.has(msg)) {
+    warnedMessages.add(msg)
+    console.warn(msg)
+  }
+}
+
 export class CanvasManager {
   /**
    * @param {ShadowRoot} shadowRoot - The shadow root to append the internal canvas to.
@@ -190,10 +199,10 @@ export class CanvasManager {
     const cssHeight = Math.round(entry.contentRect?.height || 0)
 
     const nextWidth = this.host?.hasAttribute('width')
-      ? parseInt(this.host.getAttribute('width'), 10) || this.width
+      ? this.#resolveLength(this.host.getAttribute('width'), this.width, 'width')
       : cssWidth || FALLBACK_WIDTH
     const nextHeight = this.host?.hasAttribute('height')
-      ? parseInt(this.host.getAttribute('height'), 10) || this.height
+      ? this.#resolveLength(this.host.getAttribute('height'), this.height, 'height')
       : cssHeight || FALLBACK_HEIGHT
 
     if (nextWidth === this.width && nextHeight === this.height) return
@@ -203,6 +212,27 @@ export class CanvasManager {
         detail: { width: nextWidth, height: nextHeight },
       })
     )
+  }
+
+  /**
+   * Coerces a `width`/`height` attribute string into a number, falling back to
+   * the previous resolution when the value is missing or non-numeric. Emits a
+   * one-time `console.warn` per unique invalid value so typos are visible
+   * instead of being silently masked by the fallback.
+   * @param {string|null} raw
+   * @param {number} fallback
+   * @param {string} name
+   * @returns {number}
+   * @private
+   */
+  #resolveLength(raw, fallback, name) {
+    if (raw === null || raw === undefined || raw === '') return fallback
+    const parsed = Number(raw)
+    if (Number.isNaN(parsed)) {
+      warnOnce(`[hydra-element] invalid ${name} attribute: "${raw}" (expected a plain number)`)
+      return fallback
+    }
+    return parsed
   }
 
   /**
