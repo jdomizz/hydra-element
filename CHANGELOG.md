@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Non-global elements no longer bind `_hydra`, `synth`, or DSL functions on `window`
 - `width`/`height` attributes now coerce with strict `Number()` instead of `parseInt`. A `console.warn` fires once per session for non-numeric values like `width="500px"`; the canvas falls back to its previous resolution. Empty attributes (`width=""`) are treated as absent and fall back too.
 - README is oriented at the creative coder; implementation details moved to `ARCHITECTURE.md`
+- Dev playground: `<log-panel>.clear()` is private (`#clear`) — only the clear button uses it
 
 ### Fixed
 

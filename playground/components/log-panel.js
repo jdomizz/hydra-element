@@ -114,7 +114,7 @@ class LogPanel extends HTMLElement {
     this.#empty.className = 'empty'
     this.#empty.textContent = 'waiting for hydra-ready …'
     this.#list.append(this.#empty)
-    this.shadowRoot.querySelector('[data-clear]').addEventListener('click', () => this.clear())
+    this.shadowRoot.querySelector('[data-clear]').addEventListener('click', () => this.#clear())
   }
 
   connectedCallback() {
@@ -129,7 +129,7 @@ class LogPanel extends HTMLElement {
     this.#unbindTarget()
   }
 
-  clear() {
+  #clear() {
     this.#list.replaceChildren()
     const empty = document.createElement('span')
     empty.className = 'empty'
