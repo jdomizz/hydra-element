@@ -1,7 +1,8 @@
 import { CanvasManager } from './canvas'
 import { HydraManager } from './hydra'
 import { LoopController } from './loop'
-import { AttributeHandler, DEFAULT_OPTIONS } from './attributes'
+import { AttributeHandler } from './attributes'
+import { DEFAULT_OPTIONS } from './defaults'
 
 /**
  * A custom element that renders Hydra sketches.
@@ -170,6 +171,7 @@ export class HydraElement extends HTMLElement {
       scope: this._scope,
     })
     this.hydraManager.init()
+    this.canvasManager.tagAnalyzerCanvases()
     
     // Expose hydra instance globally for community extensions compatibility
     // Note: With multiple elements, only the last initialized element's synth

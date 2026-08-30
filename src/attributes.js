@@ -1,15 +1,5 @@
 import { parseJSON, parseNumber, parseOption } from './parse'
-
-export const DEFAULT_OPTIONS = {
-  width: null,
-  height: null,
-  autoLoop: true,
-  makeGlobal: false,
-  detectAudio: false,
-  numSources: 4,
-  numOutputs: 4,
-  precision: null,
-}
+import { DEFAULT_OPTIONS } from './defaults'
 
 const ATTRS_REQUIRING_SYNTH_RESET = new Set(['global', 'audio', 'sources', 'outputs', 'precision'])
 

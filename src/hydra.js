@@ -30,7 +30,6 @@ export class HydraManager {
     if (this.hydra.loadScript) {
       this.scope.loadScript = this.hydra.loadScript.bind(this.hydra)
     }
-    this.host.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(c => c.setAttribute('part', 'analyzer'))
     this.dispatchEvent('hydra-ready', { synth: this.hydra.synth })
   }
 

@@ -81,6 +81,17 @@ export class CanvasManager {
   }
 
   /**
+   * Tags any non-internal canvases in the shadow root with `part="analyzer"`.
+   * These are canvases created by Hydra's analyzer sources (e.g. audio FFT).
+   * @private
+   */
+  tagAnalyzerCanvases() {
+    this.shadowRoot
+      ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
+      .forEach(canvas => canvas.setAttribute('part', 'analyzer'))
+  }
+
+  /**
    * Stops observing the canvas for CSS size changes. Call on teardown.
    */
   disconnect() {

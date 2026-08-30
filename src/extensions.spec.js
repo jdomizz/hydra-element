@@ -1,6 +1,5 @@
 import { html, fixture, expect } from '@open-wc/testing'
 import { HydraElement } from './element.js'
-import { wait } from './test-helpers.js'
 
 if (!customElements.get('hydra-element')) {
   customElements.define('hydra-element', HydraElement)
@@ -96,7 +95,7 @@ describe('Community extensions compatibility', () => {
   // Pattern 4: loadScript + window._hydra access (shader-park)
   describe('Pattern 4: loadScript + window._hydra access', () => {
     it('extensions can access window._hydra', async () => {
-      const el = await fixture(html`<hydra-element></hydra-element>`)
+      const _el = await fixture(html`<hydra-element></hydra-element>`)
       
       // Verify window._hydra is available
       expect(window._hydra).to.exist
