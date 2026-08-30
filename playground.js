@@ -233,16 +233,6 @@ function wireEditor(el, trigger) {
   evalBtn?.addEventListener('click', evalNow)
 }
 
-function wireDrawer() {
-  const drawer = document.querySelector('.drawer')
-  const toggle = document.querySelector('#drawer-toggle')
-  if (!drawer || !toggle) return
-  toggle.addEventListener('click', () => {
-    const collapsed = drawer.classList.toggle('is-collapsed')
-    toggle.textContent = collapsed ? 'expand' : 'collapse'
-  })
-}
-
 function wireClear(log) {
   const btn = document.querySelector('#log-clear')
   btn?.addEventListener('click', () => {
@@ -266,7 +256,6 @@ async function main() {
   wirePresets(el, trigger, log)
   wireToggles(el, log)
   wireEditor(el, trigger)
-  wireDrawer()
   wireClear(log)
   startStatsLoop(el, document.querySelector('#stat-time'), document.querySelector('#stat-fps'))
 
