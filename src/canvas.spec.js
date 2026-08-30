@@ -1,6 +1,11 @@
-import { expect } from '@open-wc/testing'
+import { expect, fixture, html } from '@open-wc/testing'
 import sinon from 'sinon'
 import { CanvasManager } from './canvas'
+import { HydraElement } from './element'
+
+if (!customElements.get('hydra-element')) {
+  customElements.define('hydra-element', HydraElement)
+}
 
 class FakeResizeObserver {
   constructor(callback) {
@@ -230,5 +235,40 @@ describe('CanvasManager', () => {
     manager.preserveCustomCanvas(custom)
     manager.preserveCustomCanvas(custom)
     expect(shadowRoot.querySelectorAll('canvas')).to.have.length(1)
+  })
+})
+
+describe('CanvasManager width/height coercion', () => {
+  let originalResizeObserver
+
+  beforeEach(() => {
+    originalResizeObserver = window.ResizeObserver
+    window.ResizeObserver = FakeResizeObserver
+  })
+
+  afterEach(() => {
+    window.ResizeObserver = originalResizeObserver
+  })
+
+  it('warns once on a non-numeric width attribute', async () => {
+    const warn = sinon.stub(console, 'warn')
+    const el = await fixture(html`<hydra-element width="500px"></hydra-element>`)
+    el.canvasManager.resizeObserver.callback([{ contentRect: { width: 100, height: 100 } }])
+    expect(warn).to.have.been.calledWithMatch(/invalid width/)
+    expect(el.canvas.width).to.not.equal(500)
+    warn.restore()
+  })
+
+  it('treats empty width attribute as absent', async () => {
+    const warn = sinon.stub(console, 'warn')
+    await fixture(html`<hydra-element width=""></hydra-element>`)
+    expect(warn).to.not.have.been.called
+    warn.restore()
+  })
+
+  it('still accepts plain numeric attributes', async () => {
+    const el = await fixture(html`<hydra-element width="800" height="600"></hydra-element>`)
+    expect(el.canvas.width).to.equal(800)
+    expect(el.canvas.height).to.equal(600)
   })
 })
