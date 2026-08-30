@@ -91,12 +91,27 @@ describe('Community extensions compatibility', () => {
     })
   })
 
-  // Pattern 4: loadScript + window._hydra access (shader-park)
+  // Pattern 4: loadScript + window._hydra access (shader-park) —
+  // window._hydra is transiently bridged while the script loads,
+  // then restored. Assertions target both states.
   describe('Pattern 4: loadScript + window._hydra access', () => {
-    it('extensions can access window._hydra', async () => {
-      const _el = await fixture(html`<hydra-element></hydra-element>`)
+    it('bridges window._hydra during loadScript and restores it afterwards', async () => {
+      const el = await fixture(html`<hydra-element></hydra-element>`)
+      await el.ready
+      const scriptUrl = `data:text/javascript,${encodeURIComponent(
+        'if (typeof window._hydra === "undefined") throw new Error("no bridge");' +
+          'if (typeof window.synth.setFunction !== "function") throw new Error("no setFunction");' +
+          'window._sawBridge = true;'
+      )}`
+      await el.loadScript(scriptUrl)
+      expect(window._sawBridge).to.be.true
+      expect(window._hydra).to.be.undefined
+      expect(window.synth).to.be.undefined
+      delete window._sawBridge
+    })
 
-      // Verify window._hydra is available
+    it('extensions can reach window._hydra via global="true"', async () => {
+      const _el = await fixture(html`<hydra-element global="true"></hydra-element>`)
       expect(window._hydra).to.exist
       expect(window._hydra.synth).to.exist
       expect(window._hydra.canvas).to.exist
@@ -173,8 +188,8 @@ describe('Community extensions compatibility', () => {
       expect(el.synth.anotherFunc).to.be.a('function')
     })
 
-    it('window.synth.setFunction works', async () => {
-      const el = await fixture(html`<hydra-element></hydra-element>`)
+    it('window.synth.setFunction works (global="true" fixture)', async () => {
+      const el = await fixture(html`<hydra-element global="true"></hydra-element>`)
 
       window.synth.setFunction({
         name: 'globalFunc',

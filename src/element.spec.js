@@ -151,19 +151,32 @@ describe('<hydra-element>', () => {
     expect(synth).to.equal(el.synth)
   })
 
-  it('exposes window._hydra and window.synth for community extensions compatibility', async () => {
-    const el = await fixture(html`<hydra-element></hydra-element>`)
+  it('exposes window._hydra and window.synth persistently in global mode', async () => {
+    const el = await fixture(html`<hydra-element global="true"></hydra-element>`)
     expect(window._hydra).to.exist
     expect(window._hydra).to.equal(el.hydraManager.hydra)
     expect(window.synth).to.exist
     expect(window.synth).to.equal(el.hydraManager.hydra.synth)
-    // Verify they have the properties extensions expect
     expect(window._hydra.synth).to.exist
     expect(window._hydra.canvas).to.exist
     expect(window._hydra.sandbox).to.exist
     expect(window._hydra.loadScript).to.be.a('function')
     expect(window._hydra.setResolution).to.be.a('function')
     expect(window.synth.setFunction).to.be.a('function')
+  })
+
+  it('does not pollute window in non-global mode', async () => {
+    delete window._hydra
+    delete window.synth
+    delete window.osc
+    delete window.setFunction
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    await el.ready
+    expect(window._hydra).to.be.undefined
+    expect(window.synth).to.be.undefined
+    expect(window.osc).to.be.undefined
+    expect(window.setFunction).to.be.undefined
+    el.remove()
   })
 
   it('allows setFunction inside code', async () => {
@@ -208,6 +221,43 @@ describe('<hydra-element>', () => {
     expect(el.synth.testFunc).to.be.a('function')
     // Cleanup
     delete window._testExtension
+  })
+
+  it('restores window globals after loadScript settles', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    await el.ready
+    const scriptUrl = `data:text/javascript,${encodeURIComponent('/* noop */')}`
+    await el.loadScript(scriptUrl)
+    expect(window._hydra).to.be.undefined
+    expect(window.synth).to.be.undefined
+    expect(window.setFunction).to.be.undefined
+  })
+
+  it('restores pre-existing window values after loadScript', async () => {
+    window.render = 'app-render'
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    await el.ready
+    await el.loadScript('data:text/javascript,/* noop */')
+    expect(window.render).to.equal('app-render')
+    delete window.render
+  })
+
+  it('restores globals when the script fails to load', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    await el.ready
+    sinon.stub(el.hydraManager.hydra, 'loadScript').rejects(new Error('boom'))
+    let caught
+    try {
+      await el.loadScript('https://example.com/nope.js')
+    } catch (e) {
+      caught = e
+    } finally {
+      el.hydraManager.hydra.loadScript.restore()
+    }
+    expect(caught).to.exist
+    expect(caught.message).to.equal('boom')
+    expect(window._hydra).to.be.undefined
+    expect(window.synth).to.be.undefined
   })
 
   for (const [label, code, success] of EVAL_CASES) {

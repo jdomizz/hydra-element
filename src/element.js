@@ -3,6 +3,7 @@ import { HydraManager } from './hydra'
 import { LoopController } from './loop'
 import { AttributeHandler } from './attributes'
 import { DEFAULT_OPTIONS } from './defaults'
+import { publishHydraGlobals } from './globals'
 
 /**
  * A custom element that renders Hydra sketches.
@@ -82,6 +83,19 @@ export class HydraElement extends HTMLElement {
    */
   get synth() {
     return this.hydraManager?.synth
+  }
+
+  /**
+   * Loads an extension script scoped to this element. While the script
+   * loads, the element's Hydra surface is transiently published on
+   * `window` so scripts that assume globals (bare `setFunction`,
+   * `window._hydra`, `window.synth`) can self-register. The prior
+   * `window` state is restored once the script promise settles.
+   * @param {string} url
+   * @returns {Promise<void>}
+   */
+  loadScript(url) {
+    return this.hydraManager?.loadScript(url)
   }
 
   /**
@@ -169,22 +183,11 @@ export class HydraElement extends HTMLElement {
     this.hydraManager.init()
     this.canvasManager.tagAnalyzerCanvases()
 
-    // Expose hydra instance globally for community extensions compatibility
-    // Note: With multiple elements, only the last initialized element's synth
-    // will be accessible via window._hydra and window.synth
-    if (this.hydraManager.hydra) {
-      window._hydra = this.hydraManager.hydra
-      window.synth = this.hydraManager.hydra.synth
-
-      // Expose all synth functions globally for DSL compatibility
-      // This allows scripts to use setFunction(), osc(), etc. directly
-      const synthFunctions = Object.keys(this.hydraManager.hydra.synth)
-      synthFunctions.forEach(key => {
-        const value = this.hydraManager.hydra.synth[key]
-        if (typeof value === 'function') {
-          window[key] = value.bind(this.hydraManager.hydra.synth)
-        }
-      })
+    // Persistent exposure is opt-in via global="true". Non-global elements
+    // never bind _hydra/synth/DSL on window — use loadScript or
+    // el.loadScript for extension scripts that assume globals.
+    if (this.hydraManager.hydra && this.attributeHandler.getOptions().makeGlobal) {
+      publishHydraGlobals(this.hydraManager.hydra)
     }
 
     if (this._connected && this.attributeHandler.getOptions().autoLoop) {

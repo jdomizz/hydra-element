@@ -1,5 +1,6 @@
 import Hydra from 'hydra-synth'
 import { hydraEval } from './eval'
+import { publishHydraGlobals } from './globals'
 
 /**
  * Wraps a hydra-synth instance: creation, code evaluation, and teardown.
@@ -29,9 +30,26 @@ export class HydraManager {
   init() {
     this.hydra = new Hydra({ ...this.options, autoLoop: false })
     if (this.hydra.loadScript) {
-      this.scope.loadScript = this.hydra.loadScript.bind(this.hydra)
+      this.scope.loadScript = url => this.loadScript(url)
     }
     this.dispatchEvent('hydra-ready', { synth: this.hydra.synth })
+  }
+
+  /**
+   * Loads an extension script while transiently publishing the element's
+   * Hydra on `window` so scripts that assume globals (bare `setFunction`,
+   * `window._hydra`, `window.synth`, ...) can self-register. The prior
+   * `window` state is restored once the script promise settles.
+   * @param {string} url
+   * @returns {Promise<void>}
+   */
+  async loadScript(url) {
+    const restore = publishHydraGlobals(this.hydra)
+    try {
+      await this.hydra.loadScript(url)
+    } finally {
+      restore()
+    }
   }
 
   /**
