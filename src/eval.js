@@ -1,10 +1,10 @@
 const USER_PROPS = ['speed', 'bpm', 'update', 'afterUpdate', 'fps']
 
-const _warnedIdentifiers = new Set()
+const warnedIdentifiers = new Set()
 
 function warnOnce(msg) {
-  if (!_warnedIdentifiers.has(msg)) {
-    _warnedIdentifiers.add(msg)
+  if (!warnedIdentifiers.has(msg)) {
+    warnedIdentifiers.add(msg)
     console.warn(msg)
   }
 }

@@ -13,15 +13,25 @@ import { publishHydraGlobals } from './globals'
  * @extends HTMLElement
  */
 export class HydraElement extends HTMLElement {
+  #code
+  #connected
+  #scope
+  #readyPromise
+  #resolveReady
+  #onResize
+  #onContextLost
+  #pendingResetAttrs
+  #initialized
+
   static get observedAttributes() {
     return ['width', 'height', 'global', 'audio', 'sources', 'outputs', 'precision', 'loop']
   }
 
   constructor() {
     super()
-    this._code = ''
-    this._connected = false
-    this._scope = Object.create(null)
+    this.#code = ''
+    this.#connected = false
+    this.#scope = Object.create(null)
     this.attachShadow({ mode: 'open' })
     this.canvasManager = new CanvasManager(this.shadowRoot)
     this.attributeHandler = new AttributeHandler({
@@ -31,16 +41,16 @@ export class HydraElement extends HTMLElement {
     })
     this.hydraManager = null
     this.loopController = null
-    this._readyPromise = new Promise(resolve => {
-      this._resolveReady = resolve
+    this.#readyPromise = new Promise(resolve => {
+      this.#resolveReady = resolve
     })
-    this._onResize = e => this.hydraManager?.setResolution(e.detail.width, e.detail.height)
-    this._onContextLost = () => {
-      if (this._connected && this.hydraManager) {
-        this._initHydra()
+    this.#onResize = e => this.hydraManager?.setResolution(e.detail.width, e.detail.height)
+    this.#onContextLost = () => {
+      if (this.#connected && this.hydraManager) {
+        this.#initHydra()
       }
     }
-    this._pendingResetAttrs = null
+    this.#pendingResetAttrs = null
   }
 
   /**
@@ -50,7 +60,7 @@ export class HydraElement extends HTMLElement {
    * @returns {Promise<{synth: Object}>} A promise that resolves when Hydra is ready.
    */
   get ready() {
-    return this.hydraManager ? Promise.resolve({ synth: this.synth }) : this._readyPromise
+    return this.hydraManager ? Promise.resolve({ synth: this.synth }) : this.#readyPromise
   }
 
   /**
@@ -69,9 +79,9 @@ export class HydraElement extends HTMLElement {
     this.canvasManager.preserveCustomCanvas(value)
     if (this.hydraManager) {
       this.hydraManager.destroy()
-      this._initHydra()
-      if (this._code !== '') {
-        this.hydraManager.evaluate(this._code)
+      this.#initHydra()
+      if (this.#code !== '') {
+        this.hydraManager.evaluate(this.#code)
       }
     }
   }
@@ -103,7 +113,7 @@ export class HydraElement extends HTMLElement {
    * @returns {string} The code of the element.
    */
   get code() {
-    return this._code
+    return this.#code
   }
 
   /**
@@ -111,7 +121,7 @@ export class HydraElement extends HTMLElement {
    * @param {string} value - The code to be set.
    */
   set code(value) {
-    this._code = value
+    this.#code = value
     if (this.hydraManager) {
       this.hydraManager.evaluate(value)
     }
@@ -127,24 +137,24 @@ export class HydraElement extends HTMLElement {
     if (newValue === oldValue) return
 
     if (attrName === 'width' || attrName === 'height') {
-      this._handleSizeChange(attrName, newValue)
+      this.#handleSizeChange(attrName, newValue)
     } else if (attrName === 'loop') {
-      this._handleLoopChange(newValue)
+      this.#handleLoopChange(newValue)
     } else if (this.attributeHandler.hasSynthResettingAttribute(attrName)) {
-      this._pendingResetAttrs = this._pendingResetAttrs || new Map()
-      this._pendingResetAttrs.set(attrName, newValue)
-      queueMicrotask(() => this._flushSynthReset())
+      this.#pendingResetAttrs = this.#pendingResetAttrs || new Map()
+      this.#pendingResetAttrs.set(attrName, newValue)
+      queueMicrotask(() => this.#flushSynthReset())
     }
   }
 
   connectedCallback() {
-    this._connected = true
-    this.addEventListener('hydra-element-resize', this._onResize)
-    this.addEventListener('hydra-context-lost', this._onContextLost)
-    if (!this._initialized) {
-      this._initialized = true
-      if (this._code === '' && this.textContent.trim()) {
-        this._code = this.textContent
+    this.#connected = true
+    this.addEventListener('hydra-element-resize', this.#onResize)
+    this.addEventListener('hydra-context-lost', this.#onContextLost)
+    if (!this.#initialized) {
+      this.#initialized = true
+      if (this.#code === '' && this.textContent.trim()) {
+        this.#code = this.textContent
         this.textContent = ''
       }
       const options = this.attributeHandler.getOptions()
@@ -152,19 +162,19 @@ export class HydraElement extends HTMLElement {
         this.canvasManager.init(options.width, options.height)
       }
       if (!this.hydraManager) {
-        this._initHydra()
+        this.#initHydra()
       }
     }
     if (this.attributeHandler.getOptions().autoLoop) {
-      this._startLoop()
+      this.#startLoop()
     }
   }
 
   disconnectedCallback() {
-    this._connected = false
-    this.removeEventListener('hydra-element-resize', this._onResize)
-    this.removeEventListener('hydra-context-lost', this._onContextLost)
-    this._stopLoop()
+    this.#connected = false
+    this.removeEventListener('hydra-element-resize', this.#onResize)
+    this.removeEventListener('hydra-context-lost', this.#onContextLost)
+    this.#stopLoop()
     this.canvasManager.disconnect()
   }
 
@@ -172,13 +182,13 @@ export class HydraElement extends HTMLElement {
    * Initializes the Hydra instance (via HydraManager) and restarts the loop.
    * @private
    */
-  _initHydra() {
-    this._stopLoop()
+  #initHydra() {
+    this.#stopLoop()
     this.hydraManager?.destroy()
     this.hydraManager = new HydraManager({
       host: this,
       options: this.attributeHandler.getOptions(),
-      scope: this._scope,
+      scope: this.#scope,
     })
     this.hydraManager.init()
     this.canvasManager.tagAnalyzerCanvases()
@@ -190,10 +200,10 @@ export class HydraElement extends HTMLElement {
       publishHydraGlobals(this.hydraManager.hydra)
     }
 
-    if (this._connected && this.attributeHandler.getOptions().autoLoop) {
-      this._startLoop()
+    if (this.#connected && this.attributeHandler.getOptions().autoLoop) {
+      this.#startLoop()
     }
-    this._resolveReady({ synth: this.hydraManager.synth })
+    this.#resolveReady({ synth: this.hydraManager.synth })
   }
 
   /**
@@ -202,16 +212,16 @@ export class HydraElement extends HTMLElement {
    * reconnect initializes fresh.
    */
   destroy() {
-    this._stopLoop()
-    this.removeEventListener('hydra-element-resize', this._onResize)
-    this.removeEventListener('hydra-context-lost', this._onContextLost)
+    this.#stopLoop()
+    this.removeEventListener('hydra-element-resize', this.#onResize)
+    this.removeEventListener('hydra-context-lost', this.#onContextLost)
     this.canvasManager.disconnect()
     this.canvasManager.removeAnalyzerCanvases()
     this.hydraManager?.destroy()
     this.hydraManager = null
-    this._initialized = false
-    this._readyPromise = new Promise(resolve => {
-      this._resolveReady = resolve
+    this.#initialized = false
+    this.#readyPromise = new Promise(resolve => {
+      this.#resolveReady = resolve
     })
   }
 
@@ -219,7 +229,7 @@ export class HydraElement extends HTMLElement {
    * Starts the animation loop.
    * @private
    */
-  _startLoop() {
+  #startLoop() {
     if (!this.loopController) {
       this.loopController = new LoopController(dt => this.hydraManager.tick(dt))
     }
@@ -230,7 +240,7 @@ export class HydraElement extends HTMLElement {
    * Stops the animation loop.
    * @private
    */
-  _stopLoop() {
+  #stopLoop() {
     this.loopController?.stop()
   }
 
@@ -238,7 +248,7 @@ export class HydraElement extends HTMLElement {
    * Handles width/height attribute changes.
    * @private
    */
-  _handleSizeChange(attrName, newValue) {
+  #handleSizeChange(attrName, newValue) {
     this.attributeHandler.update(attrName, newValue)
     if (newValue === null) {
       this.canvasManager.refreshFromCss()
@@ -255,12 +265,12 @@ export class HydraElement extends HTMLElement {
    * Handles loop attribute changes.
    * @private
    */
-  _handleLoopChange(newValue) {
+  #handleLoopChange(newValue) {
     const options = this.attributeHandler.update('loop', newValue)
-    if (this._connected && options.autoLoop) {
-      this._startLoop()
+    if (this.#connected && options.autoLoop) {
+      this.#startLoop()
     } else {
-      this._stopLoop()
+      this.#stopLoop()
     }
   }
 
@@ -269,10 +279,10 @@ export class HydraElement extends HTMLElement {
    * Applies all option updates, then performs a single synth reset.
    * @private
    */
-  _flushSynthReset() {
-    if (!this._pendingResetAttrs) return
-    const pending = this._pendingResetAttrs
-    this._pendingResetAttrs = null
+  #flushSynthReset() {
+    if (!this.#pendingResetAttrs) return
+    const pending = this.#pendingResetAttrs
+    this.#pendingResetAttrs = null
 
     for (const [attrName, newValue] of pending) {
       this.attributeHandler.update(attrName, newValue)
@@ -280,7 +290,7 @@ export class HydraElement extends HTMLElement {
 
     const options = this.attributeHandler.getOptions()
     this.canvasManager.init(options.width, options.height)
-    this._initHydra()
-    this.hydraManager.evaluate(this._code)
+    this.#initHydra()
+    this.hydraManager.evaluate(this.#code)
   }
 }

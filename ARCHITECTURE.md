@@ -138,6 +138,10 @@ The `restore()` closure restores pre-existing values and deletes keys
 the helper introduced — so a script loaded into one element cannot
 clobber a page-level `window.render`.
 
+Private methods use `#` syntax (ES2022). They are unreachable from
+outside the class even by name; underscore prefixes are reserved for
+data fields and module-level locals only.
+
 ## Lifecycle
 
 ### Connection

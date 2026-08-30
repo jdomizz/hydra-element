@@ -10,6 +10,8 @@ import { publishHydraGlobals } from './globals'
  * about the canvas or the animation loop.
  */
 export class HydraManager {
+  #evalQueue
+
   /**
    * @param {Object} config
    * @param {HTMLElement} config.host - The element that owns this manager (event target).
@@ -21,7 +23,7 @@ export class HydraManager {
     this.options = options
     this.scope = scope || Object.create(null)
     this.hydra = null
-    this._evalQueue = Promise.resolve()
+    this.#evalQueue = Promise.resolve()
   }
 
   /**
@@ -73,11 +75,11 @@ export class HydraManager {
    * @param {string} code
    */
   evaluate(code) {
-    this._evalQueue = this._evalQueue
-      .then(() => this._evaluate(code))
+    this.#evalQueue = this.#evalQueue
+      .then(() => this.#evaluate(code))
       .then(
-        result => this._handleEvalResult(result),
-        error => this._dispatchEvalError(error)
+        result => this.#handleEvalResult(result),
+        error => this.#dispatchEvalError(error)
       )
   }
 
@@ -88,7 +90,7 @@ export class HydraManager {
    * @returns {Promise|undefined} The evaluation result (always a Promise via hydraEval).
    * @private
    */
-  _evaluate(code) {
+  #evaluate(code) {
     if (this.options.makeGlobal) {
       const wrapped = `(async () => { ${code} })()`
       return this.hydra.sandbox.eval(wrapped)
@@ -101,11 +103,11 @@ export class HydraManager {
    * @param {Promise|*} result
    * @private
    */
-  _handleEvalResult(result) {
+  #handleEvalResult(result) {
     if (result && typeof result.catch === 'function') {
-      result.then(() => this._dispatchEvalSuccess()).catch(error => this._dispatchEvalError(error))
+      result.then(() => this.#dispatchEvalSuccess()).catch(error => this.#dispatchEvalError(error))
     } else {
-      this._dispatchEvalSuccess()
+      this.#dispatchEvalSuccess()
     }
   }
 
@@ -113,7 +115,7 @@ export class HydraManager {
    * Dispatches the `hydra-eval` success event.
    * @private
    */
-  _dispatchEvalSuccess() {
+  #dispatchEvalSuccess() {
     this.dispatchEvent('hydra-eval', { success: true })
   }
 
@@ -122,7 +124,7 @@ export class HydraManager {
    * @param {Error} error
    * @private
    */
-  _dispatchEvalError(error) {
+  #dispatchEvalError(error) {
     console.warn('[hydra-element] eval error:', error)
     this.dispatchEvent('hydra-eval', { success: false, error })
   }

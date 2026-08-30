@@ -46,8 +46,8 @@ export class CanvasManager {
     this.canvas.style.width = '100%'
     this.canvas.style.height = '100%'
     this.shadowRoot.append(this.canvas)
-    this._observeResize()
-    this._attachContextLossHandler()
+    this.#observeResize()
+    this.#attachContextLossHandler()
   }
 
   /**
@@ -81,7 +81,7 @@ export class CanvasManager {
     if (!canvas.hasAttribute('width') && !canvas.hasAttribute('height')) {
       canvas.style.width = '100%'
       canvas.style.height = '100%'
-      this._observeResize()
+      this.#observeResize()
     }
   }
 
@@ -150,11 +150,11 @@ export class CanvasManager {
    * the canvas backing-store resolution.
    * @private
    */
-  _observeResize() {
+  #observeResize() {
     this.disconnect()
     if (typeof ResizeObserver === 'undefined') return
     this.resizeObserver = new ResizeObserver(entries => {
-      entries.forEach(entry => this._handleResize(entry))
+      entries.forEach(entry => this.#handleResize(entry))
     })
     this.resizeObserver.observe(this.host)
   }
@@ -165,7 +165,7 @@ export class CanvasManager {
    * re-initialize. Only for internal canvases — custom canvases are user-owned.
    * @private
    */
-  _attachContextLossHandler() {
+  #attachContextLossHandler() {
     if (!this.canvas) return
     this.canvas.addEventListener(
       'webglcontextlost',
@@ -185,7 +185,7 @@ export class CanvasManager {
    * @param {ResizeObserverEntry} entry
    * @private
    */
-  _handleResize(entry) {
+  #handleResize(entry) {
     const cssWidth = Math.round(entry.contentRect?.width || 0)
     const cssHeight = Math.round(entry.contentRect?.height || 0)
 

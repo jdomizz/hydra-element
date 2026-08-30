@@ -52,7 +52,7 @@ describe('loadScript in non-global scope', () => {
     const el = await createHydraElement()
     const appendChild = stubAppendChild()
     try {
-      await hydraEval('await loadScript("https://example.com/lib.js")', el.synth, el._scope)
+      await hydraEval('await loadScript("https://example.com/lib.js")', el.synth, el.hydraManager.scope)
       expect(appendChild).to.have.been.calledOnce
       const [script] = appendChild.firstCall.args
       expect(script.src).to.equal('https://example.com/lib.js')
@@ -71,6 +71,6 @@ describe('loadScript in non-global scope', () => {
     expect(success).to.be.true
     expect(error).to.be.undefined
     expect(window.__fixtureLib).to.be.a('function')
-    expect(el._scope.result).to.equal(42)
+    expect(el.hydraManager.scope.result).to.equal(42)
   })
 })
