@@ -10,11 +10,13 @@ const PRECISION_VALUES = ['highp', 'mediump', 'lowp']
  * option set. Pure and DOM-free.
  */
 export class AttributeHandler {
+  #options
+
   /**
    * @param {Object} options - The initial options object.
    */
   constructor(options) {
-    this.options = options
+    this.#options = options
   }
 
   /**
@@ -27,9 +29,9 @@ export class AttributeHandler {
   parse(attrName, newValue) {
     switch (attrName) {
       case 'width':
-        return { width: parseNumber(newValue, this.options.width, 0) }
+        return { width: parseNumber(newValue, this.#options.width, 0) }
       case 'height':
-        return { height: parseNumber(newValue, this.options.height, 0) }
+        return { height: parseNumber(newValue, this.#options.height, 0) }
       case 'global':
         return { makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) }
       case 'audio':
@@ -52,15 +54,15 @@ export class AttributeHandler {
    * @returns {Object} The updated options.
    */
   update(attrName, newValue) {
-    this.options = { ...this.options, ...this.parse(attrName, newValue) }
-    return this.options
+    this.#options = { ...this.#options, ...this.parse(attrName, newValue) }
+    return this.#options
   }
 
   /**
    * @returns {Object} The current options.
    */
   getOptions() {
-    return this.options
+    return this.#options
   }
 
   /**

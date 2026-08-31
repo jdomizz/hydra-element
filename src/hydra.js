@@ -10,6 +10,10 @@ import { publishHydraGlobals } from './globals'
  * about the canvas or the animation loop.
  */
 export class HydraManager {
+  #host
+  #options
+  #scope
+  #hydra
   #evalQueue
 
   /**
@@ -19,10 +23,10 @@ export class HydraManager {
    * @param {Object} [config.scope] - Persistent scope for user code.
    */
   constructor({ host, options, scope }) {
-    this.host = host
-    this.options = options
-    this.scope = scope || Object.create(null)
-    this.hydra = null
+    this.#host = host
+    this.#options = options
+    this.#scope = scope || Object.create(null)
+    this.#hydra = null
     this.#evalQueue = Promise.resolve()
   }
 
@@ -39,27 +43,27 @@ export class HydraManager {
    * requiring `global="true"` — non-global mode otherwise hides them.
    */
   init() {
-    const opts = { ...this.options, autoLoop: false }
-    if (this.host?.canvas) {
-      opts.canvas = this.host.canvas
+    const opts = { ...this.#options, autoLoop: false }
+    if (this.#host?.canvas) {
+      opts.canvas = this.#host.canvas
     }
-    this.hydra = new Hydra(opts)
-    if (this.hydra.synth) {
-      Object.defineProperty(this.hydra.synth, 's', {
-        value: this.hydra.s,
+    this.#hydra = new Hydra(opts)
+    if (this.#hydra.synth) {
+      Object.defineProperty(this.#hydra.synth, 's', {
+        value: this.#hydra.s,
         enumerable: false,
         configurable: true,
       })
-      Object.defineProperty(this.hydra.synth, 'o', {
-        value: this.hydra.o,
+      Object.defineProperty(this.#hydra.synth, 'o', {
+        value: this.#hydra.o,
         enumerable: false,
         configurable: true,
       })
     }
-    if (this.hydra.loadScript) {
-      this.scope.loadScript = url => this.loadScript(url)
+    if (this.#hydra.loadScript) {
+      this.#scope.loadScript = url => this.loadScript(url)
     }
-    this.dispatchEvent('hydra-ready', { synth: this.hydra.synth })
+    this.dispatchEvent('hydra-ready', { synth: this.#hydra.synth })
   }
 
   /**
@@ -71,9 +75,9 @@ export class HydraManager {
    * @returns {Promise<void>}
    */
   async loadScript(url) {
-    const restore = publishHydraGlobals(this.hydra)
+    const restore = publishHydraGlobals(this.#hydra)
     try {
-      await this.hydra.loadScript(url)
+      await this.#hydra.loadScript(url)
     } finally {
       restore()
     }
@@ -83,14 +87,14 @@ export class HydraManager {
    * Clears all sources, stops audio, and drops the Hydra instance.
    */
   destroy() {
-    if (this.hydra) {
-      this.hydra.s?.forEach(source => source.clear?.())
+    if (this.#hydra) {
+      this.#hydra.s?.forEach(source => source.clear?.())
       try {
-        this.hydra.getAudio?.().stop?.()
+        this.#hydra.getAudio?.().stop?.()
       } catch {
         // Audio may not be started or already stopped
       }
-      this.hydra = null
+      this.#hydra = null
     }
   }
 
@@ -116,11 +120,11 @@ export class HydraManager {
    * @private
    */
   #evaluate(code) {
-    if (this.options.makeGlobal) {
+    if (this.#options.makeGlobal) {
       const wrapped = `(async () => { ${code} })()`
-      return this.hydra.sandbox.eval(wrapped)
+      return this.#hydra.sandbox.eval(wrapped)
     }
-    return hydraEval(code, this.hydra.synth, this.scope)
+    return hydraEval(code, this.#hydra.synth, this.#scope)
   }
 
   /**
@@ -159,7 +163,7 @@ export class HydraManager {
    * @param {number} dt
    */
   tick(dt) {
-    this.hydra?.tick(dt)
+    this.#hydra?.tick(dt)
   }
 
   /**
@@ -168,7 +172,7 @@ export class HydraManager {
    * @param {number} height
    */
   setResolution(width, height) {
-    this.hydra?.synth.setResolution(width, height)
+    this.#hydra?.synth.setResolution(width, height)
   }
 
   /**
@@ -176,7 +180,28 @@ export class HydraManager {
    * @returns {Object|undefined} The synth object.
    */
   get synth() {
-    return this.hydra?.synth
+    return this.#hydra?.synth
+  }
+
+  /**
+   * The raw `hydra-synth` instance, before unwrapping to the synth DSL.
+   * Exposed so the host element can publish it on `window` when
+   * `global="true"`; also useful for tests that need to stub methods
+   * on the underlying instance.
+   * @returns {Object|undefined}
+   */
+  get hydra() {
+    return this.#hydra
+  }
+
+  /**
+   * The persistent eval scope for this manager. User code's bare
+   * assignments and `var` declarations land here; `hydraEval` resolves
+   * unknown identifiers against this scope.
+   * @returns {Object}
+   */
+  get scope() {
+    return this.#scope
   }
 
   /**
@@ -185,6 +210,6 @@ export class HydraManager {
    * @param {Object} detail
    */
   dispatchEvent(name, detail) {
-    this.host.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }))
+    this.#host.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }))
   }
 }

@@ -1,10 +1,5 @@
-import { fixture, expect, html } from '@open-wc/testing'
+import { expect } from '@open-wc/testing'
 import { AttributeHandler } from './attributes'
-import { HydraElement } from './element'
-
-if (!customElements.get('hydra-element')) {
-  customElements.define('hydra-element', HydraElement)
-}
 
 describe('AttributeHandler', () => {
   it('parses width and height to numbers', () => {
@@ -67,13 +62,5 @@ describe('AttributeHandler', () => {
     expect(handler.hasSynthResettingAttribute('precision')).to.be.true
     expect(handler.hasSynthResettingAttribute('width')).to.be.false
     expect(handler.hasSynthResettingAttribute('loop')).to.be.false
-  })
-})
-
-describe('refactor-names', () => {
-  it('uses hasSynthResettingAttribute on the attribute handler', async () => {
-    const el = await fixture(html`<hydra-element></hydra-element>`)
-    expect(el.attributeHandler.hasSynthResettingAttribute('global')).to.be.true
-    expect(el.attributeHandler.hasSynthResettingAttribute('width')).to.be.false
   })
 })

@@ -11,7 +11,7 @@ maintainers and contributors; if you just want to use the element, read
 │  <hydra-element>                                                │
 │  src/element.js (HTMLElement facade)                            │
 │                                                                 │
-│  ┌────────────�  ┌──────────────┐  ┌────────────┐  ┌──────────┐ │
+│  ┌─────────────┐  ┌──────────────┐  ┌────────────┐  ┌──────────┐ │
 │  │  Attribute │  │    Canvas    │  │   Hydra    │  │   Loop   │ │
 │  │   Handler  │  │   Manager    │  │  Manager   │  │  Ctrl    │ │
 │  │ attrs.js   │  │  canvas.js   │  │  hydra.js  │  │  loop.js │ │
@@ -43,7 +43,7 @@ The custom element class. It owns:
 
 - attribute observation (`observedAttributes` + `attributeChangedCallback`)
 - lifecycle callbacks (`connectedCallback`, `disconnectedCallback`)
-- `_initHydra()` — orchestrates canvas + Hydra manager creation
+- `#initHydra()` — orchestrates canvas + Hydra manager creation (the single owner of old-manager teardown: every reset path goes through it, so the previous manager is destroyed exactly once)
 - the `code`, `canvas`, `synth`, `ready`, `loadScript`, `destroy` public surface
 - event dispatch for `hydra-ready`, `hydra-eval`, `hydra-element-resize`, `hydra-context-lost`
 
@@ -59,7 +59,7 @@ Owns the canvas lifecycle inside the shadow root:
 - `resize(w, h)` — set the backing-store resolution
 - `refreshFromCss()` — re-read the host's CSS bounding rect and resize accordingly (used when `width`/`height` attributes are removed)
 - `removeInternalCanvas()`, `removeAnalyzerCanvases()`, `tagAnalyzerCanvases()` — clean up internal vs. Hydra-created canvases
-- `_observeResize()` — wires a `ResizeObserver` on the host and applies `_handleResize` entries; precedence: explicit `width`/`height` host attribute > CSS > 1280×720 fallback
+- `#observeResize()` — wires a `ResizeObserver` on the host and applies `#handleResize` entries; precedence: explicit `width`/`height` host attribute > CSS > 1280×720 fallback
 
 ### `src/hydra.js` — `HydraManager`
 
@@ -131,7 +131,7 @@ trusted code. Real isolation requires an iframe with a separate origin.
 element's values, and returns a `restore()` closure. The helper is
 shared between:
 
-- **Global mode** (`element._initHydra`): persistent exposure for editor/extension workflows
+- **Global mode** (the element's `#initHydra`): persistent exposure for editor/extension workflows
 - **`loadScript` bridge** (`hydra.loadScript`): transient publish while a script loads, restore on completion (success or error)
 
 The `restore()` closure restores pre-existing values and deletes keys
@@ -146,7 +146,7 @@ data fields and module-level locals only.
 
 ### Connection
 
-`connectedCallback` initializes the element **once** (`_initialized`
+`connectedCallback` initializes the element **once** (the `#initialized`
 flag). Subsequent reconnects (DOM moves, attribute changes that trigger
 a synth reset) preserve the same Hydra instance — moving the element
 around is now cheap.
@@ -162,9 +162,9 @@ the WebGL context.
 Several attributes force a fresh synth (`global`, `audio`, `sources`,
 `outputs`, `precision`). On change:
 
-1. The change is queued in a `Map` and a microtask is scheduled
-2. After the current task, `_flushSynthReset` applies all pending changes in a single batch
-3. The previous `HydraManager` is destroyed (no WebGL context leak) before a new one is built
+1. The change is queued in a plain object and a microtask is scheduled
+2. After the current task, `#flushSynthReset` applies all pending changes in a single batch
+3. The previous `HydraManager` is destroyed (no WebGL context leak) before a new one is built — teardown happens inside `#initHydra`, exactly once per reset
 
 This pairs with the `lifecycle-resource-leaks` spec — every reset path
 must destroy the old manager before creating the new one.
@@ -175,7 +175,7 @@ must destroy the old manager before creating the new one.
 
 - destroys the current `HydraManager` (clears sources, stops audio)
 - removes analyzer canvases from the shadow root
-- resets `_initialized = false` and the `ready` promise so a later reconnect initializes fresh
+- resets `#initialized = false` and the `ready` promise so a later reconnect initializes fresh
 
 ### `ready`
 
@@ -183,12 +183,12 @@ must destroy the old manager before creating the new one.
 
 ```js
 get ready() {
-  return this.hydraManager ? Promise.resolve({ synth: this.synth }) : this._readyPromise
+  return this.#hydraManager ? Promise.resolve({ synth: this.synth }) : this.#readyPromise
 }
 ```
 
 It always resolves to the **current** synth, even after a reset or
-reconnect. Before the first `_initHydra`, it returns the constructor
+reconnect. Before the first `#initHydra`, it returns the constructor
 promise (which resolves when `hydra-ready` fires).
 
 ## Eval queue and coalescing
@@ -199,7 +199,7 @@ promise (which resolves when `hydra-ready` fires).
 `el.code = …` assignments run in submission order, not parallel:
 
 ```js
-this._evalQueue = this._evalQueue.then(() => this._evaluate(code)).then(handleResult, dispatchError)
+this.#evalQueue = this.#evalQueue.then(() => this.#evaluate(code)).then(handleResult, dispatchError)
 ```
 
 This matters for live-coding editors that fire many keystrokes per
@@ -279,5 +279,13 @@ Runner with Playwright's Chromium. The element is registered in each
 spec file (`customElements.define`) so tests are self-contained and can
 run independently.
 
+All manager state is private (`#` fields). Tests that need to reach
+internals use the **test seams** — read-only getters on the element
+(`canvasManager`, `attributeHandler`, `hydraManager`, `scope`) and on
+the managers (`CanvasManager.resizeObserver`, `HydraManager.hydra`,
+`HydraManager.scope`). They exist for the suite only and are not part
+of the public API.
+
 For full test details and the WTR quirks (e.g. installing Playwright's
-Chromium), see [CONTRIBUTING.md](./CONTRIBUTING.md).
+Chromium, the failing-sinon-assertion hang), see
+[CONTRIBUTING.md](./CONTRIBUTING.md).

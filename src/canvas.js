@@ -21,15 +21,21 @@ function warnOnce(msg) {
 }
 
 export class CanvasManager {
+  #shadowRoot
+  #canvas
+  #width
+  #height
+  #resizeObserver
+
   /**
    * @param {ShadowRoot} shadowRoot - The shadow root to append the internal canvas to.
    */
   constructor(shadowRoot) {
-    this.shadowRoot = shadowRoot
-    this.canvas = null
-    this.width = null
-    this.height = null
-    this.resizeObserver = null
+    this.#shadowRoot = shadowRoot
+    this.#canvas = null
+    this.#width = null
+    this.#height = null
+    this.#resizeObserver = null
   }
 
   /**
@@ -41,20 +47,20 @@ export class CanvasManager {
    * @param {number} height
    */
   init(width, height) {
-    this.width = width || FALLBACK_WIDTH
-    this.height = height || FALLBACK_HEIGHT
-    if (this.canvas && this.canvas.id !== 'hydra-element-canvas') return
+    this.#width = width || FALLBACK_WIDTH
+    this.#height = height || FALLBACK_HEIGHT
+    if (this.#canvas && this.#canvas.id !== 'hydra-element-canvas') return
     this.removeInternalCanvas()
-    this.canvas = document.createElement('canvas')
-    this.canvas.id = 'hydra-element-canvas'
-    this.canvas.setAttribute('part', 'canvas')
-    this.canvas.setAttribute('role', 'img')
-    this.canvas.setAttribute('aria-label', 'Hydra visual')
-    this.canvas.width = this.width
-    this.canvas.height = this.height
-    this.canvas.style.width = '100%'
-    this.canvas.style.height = '100%'
-    this.shadowRoot.append(this.canvas)
+    this.#canvas = document.createElement('canvas')
+    this.#canvas.id = 'hydra-element-canvas'
+    this.#canvas.setAttribute('part', 'canvas')
+    this.#canvas.setAttribute('role', 'img')
+    this.#canvas.setAttribute('aria-label', 'Hydra visual')
+    this.#canvas.width = this.#width
+    this.#canvas.height = this.#height
+    this.#canvas.style.width = '100%'
+    this.#canvas.style.height = '100%'
+    this.#shadowRoot.append(this.#canvas)
     this.#observeResize()
     this.#attachContextLossHandler()
   }
@@ -65,11 +71,11 @@ export class CanvasManager {
    * @param {number} height
    */
   resize(width, height) {
-    this.width = width
-    this.height = height
-    if (this.canvas) {
-      this.canvas.width = width
-      this.canvas.height = height
+    this.#width = width
+    this.#height = height
+    if (this.#canvas) {
+      this.#canvas.width = width
+      this.#canvas.height = height
     }
   }
 
@@ -82,9 +88,9 @@ export class CanvasManager {
    */
   preserveCustomCanvas(canvas) {
     this.removeInternalCanvas()
-    this.canvas = canvas
-    if (!this.shadowRoot.contains(canvas)) {
-      this.shadowRoot.append(canvas)
+    this.#canvas = canvas
+    if (!this.#shadowRoot.contains(canvas)) {
+      this.#shadowRoot.append(canvas)
     }
     canvas.setAttribute('part', 'canvas')
     if (!canvas.hasAttribute('width') && !canvas.hasAttribute('height')) {
@@ -98,7 +104,7 @@ export class CanvasManager {
    * Removes any internally created canvases from the shadow root.
    */
   removeInternalCanvas() {
-    this.shadowRoot
+    this.#shadowRoot
       ?.querySelectorAll('canvas#hydra-element-canvas')
       .forEach(canvas => canvas.remove())
   }
@@ -108,7 +114,7 @@ export class CanvasManager {
    * These are canvases created by Hydra's analyzer sources (e.g. audio FFT).
    */
   removeAnalyzerCanvases() {
-    this.shadowRoot
+    this.#shadowRoot
       ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
       .forEach(canvas => canvas.remove())
   }
@@ -119,7 +125,7 @@ export class CanvasManager {
    * @private
    */
   tagAnalyzerCanvases() {
-    this.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => {
+    this.#shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => {
       canvas.setAttribute('part', 'analyzer')
       canvas.setAttribute('aria-hidden', 'true')
     })
@@ -131,13 +137,13 @@ export class CanvasManager {
    * back to the ResizeObserver.
    */
   refreshFromCss() {
-    if (!this.canvas || !this.host) return
+    if (!this.#canvas || !this.host) return
     const rect = this.host.getBoundingClientRect?.() || { width: 0, height: 0 }
     const cssWidth = Math.round(rect.width || 0)
     const cssHeight = Math.round(rect.height || 0)
     const nextWidth = cssWidth || FALLBACK_WIDTH
     const nextHeight = cssHeight || FALLBACK_HEIGHT
-    if (nextWidth === this.width && nextHeight === this.height) return
+    if (nextWidth === this.#width && nextHeight === this.#height) return
     this.resize(nextWidth, nextHeight)
     this.host.dispatchEvent(
       new CustomEvent('hydra-element-resize', {
@@ -150,8 +156,35 @@ export class CanvasManager {
    * Stops observing the canvas for CSS size changes. Call on teardown.
    */
   disconnect() {
-    this.resizeObserver?.disconnect()
-    this.resizeObserver = null
+    this.#resizeObserver?.disconnect()
+    this.#resizeObserver = null
+  }
+
+  /**
+   * The canvas element managed by this instance.
+   * @returns {HTMLCanvasElement|undefined}
+   */
+  get canvas() {
+    return this.#canvas
+  }
+
+  /**
+   * Test seam — exposes the underlying ResizeObserver so unit tests can
+   * drive size-change callbacks without depending on a real layout engine.
+   * Not part of the public API; do not call from production code.
+   * @returns {ResizeObserver|null}
+   */
+  get resizeObserver() {
+    return this.#resizeObserver
+  }
+
+  /**
+   * The host element that owns the shadow root (used for attribute precedence
+   * and as the resize-event target).
+   * @returns {HTMLElement|undefined}
+   */
+  get host() {
+    return this.#shadowRoot?.host
   }
 
   /**
@@ -162,10 +195,10 @@ export class CanvasManager {
   #observeResize() {
     this.disconnect()
     if (typeof ResizeObserver === 'undefined') return
-    this.resizeObserver = new ResizeObserver(entries => {
+    this.#resizeObserver = new ResizeObserver(entries => {
       entries.forEach(entry => this.#handleResize(entry))
     })
-    this.resizeObserver.observe(this.host)
+    this.#resizeObserver.observe(this.host)
   }
 
   /**
@@ -175,8 +208,8 @@ export class CanvasManager {
    * @private
    */
   #attachContextLossHandler() {
-    if (!this.canvas) return
-    this.canvas.addEventListener(
+    if (!this.#canvas) return
+    this.#canvas.addEventListener(
       'webglcontextlost',
       e => {
         e.preventDefault()
@@ -199,13 +232,13 @@ export class CanvasManager {
     const cssHeight = Math.round(entry.contentRect?.height || 0)
 
     const nextWidth = this.host?.hasAttribute('width')
-      ? this.#resolveLength(this.host.getAttribute('width'), this.width, 'width')
+      ? this.#resolveLength(this.host.getAttribute('width'), this.#width, 'width')
       : cssWidth || FALLBACK_WIDTH
     const nextHeight = this.host?.hasAttribute('height')
-      ? this.#resolveLength(this.host.getAttribute('height'), this.height, 'height')
+      ? this.#resolveLength(this.host.getAttribute('height'), this.#height, 'height')
       : cssHeight || FALLBACK_HEIGHT
 
-    if (nextWidth === this.width && nextHeight === this.height) return
+    if (nextWidth === this.#width && nextHeight === this.#height) return
     this.resize(nextWidth, nextHeight)
     this.host?.dispatchEvent(
       new CustomEvent('hydra-element-resize', {
@@ -233,14 +266,5 @@ export class CanvasManager {
       return fallback
     }
     return parsed
-  }
-
-  /**
-   * The host element that owns the shadow root (used for attribute precedence
-   * and as the resize-event target).
-   * @returns {HTMLElement|undefined}
-   */
-  get host() {
-    return this.shadowRoot?.host
   }
 }

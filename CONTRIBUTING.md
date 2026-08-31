@@ -31,9 +31,11 @@ custom GLSL, plus a deliberate-typo preset to exercise the eval error
 path), toggles for the element's `audio` / `global` / `loop` /
 `sources` / `outputs` attributes, and a live log of every event the
 element dispatches (`hydra-ready`, `hydra-eval`, `hydra-element-resize`,
-`hydra-context-lost`). The playground wires itself up in
-`playground.js` / `playground.css` and does not import anything from
-`src/` — it talks to `<hydra-element>` purely through its public API.
+`hydra-context-lost`). The playground lives in `playground/`
+(`main.js`, `presets.js`, `style.css`, and `components/` for the
+editor, preset selector, config form, log panel, and stats strip) and
+does not import anything from `src/` — it talks to `<hydra-element>`
+purely through its public API.
 
 If `npm test` fails to launch Chromium, install the bundled browser:
 
@@ -50,6 +52,7 @@ node node_modules/playwright/cli.js install chromium
 | `npm run build`  | Bundle to `dist/hydra-element.js` and `dist/eval.js` (ESM only) |
 | `npm run lint`   | Lint with oxlint (auto-fixes where safe)                        |
 | `npm run format` | Format with oxfmt                                               |
+| `npm run check`  | `lint` + `test` + `build` in order — the pre-PR gate CI runs    |
 
 ## Conventions
 
@@ -118,7 +121,7 @@ Conventional commit prefixes:
 
 1. Branch off `dev`: `git checkout -b my-feature`
 2. Make focused commits with the conventional prefix
-3. Run `npm run lint && npm test && npm run build` before pushing — they must be green
+3. Run `npm run check` before pushing — lint, tests, and build must be green
 4. Push to your fork and open a PR against `dev`
 5. Address review feedback; the spec's "Done when" list is the acceptance criteria
 

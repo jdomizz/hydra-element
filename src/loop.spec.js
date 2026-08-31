@@ -15,14 +15,18 @@ describe('LoopController', () => {
     expect(controller.isRunning).to.be.false
   })
 
-  it('tick computes delta time and calls the tick function', () => {
+  it('tick computes delta time from the previous tick and calls tickFn', () => {
     const calls = []
     const controller = new LoopController(dt => calls.push(dt))
-    controller.lastTime = 100
-    const dt = controller.tick(250)
-    expect(dt).to.equal(150)
+    controller.tick(150)
     expect(calls).to.deep.equal([150])
-    expect(controller.lastTime).to.equal(250)
+    controller.tick(250)
+    expect(calls).to.deep.equal([150, 100])
+  })
+
+  it('tick returns the delta time', () => {
+    const controller = new LoopController(() => {})
+    expect(controller.tick(75)).to.equal(75)
   })
 
   it('start is a no-op while running', () => {

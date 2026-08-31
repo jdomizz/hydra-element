@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Internal canvas has `role="img"` and `aria-label="Hydra visual"`; analyzer canvases are `aria-hidden="true"`
 - `ARCHITECTURE.md` describing modules, eval proxy, transient bridge, lifecycle, and build
 - `CONTRIBUTING.md` reorganized for maintainers (commands, tests, spec workflow, release process)
+- Dev playground upgrade: preset sketches (osc, noise, cam+blend, custom GLSL, deliberate typo), attribute toggles for `audio`/`global`/`loop`/`sources`/`outputs`, a live event log, and a stats strip — all in `playground/`, importing nothing from `src/`
+- `npm run check` — lint + test + build in order, the pre-PR gate CI runs
+- `.nvmrc` (Node 20 pin, matching CI) and `.editorconfig` mirroring `oxfmt`'s whitespace rules
+- Pre-commit hook (husky + lint-staged): `oxlint --fix` + `oxfmt` on staged `*.{js,mjs}`, `oxfmt` on staged `*.md` (bypass with `git commit --no-verify`)
 
 ### Changed
 
@@ -44,6 +48,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `width`/`height` attributes now coerce with strict `Number()` instead of `parseInt`. A `console.warn` fires once per session for non-numeric values like `width="500px"`; the canvas falls back to its previous resolution. Empty attributes (`width=""`) are treated as absent and fall back too.
 - README is oriented at the creative coder; implementation details moved to `ARCHITECTURE.md`
 - Dev playground: `<log-panel>.clear()` is private (`#clear`) — only the clear button uses it
+- Manager internals are fully private: `CanvasManager`, `HydraManager`, `LoopController`, and `AttributeHandler` keep their state in `#` fields, exposed only through getters (`canvas`, `resizeObserver`, `host`, `synth`, `hydra`, `scope`, `getOptions()`). The element exposes `scope` plus read-only test seams (`canvasManager`, `attributeHandler`, `hydraManager`) for the test suite — not part of the public API
+- Old-manager teardown has a single owner: the element's `#initHydra` destroys the previous `HydraManager` exactly once per reset — synth-resetting attribute changes and `canvas` swaps route through it instead of calling `destroy()` separately
 
 ### Fixed
 
