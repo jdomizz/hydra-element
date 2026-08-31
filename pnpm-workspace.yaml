@@ -1,0 +1,14 @@
+# Build-script allow-list for pnpm 11+ (the `pnpm.onlyBuiltDependencies`
+# field in package.json was retired in favour of this file's `allowBuilds`
+# map). `strictDepBuilds` defaults to true, so any dependency whose
+# package.json ships a `postinstall`/`preinstall`/`install` script must be
+# listed here, otherwise `pnpm install` aborts with `ERR_PNPM_IGNORED_BUILDS`.
+#
+# - esbuild downloads the platform-specific native binary in its postinstall;
+#   without it Vite fails to start its bundler at runtime.
+# - playwright-core / playwright do not ship install scripts today, but the
+#   spec reserves the entry so future browser-binary downloads remain
+#   non-interactive on CI.
+allowBuilds:
+  esbuild: true
+  playwright: true

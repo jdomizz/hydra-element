@@ -12,6 +12,13 @@ That's it. Drop the tag in, write Hydra code between the tags, you're live.
 
 Multiple `<hydra-element>` on one page each run their own Hydra engine — no conflicts, no shared state.
 
+## Try it
+
+- **[Multi-instance gallery](https://jdomizz.github.io/hydra-element/gallery.html)** — four isolated `<hydra-element>` running simultaneously in one HTML document. The same money shot hydra-synth#44 has been asking for.
+- **[Playground](https://jdomizz.github.io/hydra-element/)** — interactive editor with presets, attribute toggles, and a live event log. Edit code, press <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>.
+
+Source lives in [`playground/`](./playground) and [`gallery.html`](./gallery.html). Run locally with `pnpm dev` (playground) or `pnpm dev:playground` (both pages).
+
 ## Install
 
 CDN (recommended for quick sketches):

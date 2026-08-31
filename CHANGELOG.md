@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Package manager switched from npm to pnpm (`packageManager: "pnpm@11.9.0"`). `package-lock.json` is replaced by `pnpm-lock.yaml`; CI uses `pnpm install --frozen-lockfile`; `CONTRIBUTING.md` / `AGENTS.md` document `pnpm …` commands. Strict resolution (no phantom dependencies) catches "works on my machine but not for consumers" bugs before release. `onlyBuiltDependencies: ["playwright"]` is set so Chromium can still be downloaded.
+
 ### Added
 
 - `destroy()` method for explicit teardown without removing from DOM

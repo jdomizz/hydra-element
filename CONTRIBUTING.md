@@ -16,14 +16,26 @@ For how the library is put together, read
 ## Development setup
 
 The repo pins Node 20 via `.nvmrc` — run `nvm use` (or let your version
-manager auto-switch) before `npm install` to match CI. `.editorconfig`
-mirrors `oxfmt`'s whitespace rules (LF, 2-space indent, final newline),
-so editors without an `oxfmt` plugin still produce conformant files.
+manager auto-switch) before installing deps to match CI. The package
+manager is **pnpm** (pinned in `package.json` via `packageManager`).
+If you don't have it yet, the fastest path is Corepack (bundled with
+Node 20+):
 
 ```sh
-npm install
-npm run dev     # vite dev server with HMR — http://localhost:5173
+corepack enable                  # one-time per machine
+pnpm install                     # uses the version pinned in package.json
+pnpm dev                         # vite dev server with HMR — http://localhost:5173
 ```
+
+`corepack enable` is enough on every modern Node — Corepack reads the
+`packageManager` field and fetches the pinned pnpm release on first
+use. If Corepack is unavailable, install pnpm any other way
+(`npm i -g pnpm`, your distro package, etc.) and make sure its version
+matches the pin.
+
+`.editorconfig` mirrors `oxfmt`'s whitespace rules (LF, 2-space indent,
+final newline), so editors without an `oxfmt` plugin still produce
+conformant files.
 
 The dev server serves `index.html`, the manual playground for
 `<hydra-element>`. It exposes preset sketches (osc, noise, cam+blend,
@@ -37,22 +49,22 @@ editor, preset selector, config form, log panel, and stats strip) and
 does not import anything from `src/` — it talks to `<hydra-element>`
 purely through its public API.
 
-If `npm test` fails to launch Chromium, install the bundled browser:
+If `pnpm test` fails to launch Chromium, install the bundled browser:
 
 ```sh
-node node_modules/playwright/cli.js install chromium
+pnpm exec playwright install chromium
 ```
 
 ## Commands
 
-| Command          | What it does                                                    |
-| ---------------- | --------------------------------------------------------------- |
-| `npm run dev`    | Serve `index.html` with Vite (HMR)                              |
-| `npm test`       | Run all tests via Web Test Runner (headless Chromium)           |
-| `npm run build`  | Bundle to `dist/hydra-element.js` and `dist/eval.js` (ESM only) |
-| `npm run lint`   | Lint with oxlint (auto-fixes where safe)                        |
-| `npm run format` | Format with oxfmt                                               |
-| `npm run check`  | `lint` + `test` + `build` in order — the pre-PR gate CI runs    |
+| Command       | What it does                                                    |
+| ------------- | --------------------------------------------------------------- |
+| `pnpm dev`    | Serve `index.html` with Vite (HMR)                              |
+| `pnpm test`   | Run all tests via Web Test Runner (headless Chromium)           |
+| `pnpm build`  | Bundle to `dist/hydra-element.js` and `dist/eval.js` (ESM only) |
+| `pnpm lint`   | Lint with oxlint (auto-fixes where safe)                        |
+| `pnpm format` | Format with oxfmt                                               |
+| `pnpm check`  | `lint` + `test` + `build` in order — the pre-PR gate CI runs    |
 
 ## Conventions
 
@@ -79,7 +91,7 @@ if (!customElements.get('hydra-element')) {
 
 WTR uses Playwright's bundled Chromium. Tests run headless by default
 (`wtr.config.js`); for debugging, open `http://localhost:8000` after
-running `npm run test -- --watch`.
+running `pnpm test --watch`.
 
 See [AGENTS.md](./AGENTS.md) for the test-runner quirks the agent
 workflow relies on (Playwright install path, etc.).
@@ -121,13 +133,13 @@ Conventional commit prefixes:
 
 1. Branch off `dev`: `git checkout -b my-feature`
 2. Make focused commits with the conventional prefix
-3. Run `npm run check` before pushing — lint, tests, and build must be green
+3. Run `pnpm check` before pushing — lint, tests, and build must be green
 4. Push to your fork and open a PR against `dev`
 5. Address review feedback; the spec's "Done when" list is the acceptance criteria
 
 ## Release process
 
-1. Pick the spec(s) shipped since the last release — verify `npm test` is green on `dev`
+1. Pick the spec(s) shipped since the last release — verify `pnpm test` is green on `dev`
 2. Update **CHANGELOG** under `## [Unreleased]`, then bump the heading to the new version + date
 3. Update `version` in `package.json`
 4. Update **README** and **ARCHITECTURE** if user-visible behavior or internals changed

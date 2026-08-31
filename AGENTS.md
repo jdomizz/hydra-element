@@ -6,11 +6,11 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Commands
 
-- `npm run dev` — serve `index.html` with Vite (HMR)
-- `npm test` — run all tests via Web Test Runner (headless Chromium)
-- `npm run build` — bundle to `dist/hydra-element.js` (ES module only)
-- `npm run lint` — lint with oxlint
-- `npm run format` — format with oxfmt
+- `pnpm dev` — serve `index.html` with Vite (HMR)
+- `pnpm test` — run all tests via Web Test Runner (headless Chromium)
+- `pnpm build` — bundle to `dist/hydra-element.js` (ES module only)
+- `pnpm lint` — lint with oxlint
+- `pnpm format` — format with oxfmt
 - Pre-commit hook (husky + lint-staged) auto-fixes `*.{js,mjs}` with `oxlint --fix`, then runs `oxfmt` on staged JS and `*.md` files; bypass with `git commit --no-verify`
 
 ## Agents
@@ -24,7 +24,7 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 - Tests are `src/**/*.spec.js`, colocated with source (not in a `test/` dir)
 - Uses `@open-wc/testing` + `sinon`; assertions use `.to.be` / `.to.equal` (Chai style)
-- `wtr.config.js` uses Playwright's bundled Chromium — install with `node node_modules/playwright/cli.js install chromium` if tests fail to launch
+- `wtr.config.js` uses Playwright's bundled Chromium — install with `pnpm exec playwright install chromium` if tests fail to launch
 - Tests register the custom element themselves via `window.customElements.define`
 - **A failing sinon-chai assertion hangs the session instead of reporting red.** `expect(spy).to.have.been.calledOnce` etc., when false, makes WTR time out after 120s ("Browser tests did not finish", 0 passed 0 failed) — the AssertionError carries the cyclic spy object and the reporter never settles. Plain chai failures (`expect(1).to.equal(2)`) report fine. When debugging a suspected assertion failure, assert on primitives instead (`expect(spy.callCount).to.equal(1)`) or wrap the assertion in try/catch to print `e.message`
 - WTR + the Vite plugin occasionally fail a file with "Failed to fetch dynamically imported module" on the first run after files are added/removed (stale dep cache) — a clean re-run passes

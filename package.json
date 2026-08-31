@@ -23,6 +23,7 @@
     "type": "git",
     "url": "git+https://github.com/jdomizz/hydra-element.git"
   },
+  "packageManager": "pnpm@11.9.0",
   "sponsor": {
     "url": "https://opencollective.com/hydra-synth"
   },
@@ -53,10 +54,13 @@
   },
   "scripts": {
     "dev": "vite --host",
+    "dev:playground": "vite --config vite.playground.config.js --host",
     "test": "wtr --config wtr.config.js",
     "build": "vite build",
+    "build:playground": "vite build --config vite.playground.config.js",
+    "preview:playground": "vite preview --config vite.playground.config.js",
     "lint": "oxlint --fix .",
-    "check": "npm run lint && npm test && npm run build",
+    "check": "pnpm lint && pnpm test && pnpm build",
     "format": "oxfmt .",
     "prepare": "husky"
   },
@@ -78,6 +82,8 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.4.1",
     "oxc-standard": "^1.4.0",
+    "oxfmt": "0.48.0",
+    "oxlint": "1.80.0",
     "sinon": "^21.0.1",
     "vite": "^7.3.1"
   }
