@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CSS parts: `::part(canvas)` and `::part(analyzer)`
 - Reconnection safety — moving the element in the DOM no longer re-initializes synth
 - `loadScript()` works in non-global mode (and `el.loadScript(url)` is exposed as a sugar method)
-- TypeScript declarations via `dist/hydra-element.d.ts` and `dist/eval.d.ts`
+- TypeScript declarations via `dist/hydra-element.d.ts` and `dist/eval.d.ts` (hand-written in `src/`, copied to `dist/` as part of the build — no `tsc` step, no new devDeps)
 - Internal canvas has `role="img"` and `aria-label="Hydra visual"`; analyzer canvases are `aria-hidden="true"`
 - `ARCHITECTURE.md` describing modules, eval proxy, transient bridge, lifecycle, and build
 - `CONTRIBUTING.md` reorganized for maintainers (commands, tests, spec workflow, release process)

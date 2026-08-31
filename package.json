@@ -57,6 +57,7 @@
     "dev:playground": "vite --config vite.playground.config.js --host",
     "test": "wtr --config wtr.config.js",
     "build": "vite build",
+    "postbuild": "test -f dist/hydra-element.d.ts && test -f dist/eval.d.ts",
     "build:playground": "vite build --config vite.playground.config.js",
     "preview:playground": "vite preview --config vite.playground.config.js",
     "lint": "oxlint --fix .",

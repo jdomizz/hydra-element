@@ -1,4 +1,9 @@
 import { defineConfig } from 'vite'
+import { copyFileSync, mkdirSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
  * The library build (`build.lib`) emits `dist/hydra-element.js` +
@@ -11,7 +16,27 @@ import { defineConfig } from 'vite'
  * `root` would break both. The playground's dev server is configured in
  * `vite.playground.config.js` instead, which `pnpm dev` uses directly.
  */
+
+/** Copy the hand-written .d.ts files into dist/ after each Vite build. */
+function copyDeclarations() {
+  return {
+    name: 'hydra-element-copy-declarations',
+    closeBundle() {
+      const pairs = [
+        ['src/hydra-element.d.ts', 'dist/hydra-element.d.ts'],
+        ['src/eval.d.ts', 'dist/eval.d.ts'],
+      ]
+      for (const [src, dst] of pairs) {
+        const dstDir = dirname(resolve(__dirname, dst))
+        mkdirSync(dstDir, { recursive: true })
+        copyFileSync(resolve(__dirname, src), resolve(__dirname, dst))
+      }
+    },
+  }
+}
+
 export default defineConfig({
+  plugins: [copyDeclarations()],
   build: {
     lib: {
       entry: {
