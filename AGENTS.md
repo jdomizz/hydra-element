@@ -69,6 +69,7 @@ When a change here implements a registry spec:
    - **CHANGELOG** — add an entry under `## [Unreleased]`
    - **ARCHITECTURE.md** — amend if the implementation shape changed
    - **CONTRIBUTING.md** — amend if commands, dependencies, or workflow changed
+   - **AGENTS.md** — amend if commands, dependencies, architecture, or workflow changed
 6. Commit the registry repo alongside this repo's commit (don't ship them separately)
 
 ## Language conventions
