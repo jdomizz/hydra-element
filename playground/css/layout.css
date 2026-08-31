@@ -85,7 +85,7 @@
 }
 
 @media (max-width: 900px) {
-  .app {
+.app {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto;
     grid-template-areas:
