@@ -1,0 +1,98 @@
+/**
+ * Gallery-only layout (multi-instance grid). Self-contained: only the CSS
+ * variables from `playground/css/tokens.css` are imported transitively via
+ * the shared `playground/style.css` cascade. No dependency on the editor /
+ * cfg-form styles, which are scoped to the playground's three-column grid.
+ */
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--hydra-space-l);
+  padding: var(--hydra-space-l);
+  width: 100vw;
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: var(--hydra-bg);
+}
+
+.gallery__intro {
+  max-width: 60rem;
+}
+
+.gallery__intro h1 {
+  margin: 0 0 var(--hydra-space-s) 0;
+  font-size: 1.5rem;
+  color: var(--hydra-fg);
+}
+
+.gallery__intro p {
+  margin: 0 0 var(--hydra-space-s) 0;
+  color: var(--hydra-fg-muted);
+  font-size: var(--hydra-text-base);
+  line-height: 1.5;
+}
+
+.gallery__intro code {
+  background: var(--hydra-bg-input);
+  border: 1px solid var(--hydra-border);
+  border-radius: var(--hydra-radius-s);
+  padding: 0 var(--hydra-space-xs);
+  font-family: var(--hydra-font-mono);
+  font-size: 0.85em;
+  color: var(--hydra-fg);
+}
+
+.gallery__links a {
+  color: var(--hydra-accent);
+  text-decoration: none;
+}
+
+.gallery__links a:hover {
+  text-decoration: underline;
+}
+
+.gallery__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--hydra-space-l);
+}
+
+.cell {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--hydra-bg-elevated);
+  border: 1px solid var(--hydra-border);
+  border-radius: var(--hydra-radius-m);
+  overflow: hidden;
+}
+
+.cell figcaption {
+  padding: var(--hydra-space-s) var(--hydra-space-m);
+  font-family: var(--hydra-font-mono);
+  font-size: var(--hydra-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hydra-fg-muted);
+  background: var(--hydra-bg-input);
+  border-bottom: 1px solid var(--hydra-border);
+}
+
+.cell hydra-element {
+  flex: 1 1 auto;
+  display: flex;
+  aspect-ratio: 4 / 3;
+  background: #000;
+}
+
+.gallery__log {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media (max-width: 720px) {
+  .gallery__grid {
+    grid-template-columns: 1fr;
+  }
+}

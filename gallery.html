@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>&lt;hydra-element&gt; — multi-instance gallery</title>
+    <meta
+      name="description"
+      content="Four isolated &lt;hydra-element&gt; instances running simultaneously in one HTML document. Visual proof that non-global mode works without collisions."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍬</text></svg>"
+    />
+    <link rel="stylesheet" href="./playground/style.css" />
+    <link rel="stylesheet" href="./playground/css/gallery.css" />
+    <script type="module" src="./index.js"></script>
+    <script type="module" src="./playground/gallery.js"></script>
+  </head>
+  <body>
+    <main class="gallery">
+      <header class="gallery__intro">
+        <h1>&lt;hydra-element&gt; × 4</h1>
+        <p>
+          Four isolated Hydra instances running simultaneously in one HTML document.
+          No <code>window</code> collisions, no shared buffers, no shared functions.
+          Watch the log below — each instance dispatches its own
+          <code>hydra-ready</code> and runs at its own <code>time</code>.
+        </p>
+        <p class="gallery__links">
+          <a href="./">← back to playground (with editor)</a>
+          ·
+          <a href="https://github.com/jdomizz/hydra-element">source</a>
+          ·
+          <a href="https://github.com/jdomizz/hydra-element#readme">docs</a>
+        </p>
+      </header>
+
+      <section class="gallery__grid" data-grid>
+        <figure class="cell">
+          <figcaption>osc · instance #1</figcaption>
+          <hydra-element id="g-osc"></hydra-element>
+        </figure>
+        <figure class="cell">
+          <figcaption>noise · instance #2</figcaption>
+          <hydra-element id="g-noise"></hydra-element>
+        </figure>
+        <figure class="cell">
+          <figcaption>gradient · instance #3</figcaption>
+          <hydra-element id="g-gradient"></hydra-element>
+        </figure>
+        <figure class="cell">
+          <figcaption>shape · instance #4</figcaption>
+          <hydra-element id="g-shape"></hydra-element>
+        </figure>
+      </section>
+
+      <section class="gallery__log">
+        <gallery-log limit="80" data-log></gallery-log>
+      </section>
+    </main>
+  </body>
+</html>

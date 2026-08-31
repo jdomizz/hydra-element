@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Multi-instance gallery (`gallery.html` + `playground/gallery.js` + `playground/components/gallery-log.js` + `playground/css/gallery.css`) — four isolated `<hydra-element>` running simultaneously in one HTML document, with a shared `<gallery-log>` aggregating events from all four. Wired into a new `vite.playground.config.js` (multi-page input, output `dist-site/`) and deployed via the new `.github/workflows/deploy-pages.yml` on tag `v*` to `https://jdomizz.github.io/hydra-element/`.
+
 - `destroy()` method for explicit teardown without removing from DOM
 - `hydra-element-resize` event when the canvas backing-store resolution changes
 - `hydra-context-lost` event for internal canvas context loss
