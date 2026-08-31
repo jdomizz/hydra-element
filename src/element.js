@@ -53,6 +53,7 @@ export class HydraElement extends HTMLElement {
   #attributeHandler
   #hydraManager
   #loopController
+  #extendTransforms
 
   static get observedAttributes() {
     return ['width', 'height', 'global', 'audio', 'sources', 'outputs', 'precision', 'loop']
@@ -72,6 +73,7 @@ export class HydraElement extends HTMLElement {
     })
     this.#hydraManager = null
     this.#loopController = null
+    this.#extendTransforms = []
     this.#readyPromise = new Promise(resolve => {
       this.#resolveReady = resolve
     })
@@ -132,6 +134,27 @@ export class HydraElement extends HTMLElement {
    */
   get scope() {
     return this.#scope
+  }
+
+  /**
+   * Custom GLSL transforms. Assigning an array applies each function
+   * via `synth.setFunction` and re-applies them after every synth
+   * reset (attribute change, canvas swap, destroy + reconnect).
+   * @returns {Array} The current transform definitions.
+   */
+  get transforms() {
+    return this.#extendTransforms
+  }
+
+  /**
+   * Setter for the transforms property.
+   * @param {Array} value - An array of { name, type, inputs, glsl } objects.
+   */
+  set transforms(value) {
+    this.#extendTransforms = Array.isArray(value) ? value : []
+    if (this.#hydraManager?.synth) {
+      this.#extendTransforms.forEach(fn => this.#hydraManager.synth.setFunction(fn))
+    }
   }
 
   /**
@@ -264,7 +287,7 @@ export class HydraElement extends HTMLElement {
     this.#hydraManager = new HydraManager({
       host: this,
       scope: this.#scope,
-      options: this.#attributeHandler.getOptions(),
+      options: { ...this.#attributeHandler.getOptions(), extendTransforms: this.#extendTransforms },
     })
     this.#hydraManager.init()
     this.#canvasManager.tagAnalyzerCanvases()

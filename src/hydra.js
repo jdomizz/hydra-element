@@ -60,6 +60,7 @@ export class HydraManager {
         configurable: true,
       })
     }
+    this.#options.extendTransforms?.forEach(fn => this.#hydra.synth.setFunction(fn))
     if (this.#hydra.loadScript) {
       this.#scope.loadScript = url => this.loadScript(url)
     }

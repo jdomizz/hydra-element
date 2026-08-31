@@ -80,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Undefined identifiers in user code emit a one-time `console.warn`
 - `loadScript` (and `el.loadScript`) transiently publish the element's Hydra on `window` while a script loads and restore the prior state when it settles
 - Non-global elements no longer bind `_hydra`, `synth`, or DSL functions on `window`
+- `transforms` property survives synth resets — assignments are re-applied when the synth is recreated (attribute changes, canvas swaps)
 - `width`/`height` attributes now coerce with strict `Number()` instead of `parseInt`. A `console.warn` fires once per session for non-numeric values like `width="500px"`; the canvas falls back to its previous resolution. Empty attributes (`width=""`) are treated as absent and fall back too.
 - README is oriented at the creative coder; implementation details moved to `ARCHITECTURE.md`
 - Dev playground: `<log-panel>.clear()` is private (`#clear`) — only the clear button uses it
@@ -98,7 +99,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **BREAKING**: `tick()` method — use `el.synth.tick(dt)`
-- **BREAKING**: `transforms` property — use `el.synth.setFunction()`
 - **BREAKING**: `analyzer` attribute — use `::part(analyzer) { display: none }`
 - **BREAKING**: `pb` option — access via `el.synth.pb`
 

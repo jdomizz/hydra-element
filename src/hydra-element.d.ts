@@ -23,6 +23,18 @@ export interface HydraResizeDetail {
   height: number;
 }
 
+/**
+ * A custom GLSL transform/generator definition.
+ * Structurally compatible with hydra-synth's `GlslFunction` (typed locally
+ * until hydra-synth ships official types).
+ */
+export interface HydraTransformFunction {
+  name: string;
+  type: 'src' | 'coord' | 'color' | 'combine' | 'combineCoord';
+  inputs: Array<{ name: string; type: string; default: unknown }>;
+  glsl: string;
+}
+
 /** Custom element `<hydra-element>`. Embeds a hydra-synth scene. */
 export interface HydraElement extends HTMLElement {
   /** Get or set the scene code. Setting triggers evaluation through the
@@ -36,6 +48,10 @@ export interface HydraElement extends HTMLElement {
    *  `el.synth.setFunction({ ... })`, etc. Typed as `unknown` for the
    *  same reason as `HydraReadyDetail.synth`. */
   readonly synth: unknown;
+  /** Custom GLSL transforms. Assigning an array applies each function via
+   *  `synth.setFunction` and re-applies them after every synth reset
+   *  (attribute change, canvas swap). */
+  transforms: HydraTransformFunction[];
   /** Resolves with `{ synth }` once Hydra is initialized. The getter
    *  always returns the *live* synth, even after a reset or reconnect. */
   readonly ready: Promise<HydraReadyDetail>;

@@ -198,13 +198,14 @@ By default each element is isolated. `loadScript` already bridges the Hydra glob
 
 ### Properties
 
-| Property    | Type              | Description                                                                         |
-| ----------- | ----------------- | ----------------------------------------------------------------------------------- |
-| `code`      | string            | Get or set the scene code                                                           |
-| `canvas`    | HTMLCanvasElement | Adopt a custom canvas to render on                                                  |
-| `synth`     | HydraSynth        | Read-only access to the synth instance                                              |
-| `ready`     | Promise           | Resolves with `{ synth }` once Hydra is initialized; always reflects the live synth |
-| `destroy()` | method            | Tear the element down without removing it from the DOM (re-add to re-initialize)    |
+| Property     | Type                     | Description                                                                         |
+| ------------ | ------------------------ | ----------------------------------------------------------------------------------- |
+| `code`       | string                   | Get or set the scene code                                                           |
+| `canvas`     | HTMLCanvasElement        | Adopt a custom canvas to render on                                                  |
+| `synth`      | HydraSynth               | Read-only access to the synth instance                                              |
+| `transforms` | HydraTransformFunction[] | Custom GLSL transforms; survives synth resets (re-applied on attribute changes)     |
+| `ready`      | Promise                  | Resolves with `{ synth }` once Hydra is initialized; always reflects the live synth |
+| `destroy()`  | method                   | Tear the element down without removing it from the DOM (re-add to re-initialize)    |
 
 For everything else, use the synth:
 
@@ -225,6 +226,24 @@ el.synth.setFunction({
 await el.loadScript('https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-src.js')
 // load an extension from page JS — same transient-bridge behavior as in-code loadScript
 ```
+
+### Custom GLSL transforms
+
+Register custom functions that survive synth resets (attribute changes, canvas swaps):
+
+```js
+const el = document.querySelector('hydra-element')
+el.transforms = [
+  {
+    name: 'myNoise',
+    type: 'src',
+    inputs: [{ name: 'scale', type: 'float', default: 5 }],
+    glsl: `return vec4(vec3(_noise(vec3(_st*scale, time))), 0.5);`,
+  },
+]
+```
+
+You can also call `el.synth.setFunction(...)` directly for one-off additions that don't persist across resets.
 
 ### Events
 

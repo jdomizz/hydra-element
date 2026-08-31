@@ -310,6 +310,22 @@ describe('<hydra-element>', () => {
     await wait(60)
     expect(el.synth.time).to.be.greaterThan(t0)
   })
+
+  it('re-applies transforms after a synth reset', async () => {
+    const el = await fixture(html`<hydra-element></hydra-element>`)
+    el.transforms = [
+      {
+        name: 'myNoise',
+        type: 'src',
+        inputs: [{ name: 'scale', type: 'float', default: 5 }],
+        glsl: 'return vec4(vec3(0.5), 1.0);',
+      },
+    ]
+    expect(el.synth.myNoise).to.be.a('function')
+    el.setAttribute('sources', '2')
+    await wait(10)
+    expect(el.synth.myNoise, 'after reset').to.be.a('function')
+  })
 })
 
 describe('FOUC guard', () => {
