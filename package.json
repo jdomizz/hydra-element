@@ -35,8 +35,7 @@
   ],
   "type": "module",
   "sideEffects": [
-    "./dist/hydra-element.js",
-    "./dist/eval.js"
+    "./dist/hydra-element.js"
   ],
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",

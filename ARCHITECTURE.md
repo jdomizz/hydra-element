@@ -248,7 +248,7 @@ animation) fall outside the bridge window and need `global="true"`.
   - `dist/eval.js` — just `hydraEval` for users driving their own loop (subpath import `hydra-element/eval`)
 - Single runtime dependency: `hydra-synth`
 - TypeScript declarations hand-written in `src/hydra-element.d.ts` and `src/eval.d.ts`, copied to `dist/hydra-element.d.ts` and `dist/eval.d.ts` by a custom Vite plugin in `vite.config.js`. The `synth` property is typed as `unknown` because `hydra-synth` does not yet publish its own `.d.ts`; narrow when it does.
-- `package.json` declares `sideEffects: false` for both entries (no top-level side effects other than `customElements.define`)
+- `package.json` declares `sideEffects: ["./dist/hydra-element.js"]` — only the element entry has a module-load side effect (`customElements.define`); the pure `dist/eval.js` subpath stays tree-shakeable
 - `exports` map exposes `.`, `./eval`, and `./package.json` (the last so bundlers can resolve the package manifest)
 
 ## Events

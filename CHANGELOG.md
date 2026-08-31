@@ -91,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `package.json` `sideEffects` lists only `dist/hydra-element.js` (the `customElements.define` side effect) — the pure `dist/eval.js` subpath stays tree-shakeable
 - `time`, `speed`, `bpm` now resolve dynamically in non-global mode
 - Multi-element isolation — no more last-writer-wins on `window._hydra`/`window.synth` in non-global mode
 - Removing the `loop` attribute now restores the default `loop="true"` instead of stopping the loop
