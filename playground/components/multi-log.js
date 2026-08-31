@@ -85,16 +85,24 @@ styles.replaceSync(`
   .name--info    { color: var(--hydra-log-info); }
 `)
 
-const PAGE_LOAD = performance.now()
-
-function fmtMs(ms) {
-  return ms.toFixed(0).padStart(6, ' ')
-}
-
 function truncateSynth(synth) {
   if (!synth) return '{}'
   const { time = 0, bpm = 0, stats = {} } = synth
   return `{ time: ${time.toFixed(2)}, bpm: ${bpm}, fps: ${(stats.fps || 0).toFixed(1)} }`
+}
+
+function fmtTime() {
+  const d = new Date()
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(
+    2,
+    '0'
+  )}:${String(d.getSeconds()).padStart(2, '0')}`
+}
+
+function cellLabel(el) {
+  if (!el) return '?'
+  const m = el.id?.match(/(\d+)$/)
+  return m ? `#${m[1]}` : el.id || '?'
 }
 
 class MultiLog extends HTMLElement {
@@ -212,11 +220,11 @@ class MultiLog extends HTMLElement {
 
     const ts = document.createElement('span')
     ts.className = 'ts'
-    ts.textContent = `[${fmtMs(performance.now() - PAGE_LOAD)}ms]`
+    ts.textContent = `[${fmtTime()}]`
 
     const src = document.createElement('span')
     src.className = 'src'
-    src.textContent = target.id || 'target'
+    src.textContent = cellLabel(target)
 
     const ev = document.createElement('span')
     ev.className = `name name--${kind}`
