@@ -15,10 +15,13 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Agents
 
-- Default `build` and `plan` agents are pinned to `opencode-go/minimax-m3`
-  via `.opencode/agents/{build,plan}.md`. Fallback chain:
+- Agent configuration (build/plan agents, /fix command, skills, system-prompt)
+  ships from the workspace registry at `/home/domi/code/.opencode/`, not this
+  repo. Build/plan remain pinned to `opencode-go/minimax-m3`; fallback chain
   `mimo-v2.5 → qwen3.6-plus` (see `~/.config/opencode/model-fallback.json`).
-- `/fix` delegates to the `build` agent. No dedicated `coder` agent.
+- When working on this repo, launch opencode from `/home/domi/code/` so the
+  registry's agents and skills load; `.opencode/` does not exist in this repo.
+- `/fix` delegates to the `build` agent. No per-project `coder` agent.
 
 ## Test runner quirks
 
@@ -39,29 +42,28 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Spec workflow
 
-Specs live in `.opencode/specs/` (index in `roadmap.md`):
+Specs live in the workspace registry (private, this repo is not the home of
+spec docs). The per-project index for hydra-element is at
+`/home/domi/code/.opencode/specs/hydra-element/roadmap.md`; layouts follow
+the standard `backlog/ → active/ → archive/` with movement into `archive/`
+requiring explicit user approval. The seven-step process (move + implement
 
-```
-backlog/ → active/ → archive/
-```
+- approve + archive + update docs) below mirrors the workspace convention;
+  see `CONTRIBUTING.md → Spec workflow` for the canonical text used by external
+  contributors.
 
-When implementing a spec:
+When a change here implements a registry spec:
 
-1. Move it from `backlog/` to `active/`
+1. Move the spec from `backlog/` to `active/` in the workspace registry
 2. Implement according to the spec's "Done when" criteria
-3. User reviews and approves
-4. Move to `archive/`, append `## Status: accepted` with the commit hash
+3. Get explicit user approval for the archive move
+4. Move to `archive/`, append `## Status: accepted` with this commit hash
 5. Update docs:
    - **README** — reflect any new/changed features
    - **CHANGELOG** — add an entry under `## [Unreleased]`
    - **ARCHITECTURE.md** — amend if the implementation shape changed
    - **CONTRIBUTING.md** — amend if commands, dependencies, or workflow changed
-
-Specs can only move to `archive/` after explicit user approval, even if
-implementation is complete.
-
-See [CONTRIBUTING.md → Spec workflow](./CONTRIBUTING.md#spec-workflow)
-for the full process.
+6. Commit the registry repo alongside this repo's commit (don't ship them separately)
 
 ## Language conventions
 

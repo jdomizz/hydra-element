@@ -10,7 +10,7 @@ For how the library is put together, read
 ## How to contribute
 
 - **Report bugs** — open an [issue](https://github.com/jdomizz/hydra-element/issues) with a clear description and steps to reproduce
-- **Suggest features** — open an issue to discuss the idea first; check the existing [specs](./.opencode/specs/roadmap.md) to see if it's already in flight
+- **Suggest features** — open an issue to discuss the idea first; the roadmap is maintained in a private workspace registry and is not visible here. If you want context on in-flight work, ask in the issue before submitting a PR.
 - **Submit code** — fork the repo, create a branch off `dev`, and open a pull request
 
 ## Development setup
@@ -102,29 +102,17 @@ workflow relies on (Playwright install path, etc.).
 
 ## Spec workflow
 
-Specs live in `.opencode/specs/` (see [roadmap](./.opencode/specs/roadmap.md)):
+Specs and roadmap for this project live in a **private workspace registry**
+and are not browsable here. The maintained list of in-flight work, archived
+specs, and decision history is the maintainer's working record and is not
+exposed publicly. External contributors should rely on GitHub issues and
+discussions for context.
 
-```
-backlog/ → active/ → archive/
-```
+If you propose a change that maps to an existing spec, mention the issue
+number in the PR description; the maintainer will reconcile the registry
+locally when accepting the change.
 
-- **backlog/** — pending implementation
-- **active/** — work in progress (multiple allowed)
-- **archive/** — shipped, with a `Status: accepted` footer
-
-When implementing a spec:
-
-1. Move it from `backlog/` to `active/`
-2. Implement per the spec's "Done when" criteria
-3. Get user approval (a spec only moves to `archive/` after explicit approval)
-4. Move to `archive/`, append `## Status` with the commit hash
-5. Update docs:
-   - **README** — reflect any new/changed features
-   - **CHANGELOG** — add an entry (Keep a Changelog format)
-   - **AGENTS.md** — amend if commands, dependencies, or architecture changed
-   - **ARCHITECTURE.md** — amend if the implementation shape changed
-
-Each spec ships as **its own commit** (no batching unrelated specs).
+Each change ships as its **own commit** (no batching unrelated changes).
 Conventional commit prefixes:
 
 - `feat(scope): …` — new user-visible feature
@@ -147,8 +135,8 @@ Conventional commit prefixes:
 2. Update **CHANGELOG** under `## [Unreleased]`, then bump the heading to the new version + date
 3. Update `version` in `package.json`
 4. Update **README** and **ARCHITECTURE** if user-visible behavior or internals changed
-5. Move specs from `active/` to `archive/`
-6. Commit everything as `docs(release): vX.Y.Z …`
+5. Move shipped specs from `active/` to `archive/` in the workspace registry (private, maintainer-only)
+6. Commit the registry repo alongside this repo's release commit
 7. Tag the commit and push the tag
 
 ## Questions?
