@@ -24,19 +24,19 @@
         </figure>
         <figure class="cell" tabindex="0" role="button" aria-label="Select slot #1">
           <figcaption>#1</figcaption>
-          <hydra-element id="g-1">s0.init(() => [Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1])
-s1.init(() => [0, Math.sin(time * 3) * 0.5 + 0.5, 0, 1])
-src(s0).blend(src(s1)).out()</hydra-element>
+          <hydra-element id="g-1">solid(() => Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1)
+  .blend(solid(0, () => Math.sin(time * 3) * 0.5 + 0.5, 0, 1))
+  .out()</hydra-element>
         </figure>
         <figure class="cell" tabindex="0" role="button" aria-label="Select slot #2">
           <figcaption>#2</figcaption>
-          <hydra-element id="g-2" sources="6">s0.init(() => [Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1])
-s1.init(() => [0, Math.sin(time * 3) * 0.5 + 0.5, 0, 1])
-s2.init(() => [0, 0, Math.sin(time * 5) * 0.5 + 0.5, 1])
-s3.init(() => [Math.sin(time * 7) * 0.5 + 0.5, Math.sin(time * 11) * 0.5 + 0.5, 0, 1])
-s4.init(() => [Math.sin(time * 13) * 0.5 + 0.5, 0, Math.sin(time * 17) * 0.5 + 0.5, 1])
-s5.init(() => [Math.sin(time * 19) * 0.5 + 0.5, Math.sin(time * 23) * 0.5 + 0.5, Math.sin(time * 29) * 0.5 + 0.5, 1])
-src(s0).blend(src(s1)).blend(src(s2)).blend(src(s3)).blend(src(s4)).blend(src(s5)).out()</hydra-element>
+          <hydra-element id="g-2" sources="6">solid(() => Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1).out(o0)
+solid(0, () => Math.sin(time * 3) * 0.5 + 0.5, 0, 1).out(o1)
+solid(0, 0, () => Math.sin(time * 5) * 0.5 + 0.5, 1).out(o2)
+solid(() => Math.sin(time * 7) * 0.5 + 0.5, () => Math.sin(time * 11) * 0.5 + 0.5, 0, 1).out(o3)
+solid(() => Math.sin(time * 13) * 0.5 + 0.5, 0, () => Math.sin(time * 17) * 0.5 + 0.5, 1).out(o4)
+solid(() => Math.sin(time * 19) * 0.5 + 0.5, () => Math.sin(time * 23) * 0.5 + 0.5, () => Math.sin(time * 29) * 0.5 + 0.5, 1).out(o5)
+render(o0, o1, o2, o3, o4, o5)</hydra-element>
         </figure>
         <figure class="cell" tabindex="0" role="button" aria-label="Select slot #3">
           <figcaption>#3</figcaption>

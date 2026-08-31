@@ -54,28 +54,9 @@ export const PRESETS = [
     requires: { sources: 2 },
   },
   {
-    title: '2-source blend',
-    description: 'playground — programmatic init(), no permissions needed',
-    code: [
-      's0.init(() => [Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1])',
-      's1.init(() => [0, Math.sin(time * 3) * 0.5 + 0.5, 0, 1])',
-      'src(s0).blend(src(s1)).out()',
-    ].join('\n'),
-    requires: { sources: 2 },
-  },
-  {
-    title: '6-source composite',
-    description: 'playground — sources=6, programmatic init() with time-varying colors',
-    code: [
-      's0.init(() => [Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1])',
-      's1.init(() => [0, Math.sin(time * 3) * 0.5 + 0.5, 0, 1])',
-      's2.init(() => [0, 0, Math.sin(time * 5) * 0.5 + 0.5, 1])',
-      's3.init(() => [Math.sin(time * 7) * 0.5 + 0.5, Math.sin(time * 11) * 0.5 + 0.5, 0, 1])',
-      's4.init(() => [Math.sin(time * 13) * 0.5 + 0.5, 0, Math.sin(time * 17) * 0.5 + 0.5, 1])',
-      's5.init(() => [Math.sin(time * 19) * 0.5 + 0.5, Math.sin(time * 23) * 0.5 + 0.5, Math.sin(time * 29) * 0.5 + 0.5, 1])',
-      'src(s0).blend(src(s1)).blend(src(s2)).blend(src(s3)).blend(src(s4)).blend(src(s5)).out()',
-    ].join('\n'),
-    requires: { sources: 6 },
+    title: 'solid + blend',
+    description: 'playground — solid() with time-varying params, blend demo',
+    code: 'solid(() => Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1)\n  .blend(solid(0, () => Math.sin(time * 3) * 0.5 + 0.5, 0, 1))\n  .out()',
   },
   {
     title: '6-output audio-reactive',
