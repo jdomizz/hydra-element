@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-31
+
 ### Changed
 
 - Playground unified: `playground/index.html` now renders four isolated `<hydra-element id="g-0..g-3">` in a 2×2 grid by default. A new `<target-picker>` dropdown selects which cell the editor / cfg-form / stats / log reflect — one editor, four sketches. The per-slot state (time / bpm / sources / outputs / audio / loop) stays independent because non-global mode is the technical truth; only the **UI** is focused. `gallery.html` (and its `gallery.js` / `css/gallery.css` / `<gallery-log>`) is retired: the standalone gallery view is replaced by an inline 2×2 in the playground. `gallery.html` itself is preserved as a 4-line `<meta http-equiv="refresh">` redirect to `./`, so the public URL `https://jdomizz.github.io/hydra-element/playground/gallery.html` (still cited in `backlog/launch-week-comms.md` and the v0.7.0 README history) doesn't 404 for external links. The redirect is rendered alongside the index by `vite.playground.config.js` (kept as a Rollup input) and lands at `dist-site/playground/gallery.html` on GH Pages.
