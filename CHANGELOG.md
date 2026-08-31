@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Package manager switched from npm to pnpm (`packageManager: "pnpm@11.9.0"`). `package-lock.json` is replaced by `pnpm-lock.yaml`; CI uses `pnpm install --frozen-lockfile`; `CONTRIBUTING.md` / `AGENTS.md` document `pnpm …` commands. Strict resolution (no phantom dependencies) catches "works on my machine but not for consumers" bugs before release. `onlyBuiltDependencies: ["playwright"]` is set so Chromium can still be downloaded.
+- Package manager switched from npm to pnpm (`packageManager: "pnpm@11.9.0"`). `package-lock.json` is replaced by `pnpm-lock.yaml`; CI uses `pnpm install --frozen-lockfile`; `CONTRIBUTING.md` / `AGENTS.md` document `pnpm …` commands. Strict resolution (no phantom dependencies) catches "works on my machine but not for consumers" bugs before release. Build-script allow-list lives in `pnpm-workspace.yaml` (`allowBuilds: esbuild, playwright`) since pnpm 11 retired `pnpm.onlyBuiltDependencies`. `oxlint` and `oxfmt` are pinned as direct devDependencies — pnpm strict does not hoist them from `oxc-standard`, so the `lint` script and pre-commit hook would otherwise fail with `oxlint: not found`.
+- `dist-site/` (the playground static build output) is git-ignored; CI's deploy workflow builds it from source and uploads the artifact directly.
 
 ### Added
 
