@@ -1,19 +1,23 @@
 /**
- * <gallery-log> — append-only event aggregator that subscribes to a *list* of
- * `<hydra-element>` targets via the `.targets` property. Each line is prefixed
- * with the target's `id` (or `target-<index>`) so listeners can see which
- * instance produced which event. This is the money-shot log: four instances
- * dispatching `hydra-ready`, `hydra-eval`, and `hydra-element-resize`
- * independently — proof that non-global isolation holds.
+ * <multi-log> — append-only event log that follows the currently
+ * selected `<hydra-element>`. Subscribes to `target-change` on
+ * `document` and re-binds to whichever cell the user clicks; only the
+ * active cell's events are shown.
  *
  * Attribute:
- *   limit — max rendered lines (default 50, oldest dropped first)
+ *   limit — max rendered lines (default 80, oldest dropped first)
  *
  * Property:
- *   targets — array of `<hydra-element>` references. Set once by the
- *             orchestrator (`playground/gallery.js`).
+ *   targets — array of `<hydra-element>` references. Optional; used
+ *             only to discover the page's elements for `data-targets`
+ *             reporting. The actual binding is driven by `target-change`
+ *             events dispatched by the orchestrator.
+ *
+ * Replaces the earlier `<gallery-log>` (single-target, used before
+ * `playground-multi-instance-mode.md`). The header now reads "Log" —
+ * the multi-instance-ness is obvious from the page itself.
  */
-const DEFAULT_LIMIT = 50
+const DEFAULT_LIMIT = 80
 
 const styles = new CSSStyleSheet()
 styles.replaceSync(`
@@ -93,12 +97,19 @@ function truncateSynth(synth) {
   return `{ time: ${time.toFixed(2)}, bpm: ${bpm}, fps: ${(stats.fps || 0).toFixed(1)} }`
 }
 
-class GalleryLog extends HTMLElement {
-  #targets = []
+class MultiLog extends HTMLElement {
+  #target = null
   #list
   #empty
   #limit = DEFAULT_LIMIT
-  #handlers = new Map()
+  #handlers = null // { target, onReady, onEval, onResize, onContextLost } | null
+
+  #onTargetChange = e => {
+    const { element } = e.detail || {}
+    if (!element || element === this.#target) return
+    this.#unbind()
+    this.#bind(element)
+  }
 
   constructor() {
     super()
@@ -106,7 +117,8 @@ class GalleryLog extends HTMLElement {
     this.shadowRoot.adoptedStyleSheets = [styles]
     this.shadowRoot.innerHTML = `
       <header>
-        <h2>Multi-instance log</h2>
+        <h2>Log</h2>
+        <slot name="stats"></slot>
         <button type="button" class="btn btn--ghost" data-clear>clear</button>
       </header>
       <pre data-list aria-live="polite"></pre>
@@ -114,7 +126,7 @@ class GalleryLog extends HTMLElement {
     this.#list = this.shadowRoot.querySelector('[data-list]')
     this.#empty = document.createElement('span')
     this.#empty.className = 'empty'
-    this.#empty.textContent = 'waiting for hydra-ready events …'
+    this.#empty.textContent = 'no target selected'
     this.#list.append(this.#empty)
     this.shadowRoot.querySelector('[data-clear]').addEventListener('click', () => this.#clear())
   }
@@ -123,28 +135,25 @@ class GalleryLog extends HTMLElement {
     const limitAttr = parseInt(this.getAttribute('limit') || '', 10)
     if (Number.isFinite(limitAttr) && limitAttr > 0) this.#limit = limitAttr
 
-    if (this.#targets.length) this.#bindAll()
+    document.addEventListener('target-change', this.#onTargetChange)
   }
 
   disconnectedCallback() {
-    this.#unbindAll()
+    document.removeEventListener('target-change', this.#onTargetChange)
+    this.#unbind()
   }
 
-  get targets() {
-    return [...this.#targets]
+  get target() {
+    return this.#target
   }
 
-  set targets(els) {
-    if (this.isConnected) this.#unbindAll()
-    this.#targets = Array.isArray(els) ? els.filter(Boolean) : []
-    if (this.isConnected) this.#bindAll()
+  set target(el) {
+    if (el === this.#target) return
+    this.#unbind()
+    if (el) this.#bind(el)
   }
 
-  #bindAll() {
-    for (const t of this.#targets) this.#bindOne(t)
-  }
-
-  #bindOne(t) {
+  #bind(t) {
     const onReady = e => this.#append(t, 'success', 'hydra-ready', truncateSynth(e.detail?.synth))
     const onEval = e => {
       if (e.detail?.success) {
@@ -164,21 +173,26 @@ class GalleryLog extends HTMLElement {
     t.addEventListener('hydra-eval', onEval)
     t.addEventListener('hydra-element-resize', onResize)
     t.addEventListener('hydra-context-lost', onContextLost)
-    this.#handlers.set(t, { onReady, onEval, onResize, onContextLost })
+    this.#handlers = { target: t, onReady, onEval, onResize, onContextLost }
+    this.#target = t
 
     if (t.ready) {
       t.ready.then(({ synth }) => this.#append(t, 'success', 'hydra-ready', truncateSynth(synth)))
     }
   }
 
-  #unbindAll() {
-    for (const [t, h] of this.#handlers) {
-      t.removeEventListener('hydra-ready', h.onReady)
-      t.removeEventListener('hydra-eval', h.onEval)
-      t.removeEventListener('hydra-element-resize', h.onResize)
-      t.removeEventListener('hydra-context-lost', h.onContextLost)
+  #unbind() {
+    if (!this.#handlers) {
+      this.#target = null
+      return
     }
-    this.#handlers.clear()
+    const { target: t, onReady, onEval, onResize, onContextLost } = this.#handlers
+    t.removeEventListener('hydra-ready', onReady)
+    t.removeEventListener('hydra-eval', onEval)
+    t.removeEventListener('hydra-element-resize', onResize)
+    t.removeEventListener('hydra-context-lost', onContextLost)
+    this.#handlers = null
+    this.#target = null
   }
 
   #clear() {
@@ -202,7 +216,7 @@ class GalleryLog extends HTMLElement {
 
     const src = document.createElement('span')
     src.className = 'src'
-    src.textContent = target.id || `target-${this.#targets.indexOf(target)}`
+    src.textContent = target.id || 'target'
 
     const ev = document.createElement('span')
     ev.className = `name name--${kind}`
@@ -224,4 +238,4 @@ class GalleryLog extends HTMLElement {
   }
 }
 
-customElements.define('gallery-log', GalleryLog)
+customElements.define('multi-log', MultiLog)

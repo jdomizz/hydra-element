@@ -14,10 +14,9 @@ Multiple `<hydra-element>` on one page each run their own Hydra engine — no co
 
 ## Try it
 
-- **[Multi-instance gallery](https://jdomizz.github.io/hydra-element/playground/gallery.html)** — four isolated `<hydra-element>` running simultaneously in one HTML document. The same money shot hydra-synth#44 has been asking for.
-- **[Playground](https://jdomizz.github.io/hydra-element/playground/)** — interactive editor with presets, attribute toggles, and a live event log. Edit code, press <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd>. Press the share button to copy a `?code=` URL — open it in the [ojack editor](https://hydra.ojack.xyz/?code=) to keep iterating there.
+- **[Playground](https://jdomizz.github.io/hydra-element/playground/)** — four isolated `<hydra-element>` running simultaneously in one HTML document, with one editor + one cfg-form + one log + one stats strip. The target picker selects which cell the editor / cfg-form / stats reflect; the multi-instance log watches all four. Press <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> to eval the active slot. The share button copies a `?code0=…&code1=…&code2=…&code3=…` URL — open it in the [ojack editor](https://hydra.ojack.xyz/?code=) to keep iterating on the active slot's sketch.
 
-Source lives in [`playground/`](./playground). Run locally with `pnpm dev` (playground) or `pnpm dev:playground` (both pages).
+Source lives in [`playground/`](./playground). Run locally with `pnpm dev`.
 
 ## Install
 

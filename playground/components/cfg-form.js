@@ -5,10 +5,14 @@
  * element, and changing the element programmatically reflects here.
  *
  * Property:
- *   target — the `<hydra-element>` reference. Must be set by the
- *            orchestrator (`playground/main.js`), not via a global
- *            selector. A `MutationObserver` is attached when target
- *            is bound so attribute changes flow back into the form.
+ *   target — the active slot's `<hydra-element>` reference. Must be set
+ *            by the orchestrator (`playground/main.js`), not via a
+ *            global selector. A `MutationObserver` is attached when
+ *            target is bound so attribute changes flow back into the
+ *            form.
+ *
+ * Listens for `target-change` on `document` to re-bind to whichever
+ * slot the `<target-picker>` selects.
  *
  * Why hardcoded schema (not `schema` property): these are exactly the
  * attributes the playground exposes; there's no second consumer. Adding
@@ -67,22 +71,38 @@ styles.replaceSync(`
   input[type='number'] {
     width: 4rem;
   }
-  .hint {
-    display: block;
-    font-size: var(--hydra-text-xs);
-    color: var(--hydra-fg-muted);
-    margin-top: var(--hydra-space-xs);
-  }
 `)
 
 function clamp(n, lo, hi) {
   return Math.max(lo, Math.min(hi, n))
 }
 
+/**
+ * Effective loop state. `<hydra-element>`'s default for `loop` is
+ * `autoLoop: true` (see `src/defaults.js`), so an absent attribute
+ * means "loop is on" — the opposite of the other booleans
+ * (`audio`/`global`, whose default is `false`). Reflecting the
+ * checkbox on `hasAttribute('loop')` alone would show it unchecked
+ * even when the loop is running, and unchecking it would call
+ * `removeAttribute('loop')` which falls back to the same default —
+ * the user thinks they toggled it off but it keeps running.
+ */
+function effectiveLoopChecked(el) {
+  const attr = el.getAttribute('loop')
+  if (attr === null) return true
+  return attr !== 'false'
+}
+
 class CfgForm extends HTMLElement {
   #target = null
   #observer = null
   #globalRow = null
+
+  #onTargetChange = e => {
+    const { element } = e.detail || {}
+    if (!element) return
+    this.target = element
+  }
 
   constructor() {
     super()
@@ -91,16 +111,17 @@ class CfgForm extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <h2>Config</h2>
       <form onsubmit="event.preventDefault()"></form>
-      <span class="hint" data-global-hint>publish on window._hydra</span>
     `
     this.#render()
   }
 
   connectedCallback() {
+    document.addEventListener('target-change', this.#onTargetChange)
     if (this.#target) this.#bindTarget()
   }
 
   disconnectedCallback() {
+    document.removeEventListener('target-change', this.#onTargetChange)
     this.#unbindTarget()
     this.#target = null
   }
@@ -143,7 +164,7 @@ class CfgForm extends HTMLElement {
       form.append(row)
     }
 
-    form.addEventListener('change', (e) => this.#onChange(e))
+    form.addEventListener('change', e => this.#onChange(e))
   }
 
   #bindTarget() {
@@ -165,13 +186,23 @@ class CfgForm extends HTMLElement {
     const t = this.#target
     if (!t) return
     const t2 = e.target
-    const {toggle} = t2.dataset
-    const {number} = t2.dataset
+    const { toggle } = t2.dataset
+    const { number } = t2.dataset
     if (toggle) {
       if (toggle === 'global' && t2.disabled) return
-      this.#applyAttr(t, toggle, t2.checked ? 'true' : null)
+      // `loop` is the one boolean with a default of `true`. Removing
+      // the attribute would fall back to that default and unchecking
+      // would do nothing. Always write an explicit `true` / `false`
+      // so the toggle actually takes effect.
+      let value
+      if (toggle === 'loop') {
+        value = t2.checked ? 'true' : 'false'
+      } else {
+        value = t2.checked ? 'true' : null
+      }
+      this.#applyAttr(t, toggle, value)
     } else if (number) {
-      const cfg = NUMBER_ATTRS.find((c) => c.name === number)
+      const cfg = NUMBER_ATTRS.find(c => c.name === number)
       const n = clamp(parseInt(t2.value, 10) || cfg.min, cfg.min, cfg.max)
       t2.value = String(n)
       this.#applyAttr(t, number, String(n))
@@ -191,7 +222,10 @@ class CfgForm extends HTMLElement {
     if (!t) return
     for (const name of BOOLEAN_ATTRS) {
       const input = this.shadowRoot.querySelector(`[data-toggle="${name}"]`)
-      if (input) input.checked = t.hasAttribute(name)
+      if (input) {
+        // `loop` has a non-obvious default — see `effectiveLoopChecked`.
+        input.checked = name === 'loop' ? effectiveLoopChecked(t) : t.hasAttribute(name)
+      }
     }
     for (const { name } of NUMBER_ATTRS) {
       const input = this.shadowRoot.querySelector(`[data-number="${name}"]`)
@@ -202,17 +236,14 @@ class CfgForm extends HTMLElement {
   #updateGlobalAvailability() {
     const total = document.querySelectorAll('hydra-element').length
     const toggle = this.shadowRoot.querySelector('[data-toggle="global"]')
-    const hint = this.shadowRoot.querySelector('[data-global-hint]')
     if (!toggle || !this.#globalRow) return
 
     if (total > 1) {
       toggle.disabled = true
       this.#globalRow.classList.add('is-disabled')
       this.#globalRow.title = 'global is disabled: more than one <hydra-element> on the page'
-      if (hint) hint.textContent = 'publish on window._hydra (disabled: multiple instances)'
     } else {
       this.#globalRow.title = 'publishes hydra on window._hydra when on'
-      if (hint) hint.textContent = 'publish on window._hydra'
     }
   }
 }

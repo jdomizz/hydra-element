@@ -24,20 +24,6 @@
   grid-area: left;
 }
 
-.app__links {
-  margin: 0;
-  font-size: var(--hydra-text-xs);
-}
-
-.app__links a {
-  color: var(--hydra-accent);
-  text-decoration: none;
-}
-
-.app__links a:hover {
-  text-decoration: underline;
-}
-
 .app__right {
   grid-area: right;
 }
@@ -45,21 +31,63 @@
 .app__center {
   grid-area: center;
   background: #000;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: var(--hydra-space-s);
+  padding: var(--hydra-space-s);
   min-height: 0;
 }
 
-.app__center hydra-element {
+.cell {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--hydra-bg-elevated);
+  border: 1px solid var(--hydra-border);
+  border-radius: var(--hydra-radius-m);
+  overflow: hidden;
+  min-height: 0;
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition:
+    border-color var(--hydra-duration-fast) var(--hydra-easing),
+    outline-color var(--hydra-duration-fast) var(--hydra-easing);
+}
+
+.cell:hover {
+  border-color: var(--hydra-border-strong);
+}
+
+.cell.is-active {
+  border-color: var(--hydra-accent);
+  outline-color: var(--hydra-accent);
+}
+
+.cell figcaption {
+  padding: var(--hydra-space-xs) var(--hydra-space-s);
+  font-family: var(--hydra-font-mono);
+  font-size: var(--hydra-text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hydra-fg-muted);
+  background: var(--hydra-bg-input);
+  border-bottom: 1px solid var(--hydra-border);
+  flex: 0 0 auto;
+}
+
+.cell hydra-element {
   flex: 1 1 auto;
-  width: 100%;
   display: flex;
   min-height: 0;
+  background: #000;
 }
 
 @media (max-width: 900px) {
   .app {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 50vh auto;
+    grid-template-rows: auto auto auto auto;
     grid-template-areas:
       'left'
       'center'
@@ -74,11 +102,18 @@
   }
 
   .app__center {
-    min-height: 50vh;
+    min-height: 60vh;
   }
 
   editor-panel,
-  log-panel {
+  multi-log {
     min-height: 12rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .app__center {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, minmax(180px, 1fr));
   }
 }

@@ -289,3 +289,70 @@ of the public API.
 For full test details and the WTR quirks (e.g. installing Playwright's
 Chromium, the failing-sinon-assertion hang), see
 [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Demo surface (unified playground)
+
+The dev playground lives in `playground/` and is built by
+`vite.playground.config.js` to `dist-site/` for GitHub Pages.
+
+The playground page renders **four** isolated `<hydra-element>` in a 2×2
+grid (`#g-0` through `#g-3`), each with its own non-global-mode Hydra
+engine. The user selects the active cell by **clicking on it** (or
+keyboard `Tab` + `Enter` / `Space`); the editor / cfg-form / stats / log
+re-bind when the click handler fires `target-change`. The active cell
+gets `.is-active` (accent border + outline) so the user can see which
+cell the editor is targeting.
+
+```
+┌──────────────────────┬──────────────────────────┬──────────────────────┐
+│ <preset-selector>    │ <figure class="cell">    │ <cfg-form>           │
+│ <editor-panel>       │   #0  <hydra-element>    │ <multi-log>          │
+│   textarea + buttons │ <figure class="cell">    │   <stats-strip>      │
+│                      │   #1  <hydra-element>    │ </multi-log>         │
+│                      │ <figure class="cell">    │                      │
+│                      │   #2  <hydra-element>    │                      │
+│                      │ <figure class="cell">    │                      │
+│                      │   #3  <hydra-element>    │                      │
+└──────────────────────┴──────────────────────────┴──────────────────────┘
+```
+
+### Event flow
+
+```
+.click / Enter / Space on .cell ─[ setActive(i) ]→  document  ─→  <editor-panel>     rebinds target + slot
+                                              ─→  <cfg-form>         rebinds target
+                                              ─→  <stats-strip>      rebinds target
+                                              ─→  <preset-selector>  updates slot field
+<preset-selector>   ─[ preset-change ]→   document  ─→  <editor-panel>     writes to active slot
+<hydra-element>     ─[ hydra-ready | hydra-eval | hydra-element-resize | hydra-context-lost ]→
+                                            document  ─→  <multi-log>        aggregates per id
+```
+
+All four events bubble + are composed, so a single document-level listener
+catches every event without reaching into shadow roots. The cell click
+handler lives in `playground/main.js` (not in a component) because it
+needs access to both the element array and the cell DOM nodes, and that
+relationship is exactly the wiring `main.js` already owns.
+
+### Slot persistence and share URL
+
+Each cell persists its code in its own `localStorage` key:
+`hydra-element:editor:0` through `hydra-element:editor:3`. The
+`<editor-panel>` rewrites the textarea when the user clicks a different
+cell.
+
+URL hydration uses per-slot keys: `?code0=…&code1=…&code2=…&code3=…`. The
+share button collapses to a bare `?code=…` when all four slots are
+identical (the common case), so simple sketches still share a one-letter
+URL delta. A bare legacy `?code=…` (no slot suffix) is mirrored to all
+four slots on hydration — preserving any links shared before the
+multi-instance rework.
+
+### Standalone gallery
+
+The earlier `gallery.html` (a separate page that mounted 4 cells with
+hardcoded scenes and no editor) is retired. The file persists as a 4-line
+`<meta http-equiv="refresh">` redirect to `./`, so the public URL
+`https://jdomizz.github.io/hydra-element/playground/gallery.html` (still
+cited in `backlog/launch-week-comms.md`) doesn't 404 for external links.
+The redirect is rendered by Vite alongside the index page.

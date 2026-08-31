@@ -1,45 +1,33 @@
 /**
- * <editor-panel> — textarea + Cmd/Ctrl+Enter + eval / share / open-in-ojack
- * buttons, with `localStorage` persistence.
+ * <editor-panel> — textarea + Cmd/Ctrl+Enter + eval button, with
+ * `localStorage` persistence per slot.
  *
  * Attributes:
- *   storage-key — `localStorage` key (default `hydra-element:editor`)
+ *   storage-key-prefix — `localStorage` key prefix (default
+ *                        `hydra-element:editor`). Final key is
+ *                        `${prefix}:<slot>`. Four slots = four keys.
  *
  * Property:
- *   target — the `<hydra-element>` reference. Must be set by the
- *            orchestrator (`playground/main.js`), not via a global
- *            selector.
+ *   target — the `<hydra-element>` reference for the active slot. Must be
+ *            set by the orchestrator (`playground/main.js`), not via a
+ *            global selector.
+ *   slot   — 0..3, the active slot index. Setting it switches the
+ *            textarea + storage key to that slot's code.
+ *
+ * Event handling:
+ *   - Listens for `target-change` (bubbling + composed) on `document` and
+ *     updates `target` + `slot` when a different cell is picked.
+ *   - Listens for `preset-change` (bubbling + composed) and applies the
+ *     preset's code to the active slot.
  *
  * Persistence model:
- *   - On connect, restore from `localStorage` if the key is set.
- *   - On every input, save to `localStorage`.
- *   - Programmatic `value` setters (including `?code=` hydration and
+ *   - On connect, restore from `localStorage` if the slot's key is set.
+ *   - On every input, save to `localStorage` under the slot's key.
+ *   - Programmatic `value` setters (including URL hydration and
  *     `<preset-selector>` events) also persist.
- *   - URL `?code=` hydration is performed by `playground/main.js`,
- *     which sets `editor.value` directly after connect.
  *
  * Eval flow:
  *   - Cmd/Ctrl+Enter OR clicking the eval button → `target.code = value`.
- *   - The hydra-element's own setter then dispatches `hydra-eval`.
- *
- * Share flow:
- *   - Clicking share encodes the current textarea value as base64 of
- *     UTF-8 (inverse of `decodeUrlCode` in `playground/main.js:22-31`),
- *     copies `${origin}${pathname}?code=...` to the clipboard via
- *     `navigator.clipboard.writeText` (with a hidden-input +
- *     `execCommand('copy')` fallback), replaces the URL bar via
- *     `history.replaceState`, and briefly flashes "copied!" in the
- *     hint slot.
- *   - Share and eval are orthogonal — sharing does not eval.
- *
- * Open-in-ojack link:
- *   - Adjacent `<a target="_blank" rel="noopener">` whose href mirrors
- *     the share URL but routes to `https://hydra.ojack.xyz/?code=...`.
- *   - href updates on every textarea change so the link always
- *     reflects what the user is editing.
- *
- * Reflects `preset-change` events (bubbling + composed) so that picking
- * a preset updates the textarea alongside evaluating the code.
  */
 const styles = new CSSStyleSheet()
 styles.replaceSync(`
@@ -64,18 +52,9 @@ styles.replaceSync(`
     letter-spacing: 0.08em;
     color: var(--hydra-fg-muted);
   }
-  .actions {
-    display: flex;
-    align-items: center;
-    gap: var(--hydra-space-s);
-  }
   .hint {
     font-size: var(--hydra-text-xs);
     color: var(--hydra-fg-muted);
-  }
-  .hint--copied {
-    color: var(--hydra-accent);
-    font-weight: 700;
   }
   textarea {
     flex: 1 1 auto;
@@ -136,46 +115,34 @@ styles.replaceSync(`
   }
 `)
 
-const DEFAULT_STORAGE_KEY = 'hydra-element:editor'
-const OJACK_BASE = 'https://hydra.ojack.xyz/'
-const COPIED_HINT_MS = 1500
-
-function encodeForUrl(value) {
-  return btoa(unescape(encodeURIComponent(value)))
-}
-
-async function copyToClipboard(text) {
-  try {
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text)
-      return true
-    }
-  } catch {}
-  const input = document.createElement('input')
-  input.value = text
-  input.setAttribute('readonly', '')
-  input.style.position = 'fixed'
-  input.style.left = '-9999px'
-  document.body.append(input)
-  input.select()
-  let ok = false
-  try {
-    ok = document.execCommand('copy')
-  } catch {}
-  input.remove()
-  return ok
-}
+const DEFAULT_STORAGE_KEY_PREFIX = 'hydra-element:editor'
 
 class EditorPanel extends HTMLElement {
   #target = null
   #textarea
-  #hint
-  #ojackLink
-  #shareButton
-  #storageKey = DEFAULT_STORAGE_KEY
-  #copiedTimer = null
+  #storageKeyPrefix = DEFAULT_STORAGE_KEY_PREFIX
+  #slot = 0
+  #allSlots = new Map() // slot index → current code (kept in sync for slot switching)
+
+  #onTargetChange = e => {
+    const { index, element } = e.detail || {}
+    if (typeof index !== 'number' || !element) return
+    this.#allSlots.set(this.#slot, this.#textarea.value)
+    // Update the target BEFORE the slot setter runs `hydrateFromStorage`,
+    // so the `target.code` fallback sees the new element.
+    this.#target = element
+    this.slot = index
+  }
+
   #onPresetChange = e => {
-    this.value = e.detail.code
+    const { slot, code } = e.detail || {}
+    if (typeof slot !== 'number' || typeof code !== 'string') return
+    this.#allSlots.set(slot, code)
+    if (slot === this.#slot) {
+      this.value = code
+    } else {
+      this.#persistSlot(slot, code)
+    }
   }
 
   constructor() {
@@ -185,19 +152,8 @@ class EditorPanel extends HTMLElement {
     this.shadowRoot.innerHTML = `
       <header>
         <h2>Editor</h2>
-        <div class="actions">
-          <span class="hint" data-hint>Cmd / Ctrl + Enter</span>
-          <button type="button" class="btn" data-share>share</button>
-          <a
-            class="btn"
-            data-ojack
-            target="_blank"
-            rel="noopener"
-            title="Open the same sketch in the ojack editor — most sketches round-trip 1:1"
-            >open in ojack</a
-          >
-          <button type="button" class="btn btn--primary" data-eval>eval</button>
-        </div>
+        <span class="hint" data-hint>Cmd / Ctrl + Enter</span>
+        <button type="button" class="btn btn--primary" data-eval>eval</button>
       </header>
       <textarea
         spellcheck="false"
@@ -206,34 +162,23 @@ class EditorPanel extends HTMLElement {
       ></textarea>
     `
     this.#textarea = this.shadowRoot.querySelector('textarea')
-    this.#hint = this.shadowRoot.querySelector('[data-hint]')
-    this.#ojackLink = this.shadowRoot.querySelector('[data-ojack]')
-    this.#shareButton = this.shadowRoot.querySelector('[data-share]')
     this.#textarea.addEventListener('input', () => this.#onInput())
     this.#textarea.addEventListener('keydown', e => this.#onKeydown(e))
     this.shadowRoot.querySelector('[data-eval]').addEventListener('click', () => this.#eval())
-    this.#shareButton.addEventListener('click', () => this.#share())
   }
 
   connectedCallback() {
-    const key = this.getAttribute('storage-key')
-    if (key) this.#storageKey = key
+    const prefixAttr = this.getAttribute('storage-key-prefix')
+    if (prefixAttr) this.#storageKeyPrefix = prefixAttr
 
-    try {
-      const saved = localStorage.getItem(this.#storageKey)
-      if (saved !== null) this.#textarea.value = saved
-    } catch {}
-
-    this.#syncShareLinks()
+    this.#hydrateFromStorage()
+    document.addEventListener('target-change', this.#onTargetChange)
     document.addEventListener('preset-change', this.#onPresetChange)
   }
 
   disconnectedCallback() {
+    document.removeEventListener('target-change', this.#onTargetChange)
     document.removeEventListener('preset-change', this.#onPresetChange)
-    if (this.#copiedTimer !== null) {
-      clearTimeout(this.#copiedTimer)
-      this.#copiedTimer = null
-    }
     this.#target = null
   }
 
@@ -243,8 +188,8 @@ class EditorPanel extends HTMLElement {
 
   set value(v) {
     this.#textarea.value = String(v)
+    this.#allSlots.set(this.#slot, String(v))
     this.#persist()
-    this.#syncShareLinks()
   }
 
   get target() {
@@ -255,6 +200,42 @@ class EditorPanel extends HTMLElement {
     this.#target = el
   }
 
+  get slot() {
+    return this.#slot
+  }
+
+  set slot(n) {
+    const next = Math.max(0, Math.floor(Number(n)) || 0)
+    this.#allSlots.set(this.#slot, this.#textarea.value)
+    this.#slot = next
+    this.#hydrateFromStorage()
+  }
+
+  #storageKey(slot = this.#slot) {
+    return `${this.#storageKeyPrefix}:${slot}`
+  }
+
+  #hydrateFromStorage() {
+    let saved = null
+    try {
+      saved = localStorage.getItem(this.#storageKey())
+    } catch {}
+
+    if (saved !== null) {
+      this.#textarea.value = saved
+    } else if (this.#target && this.#target.code) {
+      // First visit (or cleared localStorage): seed from the element's
+      // current code (typically the `textContent` default set in
+      // `playground/index.html`). Persist so subsequent visits read from
+      // localStorage directly and don't re-derive.
+      this.#textarea.value = this.#target.code
+      this.#persistSlot(this.#slot, this.#target.code)
+    } else {
+      this.#textarea.value = ''
+    }
+    this.#allSlots.set(this.#slot, this.#textarea.value)
+  }
+
   #onKeydown(e) {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
@@ -263,8 +244,8 @@ class EditorPanel extends HTMLElement {
   }
 
   #onInput() {
+    this.#allSlots.set(this.#slot, this.#textarea.value)
     this.#persist()
-    this.#syncShareLinks()
   }
 
   #eval() {
@@ -272,38 +253,13 @@ class EditorPanel extends HTMLElement {
     this.#target.code = this.#textarea.value
   }
 
-  async #share() {
-    const payload = encodeForUrl(this.#textarea.value)
-    const url = `${location.origin}${location.pathname}?code=${payload}`
-    try {
-      history.replaceState(null, '', `?code=${payload}`)
-    } catch {}
-    await copyToClipboard(url)
-    this.#flashCopied()
-  }
-
-  #syncShareLinks() {
-    const payload = encodeForUrl(this.#textarea.value)
-    if (this.#ojackLink) this.#ojackLink.href = `${OJACK_BASE}?code=${payload}`
-  }
-
-  #flashCopied() {
-    if (!this.#hint) return
-    if (this.#copiedTimer !== null) clearTimeout(this.#copiedTimer)
-    const original = this.#hint.dataset.original || this.#hint.textContent
-    this.#hint.dataset.original = original
-    this.#hint.textContent = 'copied!'
-    this.#hint.classList.add('hint--copied')
-    this.#copiedTimer = setTimeout(() => {
-      this.#hint.textContent = original
-      this.#hint.classList.remove('hint--copied')
-      this.#copiedTimer = null
-    }, COPIED_HINT_MS)
-  }
-
   #persist() {
+    this.#persistSlot(this.#slot, this.#textarea.value)
+  }
+
+  #persistSlot(slot, value) {
     try {
-      localStorage.setItem(this.#storageKey, this.#textarea.value)
+      localStorage.setItem(this.#storageKey(slot), value)
     } catch {}
   }
 }

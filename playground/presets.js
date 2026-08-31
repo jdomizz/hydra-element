@@ -1,57 +1,101 @@
 /**
- * Static preset sketches shown in <preset-selector>.
+ * Static preset sketches shown in `<preset-selector>`.
  *
- * Each entry: `{ title, description, code, requires? }`. `code` is a string
- * (multi-line assembled with `Array.join('\n')` so leading tabs/whitespace
- * stay readable here). `requires` is informational metadata only —
- * consumers decide whether to apply it before evaluating.
+ * Title format: `extension — author — what it demonstrates`. The user sees
+ * `title — description` in the dropdown, so the description carries the
+ * author + demo summary.
+ *
+ * `requires` data on a preset is informational — the consumer decides
+ * whether to bump `sources` / `outputs` before evaluating.
+ *
+ * Removed in the playground unification (per user feedback):
+ *   - `osc`, `noise` — too simple (single-line sketches)
+ *   - `typo (error)` — narrow debug use case
+ *   - `reset` — utility, no demo value
+ *   - `osc + arithmetics`, `osc + blend modes` — niche extensions
+ *   - `custom GLSL` — kept (regression-tested by `playground/presets.spec.js`)
+ *     but moved to the end so it doesn't clutter the common-picks menu
+ *
+ * Added in the unification:
+ *   - `2-source blend`     — programmatic `s0.init(() => ...)`, no permissions
+ *   - `6-source composite` — sources="6", programmatic init with `time`
+ *   - `6-output audio-reactive` — extra-shaders-for-hydra + a.fft[] + outputs="6"
  */
 export const PRESETS = [
   {
-    title: 'osc',
-    description: 'basic oscillator — default synth output',
-    code: 'osc(10, 0.2, 0.5).out()',
-  },
-  {
-    title: 'noise',
-    description: 'colored noise — noise() + .color()',
-    code: 'noise(3, 0.1).color(0.5, 0.5, 0.5).out()',
+    title: 'osc + kaleid',
+    description: 'Zach Krall (CC BY-NC-SA 4.0) — diff + repeat modulate',
+    code: [
+      'osc(10, 0.9, 300)',
+      '.color(0.9, 0.7, 0.8)',
+      '.diff(',
+      '  osc(45, 0.3, 100)',
+      '  .color(0.9, 0.9, 0.9)',
+      '  .rotate(0.18)',
+      '  .pixelate(12)',
+      '  .kaleid()',
+      ')',
+      '.scrollX(10)',
+      '.colorama()',
+      '.luma()',
+      '.repeatX(4)',
+      '.repeatY(4)',
+      '.modulate(',
+      '  osc(1, -0.9, 300)',
+      ')',
+      '.scale(2)',
+      '.out()',
+    ].join('\n'),
   },
   {
     title: 'cam + blend',
-    description: 'camera + screen blend — requires sources=2',
+    description: 'playground — camera + screen via s0+s1 (sources=2)',
     code: 's0.initCam(); s1.initScreen(); src(s0).blend(src(s1)).out()',
     requires: { sources: 2 },
   },
   {
-    title: 'custom GLSL',
-    description: 'user-defined src — noixe() via setFunction() (self-contained)',
+    title: '2-source blend',
+    description: 'playground — programmatic init(), no permissions needed',
     code: [
-      'setFunction({',
-      '  name: "noixe",',
-      '  type: "src",',
-      '  inputs: [',
-      '    { type: "float", name: "scale", default: 5 },',
-      '    { type: "float", name: "offset", default: 0.5 },',
-      '  ],',
-      '  glsl: "return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);",',
-      '})',
-      'noixe(5, 0.5).out()',
+      's0.init(() => [Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1])',
+      's1.init(() => [0, Math.sin(time * 3) * 0.5 + 0.5, 0, 1])',
+      'src(s0).blend(src(s1)).out()',
     ].join('\n'),
+    requires: { sources: 2 },
   },
   {
-    title: 'typo (error)',
-    description: 'intentional typo — verifies hydra-eval error reporting',
-    code: 'osC(10, 0.2, 0.5).out()',
+    title: '6-source composite',
+    description: 'playground — sources=6, programmatic init() with time-varying colors',
+    code: [
+      's0.init(() => [Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1])',
+      's1.init(() => [0, Math.sin(time * 3) * 0.5 + 0.5, 0, 1])',
+      's2.init(() => [0, 0, Math.sin(time * 5) * 0.5 + 0.5, 1])',
+      's3.init(() => [Math.sin(time * 7) * 0.5 + 0.5, Math.sin(time * 11) * 0.5 + 0.5, 0, 1])',
+      's4.init(() => [Math.sin(time * 13) * 0.5 + 0.5, 0, Math.sin(time * 17) * 0.5 + 0.5, 1])',
+      's5.init(() => [Math.sin(time * 19) * 0.5 + 0.5, Math.sin(time * 23) * 0.5 + 0.5, Math.sin(time * 29) * 0.5 + 0.5, 1])',
+      'src(s0).blend(src(s1)).blend(src(s2)).blend(src(s3)).blend(src(s4)).blend(src(s5)).out()',
+    ].join('\n'),
+    requires: { sources: 6 },
   },
   {
-    title: 'reset',
-    description: 'clear sources, hush, solid black — restores default state',
-    code: 'for (let i = 0; i < s.length; i++) s[i].clear(); hush(); solid(0, 0, 0).out()',
+    title: '6-output audio-reactive',
+    description: 'playground — extra-shaders-for-hydra + a.fft[] + outputs=6 (mic input)',
+    code: [
+      'await loadScript("https://metagrowing.org/extra-shaders-for-hydra/lib-noise.js")',
+      '',
+      'turb(3, 0, () => 6 * ((0.5 * time) % 1.0)).out(o0)',
+      'uturb(3, 0, () => 6 * ((0.5 * time) % 1.0)).out(o1)',
+      'warp(3, 0, () => 6 * ((0.5 * time) % 1.0), () => 6 * ((0.5 * time) % 1.0)).out(o2)',
+      'cwarp(3, 0, () => 6 * ((0.5 * time) % 1.0), () => 6 * ((0.5 * time) % 1.0)).out(o3)',
+      'osc(20, 0.1, () => a.fft[0] * 4).modulate(src(o0), 0.5).out(o4)',
+      'shape(99, 0.3, 0.7).modulate(src(o1), 0.3).out(o5)',
+      'render(o0, o1, o2, o3, o4, o5)',
+    ].join('\n'),
+    requires: { outputs: 6, audio: true },
   },
   {
     title: 'corrupted screensaver',
-    description: 'by Ritchse (CC BY-NC-SA 4.0) — voronoi + diff chain',
+    description: 'Ritchse (CC BY-NC-SA 4.0) — voronoi + diff chain',
     code: [
       '// from https://hydra.ojack.xyz/?sketch_id=ritchse_1',
       '// licensed with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/',
@@ -73,7 +117,7 @@ export const PRESETS = [
   },
   {
     title: 'glitch river',
-    description: 'by Flor de Fuego — voronoi + kaleid feedback',
+    description: 'Flor de Fuego — voronoi + kaleid feedback',
     code: [
       '// from https://hydra.ojack.xyz/?sketch_id=flor_2',
       '//Glitch River',
@@ -97,38 +141,8 @@ export const PRESETS = [
     ].join('\n'),
   },
   {
-    title: 'osc + kaleid',
-    description: 'by Zach Krall (CC BY-NC-SA 4.0) — osc.diff + repeat modulate',
-    code: [
-      '// from https://hydra.ojack.xyz/?sketch_id=example_11',
-      '// licensed with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/',
-      '// by Zach Krall',
-      '// http://zachkrall.online/',
-      '',
-      'osc(10, 0.9, 300)',
-      '.color(0.9, 0.7, 0.8)',
-      '.diff(',
-      '  osc(45, 0.3, 100)',
-      '  .color(0.9, 0.9, 0.9)',
-      '  .rotate(0.18)',
-      '  .pixelate(12)',
-      '  .kaleid()',
-      ')',
-      '.scrollX(10)',
-      '.colorama()',
-      '.luma()',
-      '.repeatX(4)',
-      '.repeatY(4)',
-      '.modulate(',
-      '  osc(1, -0.9, 300)',
-      ')',
-      '.scale(2)',
-      '.out()',
-    ].join('\n'),
-  },
-  {
     title: 'osc + mouse rotate',
-    description: 'by Olivia Jack — pixelated osc with mouse-driven modulateRotate',
+    description: 'Olivia Jack — pixelated osc with mouse-driven modulateRotate',
     code: [
       '// from https://hydra.ojack.xyz/?sketch_id=example_18',
       '// by Olivia Jack',
@@ -145,7 +159,7 @@ export const PRESETS = [
   },
   {
     title: 'osc + modulatePixelate',
-    description: 'by Naoto Hieda (@naoto_hieda) — chained outputs with pixelate modulation',
+    description: 'Naoto Hieda (@naoto_hieda) — chained outputs with pixelate modulation',
     code: [
       '// from https://hydra.ojack.xyz/?sketch_id=naoto_0',
       '// @naoto_hieda',
@@ -156,7 +170,7 @@ export const PRESETS = [
   },
   {
     title: 'egg of the phoenix',
-    description: 'by Alexandre Rangel — stacked shape.diff chain with modulateScale',
+    description: 'Alexandre Rangel — stacked shape.diff chain with modulateScale',
     code: [
       '// from https://hydra.ojack.xyz/?sketch_id=alexandre_2',
       '// "egg of the phoenix"',
@@ -182,7 +196,7 @@ export const PRESETS = [
   },
   {
     title: 'really love',
-    description: 'by Abhinay Khoparzi — osc.pixelate.kaleid + self-diff feedback',
+    description: 'Abhinay Khoparzi — osc.pixelate.kaleid + self-diff feedback',
     code: [
       '// from https://hydra.ojack.xyz/?sketch_id=khoparzi_2',
       '// Really Love',
@@ -195,57 +209,24 @@ export const PRESETS = [
     ].join('\n'),
   },
   {
-    title: 'turb / warp / cwarp (4 outputs)',
-    description: 'CC BY-NC-SA 4.0 — extra-shaders-for-hydra (metagrowing) on all outputs',
+    title: 'turb / warp / cwarp',
+    description: 'metagrowing (CC BY-NC-SA 4.0) — 4 outputs, extra-shaders-for-hydra',
     code: [
-      '// from https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEFhd2FpdCUyMGxvYWRTY3JpcHQoJTIyaHR0cHMlM0ElMkYlMkZtZXRhZ3Jvd2luZy5vcmclMkZleHRyYS1zaGFkZXJzLWZvci1oeWRyYSUyRmxpYi1ub2lzZS5qcyUyMiklMEElMEF0dXJiKDMlMkMlMjAwJTJDJTIwJTIwKCklMjAlM0QlM0UlMjA2JTIwKiUyMCgoMC41JTIwKiUyMHRpbWUpJTIwJTI1JTIwMS4wKSkub3V0KG8wKSUzQiUwQXV0dXJiKDMlMkMlMjAwJTJDJTIwKCklMjAlM0QlM0UlMjA2JTIwKiUyMCgoMC41JTIwKiUyMHRpbWUpJTIwJTI1JTIwMS4wKSkub3V0KG8xKSUzQiUwQXdhcnAoMyUyQyUyMDAlMkMlMjAlMjAoKSUyMCUzRCUzRSUyMDYlMjAqJTIwKCgwLjUlMjAqJTIwdGltZSklMjAlMjUlMjAxLjApJTJDJTIwKCklMjAlM0QlM0UlMjA2JTIwKiUyMCgoMC41JTIwKiUyMHRpbWUpJTIwJTI1JTIwMS4wKSkub3V0KG8yKSUzQiUwQWN3YXJwKDMlMkMlMjAwJTJDJTIwKCklMjAlM0QlM0UlMjA2JTIwKiUyMCgoMC41JTIwKiUyMHRpbWUpJTIwJTI1JTIwMS4wKSUyQyUyMCgpJTIwJTNEJTNFJTIwNiUyMColMjAoKDAuNSUyMColMjB0aW1lKSUyMCUyNSUyMDEuMCkpLm91dChvMyklM0IlMEFyZW5kZXIoKSUwQQ%3D%3D',
+      '// from https://hydra.ojack.xyz/?sketch_id=metagrowing_1',
       '// licensed with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/',
       'await loadScript("https://metagrowing.org/extra-shaders-for-hydra/lib-noise.js")',
       '',
       'turb(3, 0,  () => 6 * ((0.5 * time) % 1.0)).out(o0);',
       'uturb(3, 0, () => 6 * ((0.5 * time) % 1.0)).out(o1);',
-      'warp(3, 0,  () => 6 * ((0.5 * time) % 1.0), () => 6 * ((0.5 * time) % 1.0))',
-      '.out(o2);',
+      'warp(3, 0,  () => 6 * ((0.5 * time) % 1.0), () => 6 * ((0.5 * time) % 1.0)).out(o2);',
       'cwarp(3, 0, () => 6 * ((0.5 * time) % 1.0), () => 6 * ((0.5 * time) % 1.0)).out(o3);',
       'render()',
     ].join('\n'),
   },
   {
-    title: 'osc + arithmetics',
-    description: 'by geikha — hyper-hydra extension: .mod / .step / .unipolar / .div',
-    code: [
-      '// from https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS1hcml0aG1ldGljcy5qcyUyMiklMEElMEFvc2MoMTAlMkMuMSUyQzIpJTBBJTA5Lm1vZChncmFkaWVudCgpLmFzaW4oKS5jb3MoKSklMEElMDkuc3RlcChub2lzZSgyKS51bmlwb2xhcigpLmRpdihvMCkpJTBBJTA5LmJsZW5kKG8wJTJDLjIpJTBBJTA5Lm91dCgpJTBB',
-      '',
-      'await loadScript("https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-arithmetics.js")',
-      '',
-      'osc(10,.1,2)',
-      '\t.mod(gradient().asin().cos())',
-      '\t.step(noise(2).unipolar().div(o0))',
-      '\t.blend(o0,.2)',
-      '\t.out()',
-    ].join('\n'),
-  },
-  {
-    title: 'osc + blend modes',
-    description: 'by geikha — hyper-hydra extension: .screen / .pm / .linearBurn',
-    code: [
-      '// from https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS1ibGVuZC5qcyUyMiklMEElMEFvc2MoMzApJTBBJTA5LnNjcmVlbihub2lzZSgzJTJDMSkucG0oKSklMEElMDkubGluZWFyQnVybihncmFkaWVudCgxKS5odWUoLjMpKSUwQSUwOS5vdXQoKSUwQQ%3D%3D',
-      '',
-      'await loadScript("https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-blend.js")',
-      '',
-      'osc(30)',
-      '\t.screen(noise(3,1).pm())',
-      '\t.linearBurn(gradient(1).hue(.3))',
-      '\t.out()',
-    ].join('\n'),
-  },
-  {
     title: 'shader park torus',
-    description:
-      'shader-park-core extension — rotateX/Z + animated torus via sculptToHydraRenderer',
+    description: 'shader-park-core — 3D via sculptToHydraRenderer',
     code: [
-      '// from https://hydra.ojack.xyz/?code=Y29uc3QlMjAlN0IlMjBzY3VscHRUb0h5ZHJhUmVuZGVyZXIlMjAlN0QlMjAlM0QlMjBhd2FpdCUyMGltcG9ydCglMjJodHRwcyUzQSUyRiUyRnVucGdrLmNvbSUyRnNoYWRlci1wYXJrLWNvcmUlMkZkaXN0JTJGc2hhZGVyLXBhcmstY29yZS5lc20uanMlMjIpJTBBJTBBc2N1bHB0VG9IeWRyYVJlbmRlcmVyKCgpJTIwJTNEJTNFJTIwJTdCJTBBJTA5JTA5cm90YXRlWCh0aW1lJTIwJTJGJTIwNSklMEElMDklMDlyb3RhdGVaKHRpbWUlMjAlMkYlMjAzKSUwQSUwOSUwOWRpc3BsYWNlKHNpbih0aW1lKSUyQyUyMDElMkMlMjAwKSUwQSUwOSUwOW1pcnJvck4oMyUyQyUyMDMpJTBBJTA5JTA5dG9ydXMoMC44JTJDJTIwMC4zOCUyMCUyQiUyMDAuMSUyMColMjBzaW4odGltZSkpJTBBJTA5JTdEKSUwQSUwOS5vdXQobzApJTBBJTBBcmVuZGVyKG8wKSUwQQ%3D%3D',
-      '',
       'const { sculptToHydraRenderer } = await import("https://unpkg.com/shader-park-core/dist/shader-park-core.esm.js")',
       '',
       'sculptToHydraRenderer(() => {',
@@ -261,27 +242,37 @@ export const PRESETS = [
     ].join('\n'),
   },
   {
-    title: 'midi solid (note)',
-    description: 'hydra-midi extension — note() drives red channel of solid() (needs MIDI device)',
+    title: 'midi solid',
+    description: 'arnoson (CC BY-NC-SA 4.0) — MIDI `note()` drives solid() color',
     code: [
-      '// from https://hydra.ojack.xyz/?code=JTJGJTJGJTIwWW91JTIwY2FuJTIwZWl0aGVyJTIwdXNlJTIwJTYwJTQwbGF0ZXN0JTYwJTIwb3IlMjBsb2FkJTIwYSUyMHNwZWNpZmljJTIwdmVyc2lvbiUyMHdpdGglMkMlMjBmb3IlMjBleGFtcGxlJTJDJTIwJTYwJTQwMC40LjAlNjAuJTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUwQSUyMCUyMCdodHRwcyUzQSUyRiUyRmNkbi5qc2RlbGl2ci5uZXQlMkZucG0lMkZoeWRyYS1taWRpJTQwbGF0ZXN0JTJGZGlzdCUyRmluZGV4LmpzJyUwQSklMEElMEElMkYlMkYlMjBVc2UlMjBtaWRpJTIwbWVzc2FnZXMlMjBmcm9tJTIwYWxsJTIwY2hhbm5lbHMlMjBvZiUyMGFsbCUyMGlucHV0cy4lMEFhd2FpdCUyMG1pZGkuc3RhcnQoJTdCJTIwY2hhbm5lbCUzQSUyMCcqJyUyQyUyMGlucHV0JTNBJTIwJyonJTIwJTdEKSUwQSUyRiUyRiUyMFNob3clMjBhJTIwc21hbGwlMjBtaWRpJTIwbW9uaXRvciUyMChzaW1pbGFyJTIwdG8lMjBoeWRhJTI3cyUyMCU2MGEuc2hvdyglMjklNjApLiUwQW1pZGkuc2hvdygpJTBBJTBBJTJGJTJGJTIwVXNlJTIwYW55JTIwbm90ZSUyMHRvJTIwY29udHJvbCUyMHRoZSUyMHJlZCUyMGFtb3VudCUyMG9mJTIwaHlkcmEncyUyMCU2MHNvbGlkKCklNjAlMjBmdW5jdGlvbi4lMEFzb2xpZChub3RlKCcqJyklMkMlMjAwJTJDJTIwMSkub3V0KCklMEElMEElMkYlMkYlMjBPciUyQyUyMGlmJTIweW91JTIwYXJlJTIwdXNpbmclMjBhJTIvbWlkJTIwY29udHJvbGxlciUyMGFuZCUyMG5vdCUyMGFuJTIwa2V5Ym9hcmQlM0ElMEElMkYlMkYlMjBVc2UlMjBhJTIwY29udHJvbCUyMGNoYW5nZSUyMHZhbHVlJTIwdG8lMjBjb250cm9sJTIwdGhlJTIgcmVkJTIwYW1vdW50LiUwQSUyRiUyRiUyMHNvbGlkKGNjKDc0KSUyQyUyMDAlMkMlMjAxKS5vdXQoKQ%3D%3D',
-      '',
-      '// You can either use `@latest` or load a specific version with, for example, `@0.4.0`.',
+      '// from https://hydra.ojack.xyz/?sketch_id=arnoson_midi_solid',
+      '// licensed with CC BY-NC-SA 4.0 https://creativecommons.org/licenses/by-nc-sa/4.0/',
       'await loadScript(',
       "  'https://cdn.jsdelivr.net/npm/hydra-midi@latest/dist/index.js'",
       ')',
       '',
       '// Use midi messages from all channels of all inputs.',
       "await midi.start({ channel: '*', input: '*' })",
-      "// Show a small midi monitor (similar to hydra's `a.show()`).",
       'midi.show()',
       '',
-      "// Use any note to control the red amount of hydra's `solid()` function.",
       "solid(note('*'), 0, 1).out()",
-      '',
-      '// Or, if you are using a midi controller and not a keyboard:',
-      '// Use a control change value to control the red amount.',
-      '// solid(cc(74), 0, 1).out()',
+    ].join('\n'),
+  },
+  {
+    title: 'custom GLSL',
+    description:
+      'playground — user-defined src via setFunction() (self-contained, regression-tested)',
+    code: [
+      'setFunction({',
+      '  name: "noixe",',
+      '  type: "src",',
+      '  inputs: [',
+      '    { type: "float", name: "scale", default: 5 },',
+      '    { type: "float", name: "offset", default: 0.5 },',
+      '  ],',
+      '  glsl: "return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);",',
+      '})',
+      'noixe(5, 0.5).out()',
     ].join('\n'),
   },
 ]

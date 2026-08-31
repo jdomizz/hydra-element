@@ -1,18 +1,20 @@
 /**
  * <preset-selector> — `<select>` populated from `presets` property. Each
  * option shows `title — description`. On change, dispatches
- * `preset-change` and sets `target.code` (the `<hydra-element>`).
+ * `preset-change` with `slot` (active slot, 0..3 by default) and the
+ * preset's code, then sets `target.code` on the corresponding element.
  *
  * Property:
  *   presets — array of `{ title, description, code }`. Reassigning
  *             rebuilds the option list (current selection is lost).
- *   target  — the `<hydra-element>` reference. Must be set by the
- *             orchestrator (`playground/main.js`), not via a global
- *             selector. Setting after connect re-binds immediately.
+ *   target  — the active slot's `<hydra-element>`. Setting `target` does
+ *             not change which slot the event reports; see `slot`.
+ *   slot    — current slot index (0..3). Setter updates the internal
+ *             default; `target-change` events on `document` keep it in sync.
  *
  * Events:
- *   preset-change — detail: `{ title, code }`. Bubbling + composed so
- *                   it crosses shadow boundaries if used nested.
+ *   preset-change — detail: `{ title, code, slot }`. Bubbling + composed
+ *                   so it crosses shadow boundaries if used nested.
  *
  * After a selection, the `<select>` resets to its placeholder so the
  * same preset can be re-picked (and dispatched) without UI gymnastics.
@@ -60,6 +62,13 @@ class PresetSelector extends HTMLElement {
   #target = null
   #select
   #presets = []
+  #slot = 0
+
+  #onTargetChange = e => {
+    const { index, element } = e.detail || {}
+    if (typeof index === 'number') this.#slot = index
+    if (element) this.#target = element
+  }
 
   constructor() {
     super()
@@ -75,9 +84,12 @@ class PresetSelector extends HTMLElement {
     this.#select.addEventListener('change', () => this.#onChange())
   }
 
-  connectedCallback() {}
+  connectedCallback() {
+    document.addEventListener('target-change', this.#onTargetChange)
+  }
 
   disconnectedCallback() {
+    document.removeEventListener('target-change', this.#onTargetChange)
     this.#target = null
   }
 
@@ -98,6 +110,15 @@ class PresetSelector extends HTMLElement {
     this.#target = el
   }
 
+  get slot() {
+    return this.#slot
+  }
+
+  set slot(n) {
+    const next = Math.max(0, Math.floor(Number(n)) || 0)
+    this.#slot = next
+  }
+
   #rebuildOptions() {
     const select = this.#select
     while (select.options.length > 1) select.remove(1)
@@ -111,10 +132,10 @@ class PresetSelector extends HTMLElement {
   }
 
   #onChange() {
-    const {value} = this.#select
+    const { value } = this.#select
     if (!value) return
     const title = this.#select.options[this.#select.selectedIndex]?.dataset?.title || ''
-    const detail = { title, code: value }
+    const detail = { title, code: value, slot: this.#slot }
 
     if (this.#target) this.#target.code = value
 
@@ -125,7 +146,7 @@ class PresetSelector extends HTMLElement {
         detail,
         bubbles: true,
         composed: true,
-      }),
+      })
     )
   }
 }

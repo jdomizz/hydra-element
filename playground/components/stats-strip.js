@@ -1,12 +1,15 @@
 /**
- * <stats-strip> — renders `synth.time` and `synth.stats.fps` from a
- * `<hydra-element>` target. Single responsibility: read + display.
+ * <stats-strip> — renders `synth.time` and `synth.stats.fps` from the
+ * active `<hydra-element>` target. Single responsibility: read + display.
  *
  * Property:
- *   target — the `<hydra-element>` reference. Must be set by the
- *            orchestrator (`playground/main.js`), not via a global
- *            selector. The rAF loop starts as soon as the target is
- *            bound (whether via setter or pre-connect assignment).
+ *   target — the active slot's `<hydra-element>` reference. Must be set
+ *            by the orchestrator (`playground/main.js`), not via a
+ *            global selector. The rAF loop starts as soon as the target
+ *            is bound (whether via setter or pre-connect assignment).
+ *
+ * Listens for `target-change` on `document` to re-bind when the user
+ * switches slots via `<target-picker>`.
  *
  * Cleans up the rAF loop in `disconnectedCallback`. Throttled to ~4 Hz
  * to keep main-thread pressure low; sub-frame updates are noise.
@@ -44,6 +47,12 @@ class StatsStrip extends HTMLElement {
   #timer = null
   #lastTick = 0
 
+  #onTargetChange = e => {
+    const { element } = e.detail || {}
+    if (!element) return
+    this.target = element
+  }
+
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
@@ -63,10 +72,12 @@ class StatsStrip extends HTMLElement {
   }
 
   connectedCallback() {
+    document.addEventListener('target-change', this.#onTargetChange)
     this.#start()
   }
 
   disconnectedCallback() {
+    document.removeEventListener('target-change', this.#onTargetChange)
     this.#stop()
   }
 

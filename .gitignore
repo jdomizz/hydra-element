@@ -2,3 +2,4 @@ dist
 dist-site
 node_modules
 .husky/_/
+.opencode/research/

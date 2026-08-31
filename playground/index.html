@@ -8,28 +8,54 @@
       href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍬</text></svg>"
     />
     <link rel="stylesheet" href="./style.css" />
-    <script type="module" src="../index.js"></script>
     <script type="module" src="./main.js"></script>
   </head>
   <body>
     <main class="app">
       <aside class="app__left">
-        <p class="app__links">
-          <a href="./gallery.html">multi-instance gallery →</a>
-        </p>
         <preset-selector></preset-selector>
         <editor-panel></editor-panel>
       </aside>
 
-      <section class="app__center">
-        <hydra-element></hydra-element>
+      <section class="app__center" data-log-cells>
+        <figure class="cell" tabindex="0" role="button" aria-label="Select slot #0">
+          <figcaption>#0</figcaption>
+          <hydra-element id="g-0">osc(10, 0.9, 300).color(0.9, 0.7, 0.8).diff(osc(45, 0.3, 100).color(0.9, 0.9, 0.9).rotate(0.18).pixelate(12).kaleid()).scrollX(10).colorama().luma().repeatX(4).repeatY(4).modulate(osc(1, -0.9, 300)).scale(2).out()</hydra-element>
+        </figure>
+        <figure class="cell" tabindex="0" role="button" aria-label="Select slot #1">
+          <figcaption>#1</figcaption>
+          <hydra-element id="g-1">s0.init(() => [Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1])
+s1.init(() => [0, Math.sin(time * 3) * 0.5 + 0.5, 0, 1])
+src(s0).blend(src(s1)).out()</hydra-element>
+        </figure>
+        <figure class="cell" tabindex="0" role="button" aria-label="Select slot #2">
+          <figcaption>#2</figcaption>
+          <hydra-element id="g-2" sources="6">s0.init(() => [Math.sin(time * 2) * 0.5 + 0.5, 0, 0, 1])
+s1.init(() => [0, Math.sin(time * 3) * 0.5 + 0.5, 0, 1])
+s2.init(() => [0, 0, Math.sin(time * 5) * 0.5 + 0.5, 1])
+s3.init(() => [Math.sin(time * 7) * 0.5 + 0.5, Math.sin(time * 11) * 0.5 + 0.5, 0, 1])
+s4.init(() => [Math.sin(time * 13) * 0.5 + 0.5, 0, Math.sin(time * 17) * 0.5 + 0.5, 1])
+s5.init(() => [Math.sin(time * 19) * 0.5 + 0.5, Math.sin(time * 23) * 0.5 + 0.5, Math.sin(time * 29) * 0.5 + 0.5, 1])
+src(s0).blend(src(s1)).blend(src(s2)).blend(src(s3)).blend(src(s4)).blend(src(s5)).out()</hydra-element>
+        </figure>
+        <figure class="cell" tabindex="0" role="button" aria-label="Select slot #3">
+          <figcaption>#3</figcaption>
+          <hydra-element id="g-3" outputs="6" audio="true">await loadScript("https://metagrowing.org/extra-shaders-for-hydra/lib-noise.js")
+turb(3, 0, () => 6 * ((0.5 * time) % 1.0)).out(o0)
+uturb(3, 0, () => 6 * ((0.5 * time) % 1.0)).out(o1)
+warp(3, 0, () => 6 * ((0.5 * time) % 1.0), () => 6 * ((0.5 * time) % 1.0)).out(o2)
+cwarp(3, 0, () => 6 * ((0.5 * time) % 1.0), () => 6 * ((0.5 * time) % 1.0)).out(o3)
+osc(20, 0.1, () => a.fft[0] * 4).modulate(src(o0), 0.5).out(o4)
+shape(99, 0.3, 0.7).modulate(src(o1), 0.3).out(o5)
+render(o0, o1, o2, o3, o4, o5)</hydra-element>
+        </figure>
       </section>
 
       <aside class="app__right">
         <cfg-form></cfg-form>
-        <log-panel limit="50">
+        <multi-log limit="80">
           <stats-strip slot="stats"></stats-strip>
-        </log-panel>
+        </multi-log>
       </aside>
     </main>
   </body>
