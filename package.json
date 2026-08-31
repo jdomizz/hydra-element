@@ -13,7 +13,7 @@
     "video",
     "web-component"
   ],
-  "homepage": "https://jdomizz.github.io/hydra-element/",
+  "homepage": "https://jdomizz.github.io/hydra-element/playground/gallery.html",
   "bugs": {
     "url": "https://github.com/jdomizz/hydra-element/issues"
   },
@@ -53,7 +53,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "dev": "vite --host",
+    "dev": "vite --config vite.playground.config.js --host",
     "dev:playground": "vite --config vite.playground.config.js --host",
     "test": "wtr --config wtr.config.js",
     "build": "vite build",

@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 
 /**
@@ -8,24 +11,42 @@ import { defineConfig } from 'vite'
  *      declares `"files": ["dist", ...]` — *anything* we add to `dist/`
  *      ships to npm.
  *   2. The playground uses app-mode multi-page output and serves
- *      `index.html` (the dev playground) and `gallery.html` (the
- *      multi-instance money shot).
+ *      `playground/index.html` (the dev playground) and
+ *      `playground/gallery.html` (the multi-instance money shot).
  *
  * Output goes to `dist-site/` (deliberately not `dist/`) and is consumed
  * by `.github/workflows/deploy-pages.yml` for GitHub Pages.
  *
- * `base` is `/hydra-element/` so the project pages URL
- * (https://jdomizz.github.io/hydra-element/) resolves assets correctly.
+ * `base` is derived from `package.json#repository.url` so a fork with a
+ * different GitHub repo name still resolves assets correctly (no silent
+ * 404s on first deploy after a rename). For this repo the value is
+ * `/hydra-element/` — the project-pages URL
+ * `https://jdomizz.github.io/hydra-element/` resolves assets correctly.
  */
-export default defineConfig({
-  base: '/hydra-element/',
+const projectRoot = fileURLToPath(new URL('.', import.meta.url))
+const pkg = JSON.parse(readFileSync(resolve(projectRoot, 'package.json'), 'utf8'))
+
+// Tolerates: git+https://github.com/<org>/<repo>.git
+//            https://github.com/<org>/<repo>
+//            git@github.com:<org>/<repo>.git (via [/:] alternation)
+const repoUrl = pkg.repository?.url ?? ''
+const repoName = repoUrl.match(/github\.com[/:]([^/]+)\/([^/]+?)(?:\.git)?$/)?.[2] ?? pkg.name // safe fallback — for this repo equals "hydra-element"
+
+const base = `/${repoName}/`
+
+export default defineConfig(({ command }) => ({
+  // In dev (`pnpm dev`) serve at the root for the usual
+  // `http://localhost:5173/` UX. In build (`pnpm build:playground`)
+  // use the project-pages base so assets resolve under
+  // `/hydra-element/assets/…` on GitHub Pages.
+  base: command === 'serve' ? '/' : base,
   build: {
     outDir: 'dist-site',
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        index: 'index.html',
-        gallery: 'gallery.html',
+        index: resolve(projectRoot, 'playground/index.html'),
+        gallery: resolve(projectRoot, 'playground/gallery.html'),
       },
     },
   },
@@ -36,4 +57,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

@@ -37,8 +37,8 @@ matches the pin.
 final newline), so editors without an `oxfmt` plugin still produce
 conformant files.
 
-The dev server serves `index.html`, the manual playground for
-`<hydra-element>`. It exposes preset sketches (osc, noise, cam+blend,
+The dev server serves `playground/index.html`, the manual playground
+for `<hydra-element>`. It exposes preset sketches (osc, noise, cam+blend,
 custom GLSL, plus a deliberate-typo preset to exercise the eval error
 path), toggles for the element's `audio` / `global` / `loop` /
 `sources` / `outputs` attributes, and a live log of every event the
@@ -59,7 +59,7 @@ pnpm exec playwright install chromium
 
 | Command       | What it does                                                    |
 | ------------- | --------------------------------------------------------------- |
-| `pnpm dev`    | Serve `index.html` with Vite (HMR)                              |
+| `pnpm dev`    | Serve `playground/index.html` with Vite (HMR)                   |
 | `pnpm test`   | Run all tests via Web Test Runner (headless Chromium)           |
 | `pnpm build`  | Bundle to `dist/hydra-element.js` and `dist/eval.js` (ESM only) |
 | `pnpm lint`   | Lint with oxlint (auto-fixes where safe)                        |
@@ -72,7 +72,7 @@ pnpm exec playwright install chromium
 - Linting: oxlint (config in `.oxlintrc.json`)
 - Formatting: oxfmt (config in `.oxfmtrc.json`); a pre-commit hook runs `oxlint --fix` and `oxfmt` on staged files automatically (bypass with `git commit --no-verify`)
 - `hydra-synth` is the sole runtime dependency — keep it that way
-- `index.html` is the dev playground, not part of the library — don't import from it
+- `playground/index.html` is the dev playground, not part of the library — don't import from it
 - Source modules are `src/*.js`, tests live next to them as `src/*.spec.js`
 
 ## Test strategy

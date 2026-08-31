@@ -6,7 +6,7 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Commands
 
-- `pnpm dev` — serve `index.html` with Vite (HMR)
+- `pnpm dev` — serve `playground/index.html` with Vite (HMR)
 - `pnpm test` — run all tests via Web Test Runner (headless Chromium)
 - `pnpm build` — bundle to `dist/hydra-element.js` (ES module only)
 - `pnpm lint` — lint with oxlint
@@ -35,7 +35,7 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 - Linting: oxlint (config in `.oxlintrc.json`)
 - Formatting: oxfmt (config in `.oxfmtrc.json`)
 - `hydra-synth` is the sole runtime dependency; keep it that way
-- `index.html` is a dev playground, not part of the library — don't import from it
+- `playground/index.html` is a dev playground, not part of the library — don't import from it
 
 ## Spec workflow
 
