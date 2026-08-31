@@ -5,6 +5,32 @@ import { AttributeHandler } from './attributes'
 import { DEFAULT_OPTIONS } from './defaults'
 import { publishHydraGlobals } from './globals'
 
+// ---------------------------------------------------------------------------
+// FOUC guard — hides `<hydra-element>` before it is defined, so raw
+// textContent code never flashes on screen while the custom element
+// upgrade + canvas init is in progress. Runs once at module load time;
+// the export is exposed for unit testing.
+// ---------------------------------------------------------------------------
+const FOUC_ATTR = 'data-hydra-fouc'
+const FOUC_CSS = ':where(hydra-element):not(:defined){display:none}'
+
+/**
+ * Inject a global `<style>` that hides undefined `<hydra-element>` tags.
+ * Idempotent — safe to call multiple times; only the first call has an effect.
+ * @param {Document} [doc=document]
+ */
+export function injectFoucGuard(doc = document) {
+  const head = doc.head || doc.documentElement
+  if (!head || head.querySelector(`style[${FOUC_ATTR}]`)) return
+  const s = doc.createElement('style')
+  s.setAttribute(FOUC_ATTR, '')
+  s.textContent = FOUC_CSS
+  head.append(s)
+}
+
+// Run once at module load — before the caller calls define().
+injectFoucGuard()
+
 /**
  * A custom element that renders Hydra sketches.
  *

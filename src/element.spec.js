@@ -1,6 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing'
 import sinon from 'sinon'
-import { HydraElement } from './element'
+import { HydraElement, injectFoucGuard } from './element'
 import { wait } from './test-helpers'
 
 if (!customElements.get('hydra-element')) {
@@ -309,5 +309,22 @@ describe('<hydra-element>', () => {
     el.removeAttribute('loop')
     await wait(60)
     expect(el.synth.time).to.be.greaterThan(t0)
+  })
+})
+
+describe('FOUC guard', () => {
+  it('is present in document.head after module load', () => {
+    const style = document.head.querySelector('style[data-hydra-fouc]')
+    expect(style).to.exist
+    expect(style.textContent).to.include(':not(:defined)')
+    expect(style.textContent).to.include('hydra-element')
+  })
+
+  it('is idempotent — duplicate calls do not add a second <style>', () => {
+    const before = document.head.querySelectorAll('style[data-hydra-fouc]').length
+    injectFoucGuard()
+    injectFoucGuard()
+    const after = document.head.querySelectorAll('style[data-hydra-fouc]').length
+    expect(after).to.equal(before)
   })
 })

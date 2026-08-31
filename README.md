@@ -149,6 +149,20 @@ hydra-element::part(analyzer) {
 }
 ```
 
+### Avoiding FOUC (raw code flash)
+
+When code is written between `<hydra-element>` tags, a brief flash of raw text can appear before the canvas renders. This is an inherent quirk of the custom-elements spec: the `<script type="module">` is deferred, so the browser paints the undefined element (raw `textContent`) before `customElements.define` runs and the shadow root hides it.
+
+The library auto-injects a FOUC guard (`hydra-element:not(:defined) { display:none }`) at module load time, so the element hides itself as soon as the module is evaluated. For **guaranteed zero-flash on the very first paint** — before any JS runs — add this one-liner in your `<head>`:
+
+```html
+<style>
+  hydra-element:not(:defined) {
+    display: none;
+  }
+</style>
+```
+
 ## Configuration
 
 | Attribute   | Default | What it does                                       |
