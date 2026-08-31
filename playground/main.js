@@ -23,14 +23,15 @@ function decodeUrlCode() {
   try {
     const raw = new URLSearchParams(location.search).get('code')
     if (!raw) return null
-    return decodeURIComponent(Buffer.from(raw, 'base64').toString('utf-8'))
+    const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0))
+    return decodeURIComponent(new TextDecoder().decode(bytes))
   } catch {
     return null
   }
 }
 
 function ready() {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', resolve, { once: true })
     } else {
