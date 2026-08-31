@@ -12,7 +12,7 @@ import { publishHydraGlobals } from './globals'
 // the export is exposed for unit testing.
 // ---------------------------------------------------------------------------
 const FOUC_ATTR = 'data-hydra-fouc'
-const FOUC_CSS = ':where(hydra-element):not(:defined){display:none}'
+const FOUC_CSS = 'body hydra-element:not(:defined){display:none}'
 
 /**
  * Inject a global `<style>` that hides undefined `<hydra-element>` tags.
