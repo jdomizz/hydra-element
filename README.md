@@ -174,7 +174,7 @@ The library auto-injects a FOUC guard (`body hydra-element:not(:defined) { displ
 | `global`    | `false` | Keep Hydra globals on `window` permanently         |
 | `sources`   | `4`     | Number of source buffers (max 16)                  |
 | `outputs`   | `4`     | Number of output buffers (max 16)                  |
-| `precision` | auto    | Shader precision: `highp`, `mediump`, or `lowp`    |
+| `precision` | null    | Shader precision: `highp`, `mediump`, or `lowp`    |
 
 Need more than 4 sources/outputs?
 
@@ -244,6 +244,39 @@ el.transforms = [
 ```
 
 You can also call `el.synth.setFunction(...)` directly for one-off additions that don't persist across resets.
+
+### Standalone eval — `hydra-element/eval`
+
+Build your own editor or REPL on top of the element:
+
+```js
+import { hydraEval } from 'hydra-element/eval'
+
+const el = document.querySelector('hydra-element')
+const { synth } = await el.ready
+
+const scope = Object.create(null)
+await hydraEval('x = 5; osc(x).out()', synth, scope) // x persists in scope
+await hydraEval('osc(x * 2).out()', synth, scope) // sees x again
+```
+
+Bare assignments persist between calls — the same mechanism the element uses for its own `code` evaluations. Not a sandbox: evaluated code has full access to browser globals.
+
+### Custom animation loop
+
+Set `loop="false"` and drive rendering yourself:
+
+```js
+const el = document.querySelector('hydra-element')
+el.setAttribute('loop', 'false')
+const { synth } = await el.ready
+
+function frame() {
+  synth.tick(16)
+  requestAnimationFrame(frame)
+}
+requestAnimationFrame(frame)
+```
 
 ### Events
 
