@@ -24,6 +24,20 @@
   grid-area: left;
 }
 
+.app__links {
+  margin: 0;
+  font-size: var(--hydra-text-xs);
+}
+
+.app__links a {
+  color: var(--hydra-accent);
+  text-decoration: none;
+}
+
+.app__links a:hover {
+  text-decoration: underline;
+}
+
 .app__right {
   grid-area: right;
 }

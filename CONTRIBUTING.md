@@ -73,13 +73,17 @@ pnpm exec playwright install chromium
 - Formatting: oxfmt (config in `.oxfmtrc.json`); a pre-commit hook runs `oxlint --fix` and `oxfmt` on staged files automatically (bypass with `git commit --no-verify`)
 - `hydra-synth` is the sole runtime dependency — keep it that way
 - `playground/index.html` is the dev playground, not part of the library — don't import from it
-- Source modules are `src/*.js`, tests live next to them as `src/*.spec.js`
+- Source modules are `src/*.js`, tests live next to them as `src/*.spec.js` (plus `playground/*.spec.js` for playground-data fixtures)
 
 ## Test strategy
 
 Tests are colocated with source (`src/**/*.spec.js`), use
 `@open-wc/testing` + `sinon`, and assert with Chai style
-(`.to.equal`, `.to.be.a('function')`).
+(`.to.equal`, `.to.be.a('function')`). Playground tests
+(`playground/**/*.spec.js`) use the same setup — picked up by
+the WTR glob in `wtr.config.js` — for cases where the fixture
+is playground data (e.g. `playground/presets.spec.js` pinning
+preset self-containment) rather than lib behavior.
 
 Each spec registers the custom element itself:
 

@@ -25,8 +25,19 @@ export const PRESETS = [
   },
   {
     title: 'custom GLSL',
-    description: 'user-defined src — noixe() via setFunction()',
-    code: 'noixe(5, 0.5).out()',
+    description: 'user-defined src — noixe() via setFunction() (self-contained)',
+    code: [
+      'setFunction({',
+      '  name: "noixe",',
+      '  type: "src",',
+      '  inputs: [',
+      '    { type: "float", name: "scale", default: 5 },',
+      '    { type: "float", name: "offset", default: 0.5 },',
+      '  ],',
+      '  glsl: "return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);",',
+      '})',
+      'noixe(5, 0.5).out()',
+    ].join('\n'),
   },
   {
     title: 'typo (error)',
@@ -230,7 +241,8 @@ export const PRESETS = [
   },
   {
     title: 'shader park torus',
-    description: 'shader-park-core extension — rotateX/Z + animated torus via sculptToHydraRenderer',
+    description:
+      'shader-park-core extension — rotateX/Z + animated torus via sculptToHydraRenderer',
     code: [
       '// from https://hydra.ojack.xyz/?code=Y29uc3QlMjAlN0IlMjBzY3VscHRUb0h5ZHJhUmVuZGVyZXIlMjAlN0QlMjAlM0QlMjBhd2FpdCUyMGltcG9ydCglMjJodHRwcyUzQSUyRiUyRnVucGdrLmNvbSUyRnNoYWRlci1wYXJrLWNvcmUlMkZkaXN0JTJGc2hhZGVyLXBhcmstY29yZS5lc20uanMlMjIpJTBBJTBBc2N1bHB0VG9IeWRyYVJlbmRlcmVyKCgpJTIwJTNEJTNFJTIwJTdCJTBBJTA5JTA5cm90YXRlWCh0aW1lJTIwJTJGJTIwNSklMEElMDklMDlyb3RhdGVaKHRpbWUlMjAlMkYlMjAzKSUwQSUwOSUwOWRpc3BsYWNlKHNpbih0aW1lKSUyQyUyMDElMkMlMjAwKSUwQSUwOSUwOW1pcnJvck4oMyUyQyUyMDMpJTBBJTA5JTA5dG9ydXMoMC44JTJDJTIwMC4zOCUyMCUyQiUyMDAuMSUyMColMjBzaW4odGltZSkpJTBBJTA5JTdEKSUwQSUwOS5vdXQobzApJTBBJTBBcmVuZGVyKG8wKSUwQQ%3D%3D',
       '',
@@ -255,7 +267,7 @@ export const PRESETS = [
       '// from https://hydra.ojack.xyz/?code=JTJGJTJGJTIwWW91JTIwY2FuJTIwZWl0aGVyJTIwdXNlJTIwJTYwJTQwbGF0ZXN0JTYwJTIwb3IlMjBsb2FkJTIwYSUyMHNwZWNpZmljJTIwdmVyc2lvbiUyMHdpdGglMkMlMjBmb3IlMjBleGFtcGxlJTJDJTIwJTYwJTQwMC40LjAlNjAuJTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUwQSUyMCUyMCdodHRwcyUzQSUyRiUyRmNkbi5qc2RlbGl2ci5uZXQlMkZucG0lMkZoeWRyYS1taWRpJTQwbGF0ZXN0JTJGZGlzdCUyRmluZGV4LmpzJyUwQSklMEElMEElMkYlMkYlMjBVc2UlMjBtaWRpJTIwbWVzc2FnZXMlMjBmcm9tJTIwYWxsJTIwY2hhbm5lbHMlMjBvZiUyMGFsbCUyMGlucHV0cy4lMEFhd2FpdCUyMG1pZGkuc3RhcnQoJTdCJTIwY2hhbm5lbCUzQSUyMCcqJyUyQyUyMGlucHV0JTNBJTIwJyonJTIwJTdEKSUwQSUyRiUyRiUyMFNob3clMjBhJTIwc21hbGwlMjBtaWRpJTIwbW9uaXRvciUyMChzaW1pbGFyJTIwdG8lMjBoeWRhJTI3cyUyMCU2MGEuc2hvdyglMjklNjApLiUwQW1pZGkuc2hvdygpJTBBJTBBJTJGJTJGJTIwVXNlJTIwYW55JTIwbm90ZSUyMHRvJTIwY29udHJvbCUyMHRoZSUyMHJlZCUyMGFtb3VudCUyMG9mJTIwaHlkcmEncyUyMCU2MHNvbGlkKCklNjAlMjBmdW5jdGlvbi4lMEFzb2xpZChub3RlKCcqJyklMkMlMjAwJTJDJTIwMSkub3V0KCklMEElMEElMkYlMkYlMjBPciUyQyUyMGlmJTIweW91JTIwYXJlJTIwdXNpbmclMjBhJTIvbWlkJTIwY29udHJvbGxlciUyMGFuZCUyMG5vdCUyMGFuJTIwa2V5Ym9hcmQlM0ElMEElMkYlMkYlMjBVc2UlMjBhJTIwY29udHJvbCUyMGNoYW5nZSUyMHZhbHVlJTIwdG8lMjBjb250cm9sJTIwdGhlJTIgcmVkJTIwYW1vdW50LiUwQSUyRiUyRiUyMHNvbGlkKGNjKDc0KSUyQyUyMDAlMkMlMjAxKS5vdXQoKQ%3D%3D',
       '',
       '// You can either use `@latest` or load a specific version with, for example, `@0.4.0`.',
-      "await loadScript(",
+      'await loadScript(',
       "  'https://cdn.jsdelivr.net/npm/hydra-midi@latest/dist/index.js'",
       ')',
       '',

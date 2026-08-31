@@ -1,9 +1,8 @@
 /**
  * Playground bootstrap. Imports every component (each `define`s itself
  * on import), resolves the single `<hydra-element>` reference once,
- * wires it to each controller via the `target` property, decodes
- * `?code=` URL hydration into the editor, and registers the `noixe`
- * extension via the hydra-element `ready` promise.
+ * wires it to each controller via the `target` property, and decodes
+ * `?code=` URL hydration into the editor.
  *
  * The components never reach into the DOM for their target — that's
  * this file's job, done once. Each component owns its concern; main.js
@@ -85,21 +84,6 @@ async function main() {
     } catch {}
     if (editor) editor.value = urlCode
   }
-
-  // Register the `noixe` source via the hydra-element ready promise.
-  // The listener inside <log-panel> handles the timing race by
-  // subscribing to `hydra-ready` AND awaiting `el.ready`.
-  el.ready.then(({ synth }) => {
-    synth.setFunction({
-      name: 'noixe',
-      type: 'src',
-      inputs: [
-        { type: 'float', name: 'scale', default: 5 },
-        { type: 'float', name: 'offset', default: 0.5 },
-      ],
-      glsl: 'return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);',
-    })
-  })
 }
 
 main()

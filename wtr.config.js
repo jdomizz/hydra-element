@@ -4,7 +4,7 @@ import { vitePlugin } from '@remcovaes/web-test-runner-vite-plugin'
 const isCI = !!process.env.CI
 
 export default {
-  files: 'src/**/*.spec.js',
+  files: ['src/**/*.spec.js', 'playground/**/*.spec.js'],
   plugins: [vitePlugin()],
   browsers: [
     playwrightLauncher({
