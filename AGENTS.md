@@ -23,6 +23,12 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
   registry's agents and skills load; `.opencode/` does not exist in this repo.
 - `/fix` delegates to the `build` agent. No per-project `coder` agent.
 
+## Agent integration policy
+
+**No AI agent merges, fast-forwards, force-pushes, or directly commits to `main` — ever.** Agents work on feature branches (`chore/...`, `feat/...`, `fix/...`, `test/...` — see all 13 branches on origin) off `dev`, then PR or merge into `dev`. `main` is human-only because this is an npm-published public package: a bad commit on `main` would propagate to consumers the moment the next release is cut. Tags (`v0.7.0`, etc.) are human-only — agents prepare on `dev` but never push them.
+
+If you find yourself sitting on `main` with uncommitted work, switch to a feature branch first (`git switch -c <topic>`) and replay the work there before pushing. Same rule across every repo in the workspace — see root AGENTS.md for the canonical statement.
+
 ## Test runner quirks
 
 - Tests are `src/**/*.spec.js`, colocated with source (not in a `test/` dir)
