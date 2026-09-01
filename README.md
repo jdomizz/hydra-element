@@ -14,7 +14,7 @@ Multiple `<hydra-element>` on one page each run their own Hydra engine — no co
 
 ## Try it
 
-- **[Playground](https://jdomizz.github.io/hydra-element/playground/)** — four isolated `<hydra-element>` running simultaneously in one HTML document, with one editor + one cfg-form + one log + one stats strip. The target picker selects which cell the editor / cfg-form / stats reflect; the multi-instance log watches all four. Press <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> to eval the active slot. The share button copies a `?code0=…&code1=…&code2=…&code3=…` URL — open it in the [ojack editor](https://hydra.ojack.xyz/?code=) to keep iterating on the active slot's sketch.
+- **[Playground](https://jdomizz.github.io/hydra-element/playground/)** — four isolated `<hydra-element>` running simultaneously in one HTML document, with one editor + one cfg-form + one log + one stats strip + one extensions panel. The target picker selects which cell the editor / cfg-form / stats reflect; the multi-instance log watches all four. Press <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> to eval the active slot. The editor renders Prism highlighting + wordlist completion (the public `<hydra-editor>` element); loading an extension grows the completion wordlist automatically — the autocompletado crece con las extensiones que cargas.
 
 Source lives in [`playground/`](./playground). Run locally with `pnpm dev`.
 
@@ -261,6 +261,53 @@ await hydraEval('osc(x * 2).out()', synth, scope) // sees x again
 ```
 
 Bare assignments persist between calls — the same mechanism the element uses for its own `code` evaluations. Not a sandbox: evaluated code has full access to browser globals.
+
+### Light code editor — `hydra-element/editor`
+
+`<hydra-editor>` is a CodeJar + Prism editor with a Hydra-extended JS grammar and wordlist-based completion. Drop it into a page to give users a real editing surface for `<hydra-element>` scenes:
+
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element/editor"></script>
+
+<hydra-editor placeholder="osc(10, 0.2, 0.5).out()" aria-label="Hydra code editor"></hydra-editor>
+```
+
+Press <kbd>Cmd</kbd>/<kbd>Ctrl</kbd>+<kbd>Enter</kbd> to dispatch a `code-apply` event with `{ code }`. The element does **not** evaluate anything; the host decides what to do (typically: `target.code = e.detail.code`):
+
+```js
+const editor = document.querySelector('hydra-editor')
+const target = document.querySelector('hydra-element')
+
+editor.addEventListener('code-apply', e => {
+  target.code = e.detail.code
+})
+```
+
+**Extension-aware completion.** After the host evaluates code that loaded an extension, call `editor.addWords(newNames)` with the names the synth now exposes — the completion dropdown grows with the live surface:
+
+```js
+target.addEventListener('hydra-eval', () => {
+  const known = new Set(/* the 96-entry baseline: 44 DSL + globals + JS keywords */)
+  const fresh = Object.keys(target.synth.synth).filter(k => !known.has(k))
+  if (fresh.length) editor.addWords(fresh)
+})
+```
+
+The playground does this automatically (see `playground/components/editor-panel.js`).
+
+**Public surface** (TypeScript types in `dist/hydra-editor.d.ts`):
+
+| API                    | Type / Detail                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Property `value`       | `string` (get/set; setter is silent, no `code-apply`)                                                               |
+| Property `placeholder` | `string` (inherited; visible when empty)                                                                            |
+| Method `addWords(w)`   | `string[] \| string` — idempotent                                                                                   |
+| Method `destroy()`     | Idempotent teardown; safe from `disconnectedCallback`                                                               |
+| Event `code-apply`     | `CustomEvent<{ code: string }>` on Ctrl/Cmd+Enter                                                                   |
+| CSS parts              | `::part(editor)`, `::part(token-function)`, `::part(token-global)`, `::part(completion)`, `::part(completion-item)` |
+
+The element is registered via side-effect import (`import 'hydra-element/editor'`). The bundle is ~25 KB gzip; `codejar` and `prismjs` are bundled into the editor entry only, so consumers who don't import the editor pay zero cost. Grammar adapted from sweep's `hydra-prism.ts` (same owner, AGPL-3.0-or-later).
 
 ### Custom animation loop
 

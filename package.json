@@ -17,7 +17,7 @@
   "bugs": {
     "url": "https://github.com/jdomizz/hydra-element/issues"
   },
-  "license": "AGPL-3.0-or-later",
+"license": "AGPL-3.0-or-later",
   "author": "Jesús Domínguez Díaz",
   "repository": {
     "type": "git",
@@ -29,13 +29,19 @@
   },
   "qna": "https://github.com/jdomizz/hydra-element/discussions",
   "files": [
-    "dist",
+    "dist/hydra-element.js",
+    "dist/hydra-element.d.ts",
+    "dist/eval.js",
+    "dist/eval.d.ts",
+    "dist/hydra-editor.js",
+    "dist/hydra-editor.d.ts",
     "README.md",
     "LICENSE"
   ],
   "type": "module",
   "sideEffects": [
-    "./dist/hydra-element.js"
+    "./dist/hydra-element.js",
+    "./dist/hydra-editor.js"
   ],
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
@@ -49,6 +55,10 @@
       "types": "./dist/eval.d.ts",
       "import": "./dist/eval.js"
     },
+    "./editor": {
+      "types": "./dist/hydra-editor.d.ts",
+      "import": "./dist/hydra-editor.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -56,7 +66,7 @@
     "dev:playground": "vite --config vite.playground.config.js --host",
     "test": "wtr --config wtr.config.js",
     "build": "vite build",
-    "postbuild": "test -f dist/hydra-element.d.ts && test -f dist/eval.d.ts",
+    "postbuild": "test -f dist/hydra-element.d.ts && test -f dist/eval.d.ts && test -f dist/hydra-editor.d.ts",
     "build:playground": "vite build --config vite.playground.config.js",
     "preview:playground": "vite preview --config vite.playground.config.js",
     "lint": "oxlint --fix .",
@@ -65,7 +75,7 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{js,mjs}": [
+    "*.{js,m}": [
       "oxlint --fix",
       "oxfmt"
     ],
@@ -79,11 +89,13 @@
     "@remcovaes/web-test-runner-vite-plugin": "^1.4.0",
     "@web/test-runner": "^0.20.2",
     "@web/test-runner-playwright": "^0.11.1",
+    "codejar": "^4.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.4.1",
     "oxc-standard": "^1.4.0",
     "oxfmt": "0.48.0",
     "oxlint": "1.80.0",
+    "prismjs": "^1.29.0",
     "sinon": "^21.0.1",
     "vite": "^7.3.1"
   }
