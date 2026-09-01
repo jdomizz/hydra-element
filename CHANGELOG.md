@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **ο extraction (2026-09-01):** The `<hydra-editor>` element + Hydra config extract from `hydra-element` into a new standalone npm package `hydra-editor` (unscoped, AGPL-3.0-or-later). `hydra-element` 0.7.0 ships **without** the editor subpath. Removed: `src/editor/` (editor.js, hydra-config.js, index.js, specs, d.ts), `src/hydra-editor.d.ts`, `./editor` export from package.json, editor lib entry from vite.config.js, editor devDeps (@jdomizz/truss-editor, codejar, prismjs). Added: `hydra-editor: file:../hydra-editor` as devDependency. Playground imports `<hydra-editor>` from the `hydra-editor` package. Spec: `hydra-editor/backlog/hydra-editor-extraction.md`.
+
 - **ξ rewire (2026-09-01):** The generic editor core (CodeJar mount, completion state machine, caret/aria binder) moves to `@jdomizz/truss-editor` (consumed as a bundled devDep via `file:../truss/packages/truss-editor` until R2, then `^0.1.0`). `<hydra-editor>` becomes a thin product surface: shadow DOM + styles + a11y + Hydra config. The config is now **data-first**: `HYDRA_TOKENS` (canonical data: 43 functions + 30 globals + 17 keywords) → derived `hydraGrammar` (Prism) + `DEFAULT_WORDLIST` (90 entries). The subpath exports `HYDRA_TOKENS`, `hydraGrammar`, and `DEFAULT_WORDLIST` alongside `HydraEditor` — editor-format-agnostic data that non-Prism editors (CodeMirror hints, generated TextMate) can consume without adopting our stack. The element's public contract is unchanged (value, placeholder, addWords, destroy, code-apply event, parts, a11y). `src/editor/hydra-grammar.js` → `src/editor/hydra-config.js`; `src/editor/completion.js` removed (moved to truss).
 
 ## [0.7.0] - 2026-08-31

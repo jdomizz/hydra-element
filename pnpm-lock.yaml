@@ -12,9 +12,6 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0(rollup@4.57.1)
     devDependencies:
-      '@jdomizz/truss-editor':
-        specifier: file:../truss/packages/truss-editor
-        version: file:../truss/packages/truss-editor
       '@open-wc/testing':
         specifier: ^4.0.0
         version: 4.0.0
@@ -27,12 +24,12 @@ importers:
       '@web/test-runner-playwright':
         specifier: ^0.11.1
         version: 0.11.1
-      codejar:
-        specifier: ^4.3.0
-        version: 4.3.0
       husky:
         specifier: ^9.1.7
         version: 9.1.7
+      hydra-editor:
+        specifier: file:../hydra-editor
+        version: file:../hydra-editor
       lint-staged:
         specifier: ^17.4.1
         version: 17.4.1
@@ -45,9 +42,6 @@ importers:
       oxlint:
         specifier: 1.80.0
         version: 1.80.0
-      prismjs:
-        specifier: ^1.29.0
-        version: 1.30.0
       sinon:
         specifier: ^21.0.1
         version: 21.0.1
@@ -1435,6 +1429,9 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
+  hydra-editor@file:../hydra-editor:
+    resolution: {directory: ../hydra-editor, type: directory}
+
   hydra-synth@1.4.0:
     resolution: {integrity: sha512-suKn8wjx5Kqvj5Ev0aTByNzpT+7PTX2Qu83h9mIp7CArFn14VVNxlm6hBS0T/O4GG2E9P9SHvhyN2Ue0f1jH5A==}
 
@@ -1816,10 +1813,6 @@ packages:
   postcss@8.5.6:
     resolution: {integrity: sha512-3Ybi1tAuwAP9s0r1UQ2J4n5Y0G05bJkpUIO0/bI9MhwmD70S5aTWbXGBwxHrelT+XM1k6dM0pk+SwNkpTRN7Pg==}
     engines: {node: ^10 || ^12 || >=14}
-
-  prismjs@1.30.0:
-    resolution: {integrity: sha512-DEvV2ZF2r2/63V+tK8hQvrR2ZGn10srHbXviTlcv7Kpzw8jWiNTqbVgjO3IY8RxrrOUF8VPMQQFysYYYv0YZxw==}
-    engines: {node: '>=6'}
 
   progress@2.0.3:
     resolution: {integrity: sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==}
@@ -3519,6 +3512,10 @@ snapshots:
 
   husky@9.1.7: {}
 
+  hydra-editor@file:../hydra-editor:
+    dependencies:
+      '@jdomizz/truss-editor': file:../truss/packages/truss-editor
+
   hydra-synth@1.4.0(rollup@4.57.1):
     dependencies:
       meyda: 5.6.3(rollup@4.57.1)
@@ -3924,8 +3921,6 @@ snapshots:
       nanoid: 3.3.11
       picocolors: 1.1.1
       source-map-js: 1.2.1
-
-  prismjs@1.30.0: {}
 
   progress@2.0.3: {}
 

@@ -357,68 +357,25 @@ hardcoded scenes and no editor) is retired. The file persists as a 4-line
 cited in `backlog/launch-week-comms.md`) doesn't 404 for external links.
 The redirect is rendered by Vite alongside the index page.
 
-## `<hydra-editor>` public element (subpath `hydra-element/editor`)
+## `<hydra-editor>` — separate package
 
-A second web component, shipped as an additive subpath so consumers who
-don't import it pay zero cost. Lives under `src/editor/` and builds to
-`dist/hydra-editor.{js,d.ts}` via Vite's third lib entry
-(`vite.config.js` → `entry.editor: 'src/editor/index.js'`).
+Per ο (2026-09-01), the `<hydra-editor>` element + Hydra config extracted
+from `hydra-element` into a new standalone npm package
+[`hydra-editor`](https://www.npmjs.com/package/hydra-editor) (unscoped,
+AGPL-3.0-or-later). `hydra-element` 0.7.0 ships **without** the editor
+subpath.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  <hydra-editor>                                                 │
-│  src/editor/editor.js (HTMLElement facade)                      │
-│                                                                 │
-│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐    │
-│  │  hydra-        │  │  CodeJar       │  │  Completion    │    │
-│  │  grammar.js    │  │  (input        │  │  (wordlist +   │    │
-│  │  Prism lang    │  │   surface)     │  │   listbox UI)  │    │
-│  │  hydra + token │  │                │  │                │    │
-│  │  colors        │  │                │  │                │    │
-│  └────────────────┘  └────────────────┘  └────────────────┘    │
-└─────────────────────────────────────────────────────────────────┘
-```
+The playground adopts `<hydra-editor>` from the `hydra-editor` package
+(devDependency `file:../hydra-editor` until R1 publish, then `^0.1.0`).
+The panel keeps its per-slot `localStorage` Map, `target-change` rebind,
+`preset-change` routing, and storage fallback. The element's `code-apply`
+event triggers `target.code = ...`, and after each eval the panel diffs
+the synth keys against the 96-entry baseline and calls
+`editor.addWords(newNames)` — so loading an extension grows the completion
+dropdown automatically.
 
-- **Public API** (declared in `src/hydra-editor.d.ts`, hand-written — same
-  pattern as `src/hydra-element.d.ts`): `value` (silent setter),
-  `placeholder`, `addWords(words)` (idempotent), `destroy()`,
-  `code-apply` event (Ctrl/Cmd+Enter) with `{ code }`.
-- **A11y:** `role="textbox"`, `aria-multiline="true"`, `aria-label`
-  (consumer-supplied or default). The completion dropdown uses
-  `role="listbox"` with `aria-activedescendant` and `aria-expanded`.
-- **Styling:** `::part(editor)`, `::part(token-function)`,
-  `::part(token-global)`, `::part(completion)`,
-  `::part(completion-item)`. The Prism token theme ships as inline
-  `:where(...)` rules inside the shadow root so consumer `::part(...)`
-  rules win without `!important`.
-- **Grammar:** `src/editor/hydra-grammar.js` adapts sweep's
-  `packages/app/src/app/shared/hydra-prism.ts` (same owner, AGPL-3.0-or-later;
-  attribution comment at the top of the file). 44 DSL functions + the
-  globals regex `k[0-7]|g[0-7]|gp[0-7]|time|o[0-3]|a` registered via
-  `Prism.languages.extend('javascript', ...)`. The grammar is the source
-  of truth for the DSL verb list until hydra-synth PR #211 ships
-  `global.d.ts` upstream — then the wordlist can be derived from the
-  declarations.
-- **Wordlist (`DEFAULT_WORDLIST`):** the 44 DSL verbs + 35 globals
-  (k0..k7, g0..g7, gp0..gp7, time, o0..o3, a) + 17 common JS keywords =
-  96 entries. Exported from `completion.js` and consumed by the playground
-  editor-panel for the extension-aware `addWords` demo (the host diffs
-  `Object.keys(target.synth.synth)` against this baseline and feeds new
-  names in after each eval).
-- **Distribution:** `package.json` `exports` gains `./editor` →
-  `dist/hydra-editor.{d.ts,js}`. `sideEffects` gains
-  `./dist/hydra-editor.js` (the `customElements.define` side effect).
-  `codejar` and `prismjs` are devDependencies bundled into the editor
-  entry via Vite lib mode; the main entry's runtime dependency stays
-  `hydra-synth` only.
-- **Playground adoption:** the dev playground's `<editor-panel>`
-  (`playground/components/editor-panel.js`) swaps its textarea for
-  `<hydra-editor>`. The panel keeps its per-slot `localStorage` Map,
-  `target-change` rebind, `preset-change` routing, and storage fallback.
-  The element's `code-apply` event triggers `target.code = ...`, and
-  after each eval the panel diffs the synth keys against the 96-entry
-  baseline and calls `editor.addWords(newNames)` — so loading an
-  extension grows the completion dropdown automatically.
+See the [`hydra-editor` README](https://github.com/jdomizz/hydra-editor#readme)
+for the element's API, architecture, and scope discipline.
 
 ## Playground extensions catalog
 

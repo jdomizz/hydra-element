@@ -264,13 +264,17 @@ await hydraEval('osc(x * 2).out()', synth, scope) // sees x again
 
 Bare assignments persist between calls — the same mechanism the element uses for its own `code` evaluations. Not a sandbox: evaluated code has full access to browser globals.
 
-### Light code editor — `hydra-element/editor`
+### Light code editor — `hydra-editor`
 
-`<hydra-editor>` is a CodeJar + Prism editor with a Hydra-extended JS grammar and wordlist-based completion. Drop it into a page to give users a real editing surface for `<hydra-element>` scenes:
+`<hydra-editor>` is a CodeJar + Prism editor with a Hydra-extended JS grammar and wordlist-based completion. It lives in a separate npm package [`hydra-editor`](https://www.npmjs.com/package/hydra-editor) (AGPL-3.0-or-later, same license as this package). Install it alongside `hydra-element`:
+
+```bash
+npm install hydra-element hydra-editor
+```
 
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element"></script>
-<script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element/editor"></script>
+<script type="module" src="https://cdn.jsdelivr.net/npm/hydra-editor"></script>
 
 <hydra-editor placeholder="osc(10, 0.2, 0.5).out()" aria-label="Hydra code editor"></hydra-editor>
 ```
@@ -298,7 +302,7 @@ target.addEventListener('hydra-eval', () => {
 
 The playground does this automatically (see `playground/components/editor-panel.js`).
 
-**Public surface** (TypeScript types in `dist/hydra-editor.d.ts`):
+**Public surface** (TypeScript types in `hydra-editor/dist/hydra-editor.d.ts`):
 
 | API                    | Type / Detail                                                                                                       |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
@@ -309,7 +313,7 @@ The playground does this automatically (see `playground/components/editor-panel.
 | Event `code-apply`     | `CustomEvent<{ code: string }>` on Ctrl/Cmd+Enter                                                                   |
 | CSS parts              | `::part(editor)`, `::part(token-function)`, `::part(token-global)`, `::part(completion)`, `::part(completion-item)` |
 
-The element is registered via side-effect import (`import 'hydra-element/editor'`). The bundle is ~25 KB gzip; `codejar` and `prismjs` are bundled into the editor entry only, so consumers who don't import the editor pay zero cost. Grammar adapted from sweep's `hydra-prism.ts` (same owner, AGPL-3.0-or-later).
+The element is registered via side-effect import (`import 'hydra-editor'`). The bundle is ~25 KB gzip; `codejar` and `prismjs` are bundled into the lib entry. Grammar adapted from sweep's `hydra-prism.ts` (same owner, AGPL-3.0-or-later). See the [`hydra-editor` README](https://github.com/jdomizz/hydra-editor#readme) for full API docs.
 
 ### Custom animation loop
 
