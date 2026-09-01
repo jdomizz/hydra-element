@@ -1,6 +1,10 @@
 /**
- * <editor-panel> — textarea + Cmd/Ctrl+Enter + eval button, with
- * `localStorage` persistence per slot.
+ * <editor-panel> — `<hydra-editor>` element + Cmd/Ctrl+Enter + eval button,
+ * with `localStorage` persistence per slot. The element (CodeJar + Prism +
+ * wordlist completion, registered via side-effect import) handles the input
+ * surface, Cmd/Ctrl+Enter → `code-apply`, and a11y; this panel handles the
+ * chrome (header, hint, eval button), the per-slot Map, localStorage, and
+ * the host-side `target-change` / `preset-change` / `code-apply` wiring.
  *
  * Attributes:
  *   storage-key-prefix — `localStorage` key prefix (default
@@ -12,23 +16,25 @@
  *            set by the orchestrator (`playground/main.js`), not via a
  *            global selector.
  *   slot   — 0..3, the active slot index. Setting it switches the
- *            textarea + storage key to that slot's code.
+ *            editor + storage key to that slot's code.
  *
  * Event handling:
  *   - Listens for `target-change` (bubbling + composed) on `document` and
  *     updates `target` + `slot` when a different cell is picked.
  *   - Listens for `preset-change` (bubbling + composed) and applies the
- *     preset's code to the active slot.
+ *     preset's code to the active slot (editor `value` is a silent setter,
+ *     so the value is written without dispatching `code-apply` again).
+ *   - Listens for `code-apply` from the element (Ctrl/Cmd+Enter) and
+ *     pushes the code to `target.code`.
  *
- * Persistence model:
- *   - On connect, restore from `localStorage` if the slot's key is set.
- *   - On every input, save to `localStorage` under the slot's key.
- *   - Programmatic `value` setters (including URL hydration and
- *     `<preset-selector>` events) also persist.
- *
- * Eval flow:
- *   - Cmd/Ctrl+Enter OR clicking the eval button → `target.code = value`.
+ * Extension-aware completion: after every successful eval, the panel diffs
+ * `Object.keys(target.synth.synth)` against the baseline wordlist and
+ * calls `editor.addWords(newNames)` so the dropdown grows as extensions
+ * load. This is the killer demo detail tying the element spec to the
+ * extensions catalog (`active/playground-editor.md` §2.2).
  */
+import 'hydra-element/editor'
+
 const styles = new CSSStyleSheet()
 styles.replaceSync(`
   :host {
@@ -56,23 +62,10 @@ styles.replaceSync(`
     font-size: var(--hydra-text-xs);
     color: var(--hydra-fg-muted);
   }
-  textarea {
+  hydra-editor {
     flex: 1 1 auto;
-    width: 100%;
-    border: 1px solid var(--hydra-border);
-    border-radius: var(--hydra-radius-s);
-    resize: none;
-    padding: var(--hydra-space-s);
-    font-family: inherit;
-    font-size: var(--hydra-text-base);
-    color: var(--hydra-fg);
-    background: var(--hydra-bg-input);
     min-height: 0;
-    line-height: 1.5;
-    transition: border-color var(--hydra-duration-fast) var(--hydra-easing);
-  }
-  textarea:hover {
-    border-color: var(--hydra-border-strong);
+    display: block;
   }
   .btn {
     font-family: inherit;
@@ -113,13 +106,118 @@ styles.replaceSync(`
     background: color-mix(in oklab, var(--hydra-accent) 88%, white);
     border-color: color-mix(in oklab, var(--hydra-accent) 88%, white);
   }
+  .btn:focus-visible,
+  hydra-editor:focus-visible {
+    outline: 2px solid var(--hydra-accent);
+    outline-offset: 2px;
+  }
 `)
 
 const DEFAULT_STORAGE_KEY_PREFIX = 'hydra-element:editor'
 
+// Mirror of `DEFAULT_WORDLIST` from `src/editor/completion.js` — 90
+// entries (43 DSL + 30 globals + 17 JS keywords). Kept here as a
+// separate constant because we don't import the editor module
+// directly (it's a published subpath in production, the source in dev —
+// the import shape differs). Once hydra-synth#211 lands and ships
+// `global.d.ts`, the wordlist can be derived from the declarations and
+// this duplicate disappears.
+const KNOWN_WORDS = new Set([
+  'osc',
+  'src',
+  'solid',
+  'noise',
+  'shape',
+  'voronoi',
+  'kaleid',
+  'rotate',
+  'scale',
+  'hue',
+  'saturate',
+  'contrast',
+  'add',
+  'luma',
+  'grain',
+  'scanline',
+  'dither',
+  'chromatic',
+  'vignette',
+  'tri',
+  'square',
+  'saw',
+  'invert',
+  'colorama',
+  'out',
+  'diff',
+  'layer',
+  'mask',
+  'blend',
+  'modulate',
+  'repeat',
+  'scrollX',
+  'scrollY',
+  'pixelate',
+  'posterize',
+  'shift',
+  'thresh',
+  'modulateScrollX',
+  'modulateScrollY',
+  'modulateKaleid',
+  'modulateRepeat',
+  'modulateRepeatX',
+  'modulateRepeatY',
+  'k0',
+  'k1',
+  'k2',
+  'k3',
+  'k4',
+  'k5',
+  'k6',
+  'k7',
+  'g0',
+  'g1',
+  'g2',
+  'g3',
+  'g4',
+  'g5',
+  'g6',
+  'g7',
+  'gp0',
+  'gp1',
+  'gp2',
+  'gp3',
+  'gp4',
+  'gp5',
+  'gp6',
+  'gp7',
+  'time',
+  'o0',
+  'o1',
+  'o2',
+  'o3',
+  'a',
+  'const',
+  'let',
+  'var',
+  'function',
+  'return',
+  'await',
+  'async',
+  'if',
+  'else',
+  'for',
+  'while',
+  'true',
+  'false',
+  'null',
+  'undefined',
+  'new',
+  'class',
+])
+
 class EditorPanel extends HTMLElement {
   #target = null
-  #textarea
+  #editor
   #storageKeyPrefix = DEFAULT_STORAGE_KEY_PREFIX
   #slot = 0
   #allSlots = new Map() // slot index → current code (kept in sync for slot switching)
@@ -127,7 +225,7 @@ class EditorPanel extends HTMLElement {
   #onTargetChange = e => {
     const { index, element } = e.detail || {}
     if (typeof index !== 'number' || !element) return
-    this.#allSlots.set(this.#slot, this.#textarea.value)
+    this.#allSlots.set(this.#slot, this.#editor.value)
     // Update the target BEFORE the slot setter runs `hydrateFromStorage`,
     // so the `target.code` fallback sees the new element.
     this.#target = element
@@ -145,6 +243,21 @@ class EditorPanel extends HTMLElement {
     }
   }
 
+  #onCodeApply = _e => {
+    if (!this.#target) return
+    this.#target.code = this.#editor.value
+    // After a successful eval, diff the live synth keys against the
+    // baseline and feed new names into the completion dropdown. The
+    // promise is fire-and-forget; eval errors don't block the wordlist
+    // growth (some extensions register before the eval throws).
+    this.#harvestExtensionWords()
+  }
+
+  #onInput = () => {
+    this.#allSlots.set(this.#slot, this.#editor.value)
+    this.#persist()
+  }
+
   constructor() {
     super()
     this.attachShadow({ mode: 'open' })
@@ -155,16 +268,21 @@ class EditorPanel extends HTMLElement {
         <span class="hint" data-hint>Cmd / Ctrl + Enter</span>
         <button type="button" class="btn btn--primary" data-eval>eval</button>
       </header>
-      <textarea
+      <hydra-editor
         spellcheck="false"
+        autocapitalize="off"
+        autocorrect="off"
         placeholder="osc(10, 0.2, 0.5).out()"
         aria-label="Hydra code editor"
-      ></textarea>
+      ></hydra-editor>
     `
-    this.#textarea = this.shadowRoot.querySelector('textarea')
-    this.#textarea.addEventListener('input', () => this.#onInput())
-    this.#textarea.addEventListener('keydown', e => this.#onKeydown(e))
+    this.#editor = this.shadowRoot.querySelector('hydra-editor')
+    this.#editor.addEventListener('input', this.#onInput)
+    this.#editor.addEventListener('code-apply', this.#onCodeApply)
     this.shadowRoot.querySelector('[data-eval]').addEventListener('click', () => this.#eval())
+    // The editor element handles Cmd/Ctrl+Enter internally and dispatches
+    // `code-apply`; the panel listens for that and pushes the code to
+    // `target.code`. We don't attach a separate `keydown` listener here.
   }
 
   connectedCallback() {
@@ -179,16 +297,21 @@ class EditorPanel extends HTMLElement {
   disconnectedCallback() {
     document.removeEventListener('target-change', this.#onTargetChange)
     document.removeEventListener('preset-change', this.#onPresetChange)
+    document.removeEventListener('code-apply', this.#onCodeApply)
+    try {
+      this.#editor?.destroy?.()
+    } catch {}
     this.#target = null
   }
 
   get value() {
-    return this.#textarea.value
+    return this.#editor.value
   }
 
   set value(v) {
-    this.#textarea.value = String(v)
-    this.#allSlots.set(this.#slot, String(v))
+    const text = String(v)
+    this.#editor.value = text
+    this.#allSlots.set(this.#slot, text)
     this.#persist()
   }
 
@@ -206,7 +329,7 @@ class EditorPanel extends HTMLElement {
 
   set slot(n) {
     const next = Math.max(0, Math.floor(Number(n)) || 0)
-    this.#allSlots.set(this.#slot, this.#textarea.value)
+    this.#allSlots.set(this.#slot, this.#editor.value)
     this.#slot = next
     this.#hydrateFromStorage()
   }
@@ -222,39 +345,42 @@ class EditorPanel extends HTMLElement {
     } catch {}
 
     if (saved !== null) {
-      this.#textarea.value = saved
+      this.#editor.value = saved
     } else if (this.#target && this.#target.code) {
       // First visit (or cleared localStorage): seed from the element's
       // current code (typically the `textContent` default set in
       // `playground/index.html`). Persist so subsequent visits read from
       // localStorage directly and don't re-derive.
-      this.#textarea.value = this.#target.code
-      this.#persistSlot(this.#slot, this.#target.code)
+      const { code } = this.#target
+      this.#editor.value = code
+      this.#persistSlot(this.#slot, code)
     } else {
-      this.#textarea.value = ''
+      this.#editor.value = ''
     }
-    this.#allSlots.set(this.#slot, this.#textarea.value)
-  }
-
-  #onKeydown(e) {
-    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault()
-      this.#eval()
-    }
-  }
-
-  #onInput() {
-    this.#allSlots.set(this.#slot, this.#textarea.value)
-    this.#persist()
+    this.#allSlots.set(this.#slot, this.#editor.value)
   }
 
   #eval() {
     if (!this.#target) return
-    this.#target.code = this.#textarea.value
+    this.#target.code = this.#editor.value
+    this.#harvestExtensionWords()
+  }
+
+  #harvestExtensionWords() {
+    const synth = this.#target?.synth?.synth
+    if (!synth) return
+    let names
+    try {
+      names = Object.keys(synth)
+    } catch {
+      return
+    }
+    const fresh = names.filter(k => typeof k === 'string' && !KNOWN_WORDS.has(k))
+    if (fresh.length) this.#editor.addWords(fresh)
   }
 
   #persist() {
-    this.#persistSlot(this.#slot, this.#textarea.value)
+    this.#persistSlot(this.#slot, this.#editor.value)
   }
 
   #persistSlot(slot, value) {
