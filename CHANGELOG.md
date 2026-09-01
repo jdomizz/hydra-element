@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **ξ rewire (2026-09-01):** The generic editor core (CodeJar mount, completion state machine, caret/aria binder) moves to `@jdomizz/truss-editor` (consumed as a bundled devDep via `file:../truss/packages/truss-editor` until R2, then `^0.1.0`). `<hydra-editor>` becomes a thin product surface: shadow DOM + styles + a11y + Hydra config. The config is now **data-first**: `HYDRA_TOKENS` (canonical data: 43 functions + 30 globals + 17 keywords) → derived `hydraGrammar` (Prism) + `DEFAULT_WORDLIST` (90 entries). The subpath exports `HYDRA_TOKENS`, `hydraGrammar`, and `DEFAULT_WORDLIST` alongside `HydraEditor` — editor-format-agnostic data that non-Prism editors (CodeMirror hints, generated TextMate) can consume without adopting our stack. The element's public contract is unchanged (value, placeholder, addWords, destroy, code-apply event, parts, a11y). `src/editor/hydra-grammar.js` → `src/editor/hydra-config.js`; `src/editor/completion.js` removed (moved to truss).
+
 ## [0.7.0] - 2026-08-31
 
 ### Added

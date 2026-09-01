@@ -1,13 +1,14 @@
-import { CodeJar } from 'codejar'
-import { highlightHydra } from './hydra-grammar.js'
-import { Completion } from './completion.js'
-
-const TRAILING_IDENT = /[a-zA-Z_$][\w$]*$/
+import { createEditor } from '@jdomizz/truss-editor'
+import { highlightHydra, DEFAULT_WORDLIST } from './hydra-config.js'
 
 /**
  * `<hydra-editor>` — CodeJar + Prism (Hydra-extended JS grammar) +
  * wordlist completion. Public element, shipped via the `hydra-element/editor`
  * subpath so consumers who don't import it pay zero bundle cost.
+ *
+ * The generic editing core (CodeJar mount, completion state machine,
+ * caret/aria binder) lives in `@jdomizz/truss-editor`; this element
+ * provides the product surface (shadow DOM, styles, a11y, Hydra config).
  *
  * Public surface (see `src/hydra-editor.d.ts`):
  *   - `value` (string, get/set; setter is a silent programmatic write)
@@ -101,8 +102,7 @@ styles.replaceSync(`
 `)
 
 class HydraEditor extends HTMLElement {
-  #jar
-  #completion
+  #handle
   #editorEl
   #dropdownEl
   #destroyed = false
@@ -132,27 +132,32 @@ class HydraEditor extends HTMLElement {
     this.#editorEl = this.shadowRoot.querySelector('.editor')
     this.#dropdownEl = this.shadowRoot.querySelector('.completion')
 
-    // Register the keydown listener BEFORE CodeJar so we can
-    // `stopImmediatePropagation` on Tab/Enter when the completion
-    // dropdown is open (or on Ctrl/Cmd+Enter for `code-apply`).
-    this.#editorEl.addEventListener('keydown', this.#onKeydown)
-
-    // CodeJar is a factory function (returns a CodeJar instance), not a
-    // constructor — `new-cap` is a documented exception. (See codejar docs.)
-    // eslint-disable-next-line new-cap
-    this.#jar = CodeJar(this.#editorEl, highlightHydra, {
-      tab: '  ',
-      spellcheck: false,
-      addClosing: false,
-    })
-    this.#jar.onUpdate(this.#onUpdate)
-
-    this.#completion = new Completion(this.#editorEl, this.#dropdownEl, word =>
-      this.#acceptCompletion(word)
+    // Mount the truss-editor core on the host-provided DOM.
+    this.#handle = createEditor(
+      { surface: this.#editorEl, dropdown: this.#dropdownEl },
+      {
+        highlight: highlightHydra,
+        words: DEFAULT_WORDLIST,
+        completionOptionIdPrefix: 'hydra-editor-opt',
+        ariaLabel: this.getAttribute('aria-label') || 'Hydra code editor',
+        onInput: () => {
+          this.dispatchEvent(new CustomEvent('input', { bubbles: true, composed: true }))
+          this.#updateEmptyClass(this.#editorEl.textContent ?? '')
+        },
+        onApply: code => {
+          this.dispatchEvent(
+            new CustomEvent('code-apply', {
+              detail: { code },
+              bubbles: true,
+              composed: true,
+            })
+          )
+        },
+      }
     )
 
     this.#applyPlaceholder()
-    this.#applyAriaLabel()
+    this.#updateEmptyClass(this.#editorEl.textContent ?? '')
   }
 
   /**
@@ -162,27 +167,19 @@ class HydraEditor extends HTMLElement {
    * user-initiated eval.
    */
   get value() {
-    return this.#editorEl?.textContent ?? ''
+    return this.#handle?.value ?? this.#editorEl?.textContent ?? ''
   }
 
   set value(v) {
     const text = String(v ?? '')
-    if (this.#jar && !this.#destroyed) {
-      try {
-        // `callOnUpdate = false` suppresses CodeJar's `onUpdate` callback
-        // so the programmatic write doesn't dispatch `input` (the host
-        // would otherwise persist via its `input` listener — spec:
-        // programmatic setter is silent; only user typing fires `input`).
-        this.#jar.updateCode(text, false)
-      } catch {
-        this.#editorEl.textContent = text
-      }
-      this.#updateEmptyClass(text)
+    if (this.#handle && !this.#destroyed) {
+      this.#handle.value = text
     } else if (this.#editorEl) {
-      // After `destroy()`: CodeJar is gone. Set the textContent directly
+      // After `destroy()`: core is gone. Set the textContent directly
       // so the test suite can verify `value` is a no-throw after teardown.
       this.#editorEl.textContent = text
     }
+    this.#updateEmptyClass(text)
   }
 
   /**
@@ -204,25 +201,20 @@ class HydraEditor extends HTMLElement {
    * @param {string[]|string} words
    */
   addWords(words) {
-    this.#completion?.addWords(words)
+    this.#handle?.addWords(words)
   }
 
   /**
-   * Tear down CodeJar, the completion dropdown, and the document-level
-   * click listener. Idempotent — safe to call from `disconnectedCallback`
-   * and from external cleanup paths.
+   * Tear down the truss-editor core, the completion dropdown, and the
+   * document-level click listener. Idempotent — safe to call from
+   * `disconnectedCallback` and from external cleanup paths.
    */
   destroy() {
     if (this.#destroyed) return
     this.#destroyed = true
-    try {
-      this.#jar?.destroy()
-    } catch {
-      // CodeJar may have already torn down internally; ignore.
-    }
-    this.#jar = null
+    this.#handle?.destroy()
+    this.#handle = null
     document.removeEventListener('click', this.#onDocClick, true)
-    this.#completion?.close()
   }
 
   /**
@@ -231,7 +223,7 @@ class HydraEditor extends HTMLElement {
    * extension-aware `addWords` test to verify the wordlist grew.
    */
   get completion() {
-    return this.#completion
+    return this.#handle?.completion
   }
 
   attributeChangedCallback(name, oldValue, newValue) {
@@ -251,79 +243,7 @@ class HydraEditor extends HTMLElement {
   #onDocClick = e => {
     if (!this.isConnected) return
     if (e.composedPath().includes(this)) return
-    this.#completion?.close()
-  }
-
-  #onUpdate = text => {
-    this.#updateEmptyClass(text)
-    this.dispatchEvent(new CustomEvent('input', { bubbles: true, composed: true }))
-  }
-
-  #onKeydown = e => {
-    // Ctrl/Cmd+Enter dispatches `code-apply` regardless of completion state.
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-      e.preventDefault()
-      e.stopImmediatePropagation()
-      this.dispatchEvent(
-        new CustomEvent('code-apply', {
-          detail: { code: this.value },
-          bubbles: true,
-          composed: true,
-        })
-      )
-      this.#completion?.close()
-      return
-    }
-    // Let the completion handle navigation / accept keys first.
-    if (this.#completion?.onKeydown(e)) {
-      e.preventDefault()
-      e.stopImmediatePropagation()
-    }
-  }
-
-  #acceptCompletion(word) {
-    const text = this.#editorEl.textContent ?? ''
-    const m = text.match(TRAILING_IDENT)
-    if (!m) {
-      // No trailing identifier — append the word at the end.
-      const next = text + word
-      this.#jar?.updateCode(next)
-      return
-    }
-    const start = m.index
-    const next = text.slice(0, start) + word
-    this.#jar?.updateCode(next)
-    // Restore the caret to the end of the inserted word.
-    queueMicrotask(() => {
-      const sel = this.#editorEl.ownerDocument.getSelection()
-      if (!sel) return
-      const range = this.#editorEl.ownerDocument.createRange()
-      const target = this.#findTextNodeAt(next.length)
-      if (target) {
-        range.setStart(target, next.length)
-        range.collapse(true)
-        sel.removeAllRanges()
-        sel.addRange(range)
-      }
-    })
-  }
-
-  #findTextNodeAt(offset) {
-    const walker = this.#editorEl.ownerDocument.createTreeWalker(
-      this.#editorEl,
-      4 /* NodeFilter.SHOW_TEXT */
-    )
-    let consumed = 0
-    let node = walker.nextNode()
-    while (node) {
-      const len = node.nodeValue.length
-      if (consumed + len >= offset) {
-        return { nodeValue: node, node }
-      }
-      consumed += len
-      node = walker.nextNode()
-    }
-    return null
+    this.#handle?.completion.close()
   }
 
   #applyPlaceholder() {

@@ -30,6 +30,25 @@ export interface HydraEditor extends HTMLElement {
   destroy(): void;
 }
 
+/** The canonical Hydra editing vocabulary — editor-format-agnostic data (ξ). */
+export interface HydraTokens {
+  /** The 43 DSL generator/transform/output functions. */
+  functions: string[]
+  /** The 30 globals (k0..k7, g0..g7, gp0..gp7, time, o0..o3, a). */
+  globals: string[]
+  /** Common JS keywords kept in the completion wordlist. */
+  keywords: string[]
+}
+
+/** The canonical token data — the source every derivation reads. */
+export const HYDRA_TOKENS: HydraTokens
+
+/** The derived Prism grammar object (Prism.languages.hydra). */
+export const hydraGrammar: unknown
+
+/** The derived completion wordlist (functions + globals + keywords). */
+export const DEFAULT_WORDLIST: Set<string>
+
 /** The element is registered via side-effect import (`import 'hydra-element/editor'`),
  *  so there is no named element export — only the `HTMLElementTagNameMap` augmentation
  *  and the `HydraEditor` interface for consumers who want to type a local

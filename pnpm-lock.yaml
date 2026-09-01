@@ -12,6 +12,9 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0(rollup@4.57.1)
     devDependencies:
+      '@jdomizz/truss-editor':
+        specifier: file:../truss/packages/truss-editor
+        version: file:../truss/packages/truss-editor
       '@open-wc/testing':
         specifier: ^4.0.0
         version: 4.0.0
@@ -228,6 +231,10 @@ packages:
 
   '@esm-bundle/chai@4.3.4-fix.0':
     resolution: {integrity: sha512-26SKdM4uvDWlY8/OOOxSB1AqQWeBosCX3wRYUZO7enTAj03CtVxIiCimYVG2WpULcyV51qapK4qTovwkUr5Mlw==}
+
+  '@jdomizz/truss-editor@file:../truss/packages/truss-editor':
+    resolution: {directory: ../truss/packages/truss-editor, type: directory}
+    engines: {node: '>=22'}
 
   '@jridgewell/resolve-uri@3.1.2':
     resolution: {integrity: sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==}
@@ -2336,6 +2343,10 @@ snapshots:
   '@esm-bundle/chai@4.3.4-fix.0':
     dependencies:
       '@types/chai': 4.3.14
+
+  '@jdomizz/truss-editor@file:../truss/packages/truss-editor':
+    dependencies:
+      codejar: 4.3.0
 
   '@jridgewell/resolve-uri@3.1.2': {}
 
