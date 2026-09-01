@@ -50,6 +50,48 @@ export function hydraEval(code, synth, scope) {
   }
 }
 
+/**
+ * V8 compiles `new Function` bodies with a two-line synthetic prologue
+ * (`function anonymous(<args>\n) {\n`), so every `error.stack` line inside
+ * the wrapper sits this many lines below the line the user wrote.
+ */
+const WRAPPER_LINE_OFFSET = 2
+
+/**
+ * Extracts the user-code line from an eval error, best-effort.
+ *
+ * `hydraEval` embeds the user's code in the only `new Function` wrapper this
+ * library compiles, and Chromium marks its stack frames with an
+ * `<anonymous>:line:col` position. The first such frame is the error's
+ * position in user code — the throw site when user code threw directly, or
+ * the call site when hydra-synth internals threw deeper down. Subtracting
+ * the wrapper offset maps it back to the user's own line numbering.
+ *
+ * Returns `undefined` for everything else: syntax errors (no position in
+ * the stack), non-Error rejections, foreign eval frames outside the code's
+ * line range, or any parse failure. Never throws.
+ *
+ * @param {*} error The error from a failed eval (Error, string, or anything).
+ * @param {string} code The user code that was evaluated.
+ * @returns {number|undefined} 1-based user-code line, or undefined.
+ */
+export function userCodeLine(error, code) {
+  try {
+    if (!error || typeof error.stack !== 'string' || typeof code !== 'string') return undefined
+    const maxLine = code.split('\n').length
+    for (const frame of error.stack.split('\n')) {
+      if (!/^\s*at\s/.test(frame)) continue
+      const match = /<anonymous>:(\d+):\d+/.exec(frame)
+      if (!match) continue
+      const line = Number(match[1]) - WRAPPER_LINE_OFFSET
+      if (line >= 1 && line <= maxLine) return line
+    }
+    return undefined
+  } catch {
+    return undefined
+  }
+}
+
 function createScopeProxy(synth, scopeObj) {
   return new Proxy(scopeObj, {
     has(_target, _prop) {

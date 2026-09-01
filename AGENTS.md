@@ -7,7 +7,7 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 ## Commands
 
 - `pnpm dev` — serve `playground/index.html` with Vite (HMR). The playground imports `<hydra-editor>` from the `hydra-editor` npm package (devDependency `file:../hydra-editor`).
-- `pnpm test` — run all tests via Web Test Runner (headless Chromium). The glob covers `src/**/*.spec.js` and `playground/**/*.spec.js` (incl. `playground/editor-panel-extensions.spec.js` for the extension-aware `addWords` demo and `playground/extensions.spec.js` for the catalog data shape + panel rendering + click/keyboard dispatch).
+- `pnpm test` — run all tests via Web Test Runner (headless Chromium). The glob covers `src/**/*.spec.js` and `playground/**/*.spec.js` (incl. `playground/editor-panel-extensions.spec.js` for the extension-aware `addWords` demo, `playground/extensions.spec.js` for the catalog data shape + panel rendering + click/keyboard dispatch, and `playground/editor-error-wiring.spec.js` for the `hydra-eval` → `markError`/`clearErrors` wiring — pending the `hydra-editor` dist exposing those methods).
 - `pnpm build` — bundles two artifacts: `dist/hydra-element.js` (main element), `dist/eval.js` (standalone eval). Both hand-written `.d.ts` files (`src/hydra-element.d.ts`, `src/eval.d.ts`) are copied to `dist/` by the `copyDeclarations` Vite plugin. `postbuild` asserts both `.d.ts` exist.
 - `pnpm lint` — lint with oxlint
 - `pnpm format` — format with oxfmt

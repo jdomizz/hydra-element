@@ -253,12 +253,12 @@ animation) fall outside the bridge window and need `global="true"`.
 
 ## Events
 
-| Event                  | Source          | When                                            |
-| ---------------------- | --------------- | ----------------------------------------------- |
-| `hydra-ready`          | `HydraManager`  | First (or fresh) synth is ready                 |
-| `hydra-eval`           | `HydraManager`  | After every `evaluate()`, `{ success, error? }` |
-| `hydra-element-resize` | `CanvasManager` | Canvas backing-store resolution changes         |
-| `hydra-context-lost`   | `CanvasManager` | WebGL context for the internal canvas was lost  |
+| Event                  | Source          | When                                                   |
+| ---------------------- | --------------- | ------------------------------------------------------ |
+| `hydra-ready`          | `HydraManager`  | First (or fresh) synth is ready                        |
+| `hydra-eval`           | `HydraManager`  | After every `evaluate()`, `{ success, error?, line? }` |
+| `hydra-element-resize` | `CanvasManager` | Canvas backing-store resolution changes                |
+| `hydra-context-lost`   | `CanvasManager` | WebGL context for the internal canvas was lost         |
 
 All events bubble (`bubbles: true`) so a single document-level listener
 can watch every element.

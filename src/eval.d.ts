@@ -19,3 +19,13 @@ export function hydraEval(
   /** Optional persistent scope. Pass `Object.create(null)` for a fresh one. */
   scope?: Record<string, unknown>,
 ): Promise<unknown>;
+
+/**
+ * Extract the 1-based user-code line from an error thrown by `hydraEval`,
+ * best-effort. The user's code is embedded in a `new Function` wrapper
+ * (two synthetic prologue lines), so stack lines inside the wrapper are
+ * offset by 2 from the user's own numbering. Returns `undefined` when the
+ * error carries no parseable position (syntax errors, non-Error rejections,
+ * foreign stacks). Never throws.
+ */
+export function userCodeLine(error: unknown, code: string): number | undefined;
