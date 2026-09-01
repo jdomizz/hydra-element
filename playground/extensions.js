@@ -330,9 +330,9 @@ export const EXTENSIONS = [
     load: 'await import("https://www.fentonia.com/hydra-extensions/vertex/index.js").then(m => m.install(window.hydraSynth))',
     code: '// hydra-vertex — Jamie Faye Fenton\n\nosc(10, 0.1, 1).diffuse(0, 1, 0).out(o0, sphere().perspective(60).rotateY(() => time))',
     category: 'extension',
-    compat: 'not-yet',
+    compat: 'works',
     compatNote:
-      'reads `window.hydraSynth` only — not currently published by the bridge (see §5). Demo will error until `bridge-globals-unification.md` lands.',
+      'bridge publishes `window.hydraSynth` as an alias for `_hydra` (same hydra-synth instance; bridge-globals-unification.md)',
   },
   {
     name: 'hydra-datamosh',
@@ -345,9 +345,9 @@ export const EXTENSIONS = [
     load: 'const { datamosh } = await import("https://emptyfla.sh/hydra-datamosh/datamosh.js")',
     code: "// hydra-datamosh — emptyflash\n\nawait s0.initVideo('https://content.jwplatform.com/videos/N4X1NkIR-1hon4Bsu.mp4')\nconst newSource = await datamosh(s0)\nsrc(newSource).out()",
     category: 'extension',
-    compat: 'not-yet',
+    compat: 'works',
     compatNote:
-      'reads `window.hydraSynth` (fallback path) — not currently published by the bridge (see §5). Demo will error until `bridge-globals-unification.md` lands.',
+      "bridge publishes `window.hydraSynth`; datamosh's `params.hydra || window.hydraSynth` fallback path now resolves",
   },
 
   // ── External libraries (6, snapshot 2026-09-01) ───────────────────────

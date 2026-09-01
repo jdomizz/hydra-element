@@ -57,4 +57,36 @@ describe('publishHydraGlobals', () => {
       restore()
     }
   })
+
+  it('publishes window.hydraSynth as an alias for the hydra-synth instance (bridge fix)', () => {
+    // hydra-vertex + hydra-datamosh read `window.hydraSynth` directly
+    // (per .opencode/specs/hydra-element/active/playground-extensions-catalog.md
+    // §5 — bridge survey 2026-09-01). The bridge publishes it as an
+    // alias for `_hydra` (same instance) so those demos run.
+    delete window.hydraSynth
+    const hydra = makeSynth()
+    const restore = publishHydraGlobals(hydra)
+    try {
+      expect(window.hydraSynth, 'alias published').to.equal(hydra)
+      expect(window._hydra, '_hydra still published').to.equal(hydra)
+      expect(window.hydraSynth === window._hydra, 'same instance').to.equal(true)
+    } finally {
+      restore()
+    }
+  })
+
+  it('restores pre-existing window.hydraSynth instead of deleting it', () => {
+    // If the page already had a `hydraSynth` global before publish (e.g.
+    // another library), the bridge must restore the prior value on
+    // restore — not delete it. Regression for the snapshot/restore
+    // contract.
+    const sentinel = 'page-level-hydraSynth'
+    window.hydraSynth = sentinel
+    const hydra = makeSynth()
+    const restore = publishHydraGlobals(hydra)
+    expect(window.hydraSynth).to.equal(hydra) // overwrite during publish
+    restore()
+    expect(window.hydraSynth).to.equal(sentinel) // restore prior
+    delete window.hydraSynth
+  })
 })

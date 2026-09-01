@@ -107,6 +107,8 @@ Hydra has a rich ecosystem of extensions. Load any of them with `loadScript` ins
 
 Works in both global and isolated mode. `loadScript` transiently publishes this element's Hydra on `window` while the script loads, so scripts that call bare `setFunction(...)` or read `window._hydra` self-register on this element's synth — and `window` returns to its prior state when the load finishes. Multiple elements stay isolated.
 
+The playground ships a **full catalog** of the 29 entries the [ojack editor](https://hydra.ojack.xyz/) offers — 23 extensions (metagrowing, geikha hyper-hydra, hydra-midi, hydra-strudel, hydra-vertex, hydra-datamosh, scrawlink, Noise Room, hydrated-gradient, etc.) + 6 external libraries (p5.js, Tone.js, Three.js, bitfolly, bl4st, Total Serialism). Click any row in the playground's `<extensions-panel>` → the demo sketch loads into the active slot. Snapshot date 2026-09-01 — see [`EXTENSIONS.md`](./EXTENSIONS.md) for the compatibility matrix and the catalog spec's §5 for the bridge survey.
+
 A few popular extensions:
 
 - [metagrowing/extra-shaders-for-hydra](https://github.com/metagrowing/extra-shaders-for-hydra) — `turb`, `warp`, `lib-noise`, `lib-pattern`, `lib-color`
