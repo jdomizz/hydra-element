@@ -93,3 +93,60 @@ input:disabled {
   font-size: var(--hydra-text-xs);
   color: var(--hydra-fg-muted);
 }
+
+/* App-level header strip (title + tagline + nav links). Lives above
+   the 3-column app grid; layout.css sizes the grid to fill the
+   remaining viewport height so the playground's aspect ratio is
+   preserved on every viewport. */
+.app__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--hydra-space-m);
+  padding: var(--hydra-space-xs) var(--hydra-space-m);
+  background: var(--hydra-bg-elevated);
+  border-bottom: 1px solid var(--hydra-border);
+}
+.app__title {
+  margin: 0;
+  font-size: var(--hydra-text-s);
+  font-weight: 700;
+  display: flex;
+  align-items: baseline;
+  gap: var(--hydra-space-s);
+}
+.app__title code {
+  font-family: var(--hydra-font-mono);
+  color: var(--hydra-accent);
+}
+.app__tagline {
+  font-size: var(--hydra-text-xs);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--hydra-fg-muted);
+}
+.app__nav {
+  display: flex;
+  gap: var(--hydra-space-s);
+}
+.app__link {
+  font-size: var(--hydra-text-xs);
+  font-family: var(--hydra-font-mono);
+  color: var(--hydra-fg-muted);
+  text-decoration: none;
+  padding: 2px var(--hydra-space-xs);
+  border-radius: var(--hydra-radius-s);
+  transition:
+    color var(--hydra-duration-fast) var(--hydra-easing),
+    background-color var(--hydra-duration-fast) var(--hydra-easing);
+}
+.app__link:hover {
+  color: var(--hydra-fg);
+  background: var(--hydra-bg-hover);
+}
+.app__link:focus-visible {
+  outline: 2px solid var(--hydra-accent);
+  outline-offset: 2px;
+  color: var(--hydra-fg);
+}

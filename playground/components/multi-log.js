@@ -34,6 +34,47 @@ styles.replaceSync(`
     gap: var(--hydra-space-s);
     margin-bottom: var(--hydra-space-s);
   }
+  /* The clear button uses the global .btn classes, but its shadow root
+     doesn't inherit global CSS — define them here. Kept in sync with
+     playground/css/components.css (the .btn and .btn--ghost rules).
+     Future refactor would share via adoptedStyleSheets once the build
+     supports it. */
+  .btn {
+    font-family: inherit;
+    font-size: var(--hydra-text-s);
+    color: var(--hydra-fg);
+    background: var(--hydra-bg-input);
+    border: 1px solid var(--hydra-border);
+    border-radius: var(--hydra-radius-s);
+    padding: var(--hydra-space-xs) var(--hydra-space-s);
+    cursor: pointer;
+    transition:
+      border-color var(--hydra-duration-fast) var(--hydra-easing),
+      background-color var(--hydra-duration-fast) var(--hydra-easing),
+      color var(--hydra-duration-fast) var(--hydra-easing);
+  }
+  .btn:hover {
+    border-color: var(--hydra-accent);
+    background: var(--hydra-bg-hover);
+  }
+  .btn:active {
+    transform: translateY(1px);
+  }
+  .btn--ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--hydra-fg-muted);
+  }
+  .btn--ghost:hover {
+    color: var(--hydra-fg);
+    background: var(--hydra-bg-hover);
+    border-color: var(--hydra-border);
+  }
+  button:focus-visible,
+  pre:focus-visible {
+    outline: 2px solid var(--hydra-accent);
+    outline-offset: 2px;
+  }
   h2 {
     margin: 0;
     font-size: var(--hydra-text-xs);
