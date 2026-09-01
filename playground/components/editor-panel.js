@@ -33,7 +33,7 @@
  * load. This is the killer demo detail tying the element spec to the
  * extensions catalog (`active/playground-editor.md` §2.2).
  */
-import 'hydra-element/editor'
+import 'hydra-editor'
 
 const styles = new CSSStyleSheet()
 styles.replaceSync(`

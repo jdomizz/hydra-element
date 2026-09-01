@@ -33,15 +33,12 @@
     "dist/hydra-element.d.ts",
     "dist/eval.js",
     "dist/eval.d.ts",
-    "dist/hydra-editor.js",
-    "dist/hydra-editor.d.ts",
     "README.md",
     "LICENSE"
   ],
   "type": "module",
   "sideEffects": [
-    "./dist/hydra-element.js",
-    "./dist/hydra-editor.js"
+    "./dist/hydra-element.js"
   ],
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
@@ -55,10 +52,6 @@
       "types": "./dist/eval.d.ts",
       "import": "./dist/eval.js"
     },
-    "./editor": {
-      "types": "./dist/hydra-editor.d.ts",
-      "import": "./dist/hydra-editor.js"
-    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -66,7 +59,7 @@
     "dev:playground": "vite --config vite.playground.config.js --host",
     "test": "wtr --config wtr.config.js",
     "build": "vite build",
-    "postbuild": "test -f dist/hydra-element.d.ts && test -f dist/eval.d.ts && test -f dist/hydra-editor.d.ts",
+    "postbuild": "test -f dist/hydra-element.d.ts && test -f dist/eval.d.ts",
     "build:playground": "vite build --config vite.playground.config.js",
     "preview:playground": "vite preview --config vite.playground.config.js",
     "lint": "oxlint --fix .",
@@ -85,18 +78,16 @@
     "hydra-synth": "^1.4.0"
   },
   "devDependencies": {
-    "@jdomizz/truss-editor": "file:../truss/packages/truss-editor",
     "@open-wc/testing": "^4.0.0",
     "@remcovaes/web-test-runner-vite-plugin": "^1.4.0",
     "@web/test-runner": "^0.20.2",
     "@web/test-runner-playwright": "^0.11.1",
-    "codejar": "^4.3.0",
     "husky": "^9.1.7",
+    "hydra-editor": "file:../hydra-editor",
     "lint-staged": "^17.4.1",
     "oxc-standard": "^1.4.0",
     "oxfmt": "0.48.0",
     "oxlint": "1.80.0",
-    "prismjs": "^1.29.0",
     "sinon": "^21.0.1",
     "vite": "^7.3.1"
   }

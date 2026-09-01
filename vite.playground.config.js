@@ -7,9 +7,9 @@ import { defineConfig } from 'vite'
  * Playground build (static site) — separate from the library build because:
  *
  *   1. The library build (`vite.config.js`) is `build.lib` mode and emits
- *      `dist/hydra-element.js` + `dist/eval.js` + `dist/hydra-editor.js`
- *      for npm. `package.json` declares `"files": ["dist", ...]` —
- *      *anything* we add to `dist/` ships to npm.
+ *      `dist/hydra-element.js` + `dist/eval.js` for npm. `package.json`
+ *      declares `"files": ["dist", ...]` — *anything* we add to `dist/`
+ *      ships to npm.
  *   2. The playground uses app-mode multi-page output and serves
  *      `playground/index.html` (the unified playground — 4 isolated
  *      `<hydra-element>` + editor with target picker, the result of
@@ -30,12 +30,10 @@ import { defineConfig } from 'vite'
  * `/hydra-element/` — the project-pages URL
  * `https://jdomizz.github.io/hydra-element/` resolves assets correctly.
  *
- * The `resolve.alias` map lets `playground/main.js` import the `<hydra-editor>`
- * element directly from source (`hydra-element/editor` → `src/editor/index.js`).
- * This means `pnpm dev` works without a pre-build of the lib entry. The
- * published subpath `hydra-element/editor` (used by external consumers) is
- * unaffected — it always resolves to `dist/hydra-editor.js` via the
- * `package.json` exports map.
+ * The playground imports `<hydra-editor>` from the `hydra-editor` npm
+ * package (devDependency `file:../hydra-editor`). Per ο (2026-09-01),
+ * the editor element extracted from `hydra-element` into its own
+ * standalone package.
  */
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 const pkg = JSON.parse(readFileSync(resolve(projectRoot, 'package.json'), 'utf8'))
@@ -59,18 +57,6 @@ export default defineConfig(({ command }) => ({
   // use the project-pages base so assets resolve under
   // `/hydra-element/assets/…` on GitHub Pages.
   base: command === 'serve' ? '/' : base,
-  resolve: {
-    alias:
-      command === 'serve'
-        ? {
-            // Playground imports the element from source so `pnpm dev`
-            // needs no pre-build of `dist/hydra-editor.js`. External
-            // consumers resolve `hydra-element/editor` via the
-            // `package.json` exports map (unaffected).
-            'hydra-element/editor': resolve(projectRoot, 'src/editor/index.js'),
-          }
-        : {},
-  },
   build: {
     outDir: 'dist-site',
     emptyOutDir: true,
