@@ -23,11 +23,21 @@ const CONVERSION_CASES = [
   ['loop', 'false', 'loop'],
 ]
 
+// [label, code, success, expectedLine] — expectedLine only applies to
+// failures (`undefined` = the error carries no parseable position).
 const EVAL_CASES = [
   ['sync success', 'osc().out()', true],
-  ['sync error', 'throw new Error("boom")', false],
+  ['sync error', 'throw new Error("boom")', false, 1],
   ['async success', 'await Promise.resolve(); osc().out()', true],
-  ['async error', 'await Promise.reject(new Error("async boom"))', false],
+  ['async error', 'await Promise.reject(new Error("async boom"))', false, 1],
+  ['multiline sync error', 'const a = 1\nconst b = 2\nthrow new Error("boom")', false, 3],
+  [
+    'multiline async error',
+    'const a = 1\nawait Promise.resolve()\nawait Promise.reject(new Error("async boom"))',
+    false,
+    3,
+  ],
+  ['error without parseable position', 'await Promise.reject("plain string")', false, undefined],
 ]
 
 describe('<hydra-element>', () => {
@@ -260,7 +270,7 @@ describe('<hydra-element>', () => {
     expect(window.synth).to.be.undefined
   })
 
-  for (const [label, code, success] of EVAL_CASES) {
+  for (const [label, code, success, line] of EVAL_CASES) {
     it(`dispatches hydra-eval for ${label}`, async () => {
       const el = await fixture(html`<hydra-element></hydra-element>`)
       const promise = new Promise(resolve => {
@@ -269,7 +279,12 @@ describe('<hydra-element>', () => {
       el.code = code
       const detail = await promise
       expect(detail.success).to.equal(success)
-      if (!success) expect(detail.error).to.exist
+      if (success) {
+        expect('line' in detail).to.equal(false)
+      } else {
+        expect(detail.error).to.exist
+        expect(detail.line).to.equal(line)
+      }
     })
   }
 

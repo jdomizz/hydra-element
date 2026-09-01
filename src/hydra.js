@@ -1,5 +1,5 @@
 import Hydra from 'hydra-synth'
-import { hydraEval } from './eval'
+import { hydraEval, userCodeLine } from './eval'
 import { publishHydraGlobals } from './globals'
 
 /**
@@ -108,8 +108,8 @@ export class HydraManager {
     this.#evalQueue = this.#evalQueue
       .then(() => this.#evaluate(code))
       .then(
-        result => this.#handleEvalResult(result),
-        error => this.#dispatchEvalError(error)
+        result => this.#handleEvalResult(result, code),
+        error => this.#dispatchEvalError(error, code)
       )
   }
 
@@ -131,11 +131,14 @@ export class HydraManager {
   /**
    * Resolves the evaluation result, handling both promise and non-promise.
    * @param {Promise|*} result
+   * @param {string} code - The evaluated user code (for error line extraction).
    * @private
    */
-  #handleEvalResult(result) {
+  #handleEvalResult(result, code) {
     if (result && typeof result.catch === 'function') {
-      result.then(() => this.#dispatchEvalSuccess()).catch(error => this.#dispatchEvalError(error))
+      result
+        .then(() => this.#dispatchEvalSuccess())
+        .catch(error => this.#dispatchEvalError(error, code))
     } else {
       this.#dispatchEvalSuccess()
     }
@@ -150,13 +153,16 @@ export class HydraManager {
   }
 
   /**
-   * Logs and dispatches the `hydra-eval` error event.
+   * Logs and dispatches the `hydra-eval` error event. The detail carries a
+   * best-effort `line` (1-based user-code line; `undefined` when the error's
+   * stack has no parseable user-code position).
    * @param {Error} error
+   * @param {string} code - The evaluated user code.
    * @private
    */
-  #dispatchEvalError(error) {
+  #dispatchEvalError(error, code) {
     console.warn('[hydra-element] eval error:', error)
-    this.dispatchEvent('hydra-eval', { success: false, error })
+    this.dispatchEvent('hydra-eval', { success: false, error, line: userCodeLine(error, code) })
   }
 
   /**

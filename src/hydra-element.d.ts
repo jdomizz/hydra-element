@@ -14,6 +14,10 @@ export interface HydraReadyDetail {
 export interface HydraEvalDetail {
   success: boolean;
   error?: string;
+  /** Best-effort 1-based line in the evaluated code where the error
+   *  originated. Present only on failures; `undefined` when the error's
+   *  stack carries no parseable user-code position (e.g. syntax errors). */
+  line?: number;
 }
 
 /** Payload of the `hydra-element-resize` event — fires when the canvas backing-store

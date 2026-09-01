@@ -333,18 +333,22 @@ requestAnimationFrame(frame)
 
 ### Events
 
-| Event                  | Detail                | Description                                            |
-| ---------------------- | --------------------- | ------------------------------------------------------ |
-| `hydra-ready`          | `{ synth }`           | Fired when Hydra is initialized                        |
-| `hydra-eval`           | `{ success, error? }` | Fired after every code evaluation                      |
-| `hydra-element-resize` | `{ width, height }`   | Fired when the canvas backing-store resolution changes |
-| `hydra-context-lost`   | —                     | Fired when the WebGL context was lost and recovered    |
+| Event                  | Detail                       | Description                                            |
+| ---------------------- | ---------------------------- | ------------------------------------------------------ |
+| `hydra-ready`          | `{ synth }`                  | Fired when Hydra is initialized                        |
+| `hydra-eval`           | `{ success, error?, line? }` | Fired after every code evaluation                      |
+| `hydra-element-resize` | `{ width, height }`          | Fired when the canvas backing-store resolution changes |
+| `hydra-context-lost`   | —                            | Fired when the WebGL context was lost and recovered    |
 
 ```js
 el.addEventListener('hydra-eval', e => {
-  if (!e.detail.success) console.error('Eval error:', e.detail.error)
+  if (!e.detail.success) console.error(`Eval error (line ${e.detail.line}):`, e.detail.error)
 })
 ```
+
+On failure, `detail.line` is a best-effort 1-based line number in the
+evaluated code (`undefined` when the error carries no parseable position,
+e.g. syntax errors). Success details carry no `line` field.
 
 ### Moving elements in the DOM
 
