@@ -419,3 +419,51 @@ don't import it pay zero cost. Lives under `src/editor/` and builds to
   after each eval the panel diffs the synth keys against the 96-entry
   baseline and calls `editor.addWords(newNames)` — so loading an
   extension grows the completion dropdown automatically.
+
+## Playground extensions catalog
+
+The playground ships a **full mirror** of the ojack editor's
+puzzle-piece panel — 29 entries from
+[`hydra-synth/hydra-extensions`](https://github.com/hydra-synth/hydra-extensions)
+(snapshot 2026-09-01): 23 extensions + 6 external libraries.
+
+```
+playground/extensions.js              ← EXTENSIONS catalog data (29 entries)
+playground/components/extensions-panel.js  ← <extensions-panel> custom element
+playground/extensions.spec.js         ← catalog shape + panel rendering + click dispatch
+scripts/check-extensions.mjs          ← Playwright compat pass (canvas + console evidence)
+EXTENSIONS.md                         ← compatibility matrix
+```
+
+Each entry carries: `name`, `description`, `author`, `www?`,
+`documentation?`, `license`, `thumbnail`, `load` (the line the playground
+prepends to the demo), `code` (the demo sketch), `category`
+(`'extension'` or `'library'`), `compat` (`'works'` /
+`'works-with-notes'` / `'not-yet'`), `compatNote?`. Demos adapted from
+the official `?code=` examples carry the same CC BY-NC-SA credit
+comments as `playground/presets.js`.
+
+**`<extensions-panel>`** renders two `<details>` groups (Extensions +
+External libraries), each row a click target that dispatches
+`preset-change` with `{ slot, code, name }` — the same event shape
+`<preset-selector>` uses. Reuses the playground's existing event flow
+(no editor-panel change needed beyond what `playground-editor.md` covers).
+
+**Compat pass** (`scripts/check-extensions.mjs`): launches `pnpm dev`,
+opens the playground in headless Chromium, clicks every catalog entry,
+captures a canvas screenshot + console per entry, writes evidence to
+`console-output/<slug>.{png,txt}` and a markdown matrix to
+`EXTENSIONS.md`. Not in WTR (CDN fetches unreliable in that
+environment). Documented in `CONTRIBUTING.md` as the refresh protocol.
+
+**Bridge globals survey** (catalog spec §5, filled 2026-09-01):
+per-entry `window.*` access analysis identifies two `not-yet` entries
+(hydra-vertex, hydra-datamosh) reading `window.hydraSynth` not
+currently published. Recommended fix: `bridge-globals-unification.md`
+mini-spec adds `'hydraSynth'` to `src/globals.js`'s published set
+(single-line addition; the snapshot/restore in `publishHydraGlobals`
+preserves pre-existing keys and deletes only what was introduced).
+**Out of scope for the catalog commit** — the catalog ships with the
+two gap entries honestly labeled `not-yet` and the demo `code` for
+each pointing at the `window.hydraSynth` requirement. If the bridge
+fix lands in v0.7.0, flip those labels to `works`.

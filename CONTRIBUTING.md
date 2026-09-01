@@ -55,6 +55,43 @@ If `pnpm test` fails to launch Chromium, install the bundled browser:
 pnpm exec playwright install chromium
 ```
 
+## Extensions catalog
+
+The playground ships a full mirror of the ojack editor's puzzle-piece
+panel — 29 entries from
+[`hydra-synth/hydra-extensions`](https://github.com/hydra-synth/hydra-extensions)
+(snapshot 2026-09-01). See [`EXTENSIONS.md`](./EXTENSIONS.md) for the
+compatibility matrix.
+
+The catalog is a snapshot, not a live feed. To refresh from upstream:
+
+```sh
+curl -sLo /tmp/extensions.json \
+  https://raw.githubusercontent.com/hydra-synth/hydra-extensions/main/extensions.json
+curl -sLo /tmp/external-libraries.json \
+  https://raw.githubusercontent.com/hydra-synth/hydra-extensions/main/external-libraries.json
+```
+
+Re-extract each entry's `load` URL + first example (decoded via
+`decodeURIComponent(atob(...))`), update the compat label from a manual
+run of `scripts/check-extensions.mjs`, and bump the snapshot date in
+`EXTENSIONS.md` + `playground/extensions.js`.
+
+The compat pass is a Playwright script (`scripts/check-extensions.mjs`)
+that launches `pnpm dev`, opens the playground in headless Chromium,
+clicks every catalog entry, captures canvas screenshots + console logs,
+and writes the matrix into `EXTENSIONS.md`:
+
+```sh
+node scripts/check-extensions.mjs
+# Evidence: console-output/<slug>.{png,txt}
+# Output:   EXTENSIONS.md (overwrites)
+```
+
+The script requires network (29 CDN fetches). A network failure mid-run
+leaves the affected entry labeled by the static analysis from
+`playground/extensions.js` — re-run when the network is healthy.
+
 ## Commands
 
 | Command       | What it does                                                                    |
