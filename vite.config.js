@@ -25,6 +25,7 @@ function copyDeclarations() {
       const pairs = [
         ['src/hydra-element.d.ts', 'dist/hydra-element.d.ts'],
         ['src/eval.d.ts', 'dist/eval.d.ts'],
+        ['src/hydra-editor.d.ts', 'dist/hydra-editor.d.ts'],
       ]
       for (const [src, dst] of pairs) {
         const dstDir = dirname(resolve(__dirname, dst))
@@ -42,6 +43,11 @@ export default defineConfig({
       entry: {
         'hydra-element': 'index.js',
         eval: 'src/eval.js',
+        // `<hydra-editor>` public element + subpath `hydra-element/editor`.
+        // Bundles codejar + prismjs (devDeps) into the editor entry only;
+        // the main entry keeps hydra-synth as the sole runtime dep. See
+        // `.opencode/specs/hydra-element/active/hydra-editor.md` §2.5.
+        'hydra-editor': 'src/editor/index.js',
       },
       formats: ['es'],
       fileName: (format, entryName) => `${entryName}.js`,

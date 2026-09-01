@@ -57,23 +57,33 @@ pnpm exec playwright install chromium
 
 ## Commands
 
-| Command       | What it does                                                    |
-| ------------- | --------------------------------------------------------------- |
-| `pnpm dev`    | Serve `playground/index.html` with Vite (HMR)                   |
-| `pnpm test`   | Run all tests via Web Test Runner (headless Chromium)           |
-| `pnpm build`  | Bundle to `dist/hydra-element.js` and `dist/eval.js` (ESM only) |
-| `pnpm lint`   | Lint with oxlint (auto-fixes where safe)                        |
-| `pnpm format` | Format with oxfmt                                               |
-| `pnpm check`  | `lint` + `test` + `build` in order — the pre-PR gate CI runs    |
+| Command       | What it does                                                                    |
+| ------------- | ------------------------------------------------------------------------------- |
+| `pnpm dev`    | Serve `playground/index.html` with Vite (HMR)                                   |
+| `pnpm test`   | Run all tests via Web Test Runner (headless Chromium)                           |
+| `pnpm build`  | Bundle to `dist/hydra-element.js`, `dist/eval.js`, `dist/hydra-editor.js` (ESM) |
+| `pnpm lint`   | Lint with oxlint (auto-fixes where safe)                                        |
+| `pnpm format` | Format with oxfmt                                                               |
+| `pnpm check`  | `lint` + `test` + `build` in order — the pre-PR gate CI runs                    |
+
+`pnpm build` produces three artifacts:
+
+- `dist/hydra-element.js` (≈ 327 KB) — the main `<hydra-element>` element; bundles `hydra-synth` + regl.
+- `dist/eval.js` — the `hydraEval` standalone eval subpath.
+- `dist/hydra-editor.js` (≈ 25 KB gzip) — the `<hydra-editor>` element; bundles `codejar` + `prismjs` as devDeps.
+
+The main entry's runtime dependency stays `hydra-synth` only; `codejar` and `prismjs` are devDependencies bundled into the editor entry. Consumers who don't import `'hydra-element/editor'` pay zero cost for it. The `postbuild` script asserts all three `.d.ts` declarations exist (`dist/hydra-element.d.ts`, `dist/eval.d.ts`, `dist/hydra-editor.d.ts`); if any is missing the build fails.
+
+The playground dev server uses a Vite alias (`hydra-element/editor` → `src/editor/index.js`) so `pnpm dev` resolves the element from source — no pre-build of the lib entry is needed for dev.
 
 ## Conventions
 
 - **Plain JavaScript** with JSDoc — no TypeScript source
 - Linting: oxlint (config in `.oxlintrc.json`)
 - Formatting: oxfmt (config in `.oxfmtrc.json`); a pre-commit hook runs `oxlint --fix` and `oxfmt` on staged files automatically (bypass with `git commit --no-verify`)
-- `hydra-synth` is the sole runtime dependency — keep it that way
+- `hydra-synth` is the sole runtime dependency of the main entry — keep it that way. The `hydra-element/editor` subpath bundles `codejar` and `prismjs` as devDependencies into the editor entry only; consumers who don't import `'hydra-element/editor'` pay zero cost for them.
 - `playground/index.html` is the dev playground, not part of the library — don't import from it
-- Source modules are `src/*.js`, tests live next to them as `src/*.spec.js` (plus `playground/*.spec.js` for playground-data fixtures)
+- Source modules are `src/*.js` (lib) and `src/editor/*.js` (the `<hydra-editor>` public element + grammar + completion + index barrel). Tests live next to them as `*.spec.js` (plus `playground/*.spec.js` for playground-data fixtures and the editor-panel adoption tests).
 
 ## Test strategy
 

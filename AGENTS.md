@@ -6,9 +6,9 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Commands
 
-- `pnpm dev` — serve `playground/index.html` with Vite (HMR)
-- `pnpm test` — run all tests via Web Test Runner (headless Chromium)
-- `pnpm build` — bundle to `dist/hydra-element.js` (ES module only)
+- `pnpm dev` — serve `playground/index.html` with Vite (HMR). A dev-only Vite alias resolves `hydra-element/editor` → `src/editor/index.js` so the playground imports the new `<hydra-editor>` element from source; no pre-build needed.
+- `pnpm test` — run all tests via Web Test Runner (headless Chromium). The glob covers `src/**/*.spec.js`, `src/editor/**/*.spec.js`, and `playground/**/*.spec.js` (incl. `playground/editor-panel-extensions.spec.js` for the extension-aware `addWords` demo).
+- `pnpm build` — bundles three artifacts: `dist/hydra-element.js` (main element, unchanged), `dist/eval.js` (standalone eval, unchanged), `dist/hydra-editor.js` (new, ~25 KB gzip). All three hand-written `.d.ts` files (`src/hydra-element.d.ts`, `src/eval.d.ts`, `src/hydra-editor.d.ts`) are copied to `dist/` by the `copyDeclarations` Vite plugin. `postbuild` asserts all three `.d.ts` exist.
 - `pnpm lint` — lint with oxlint
 - `pnpm format` — format with oxfmt
 - Pre-commit hook (husky + lint-staged) auto-fixes `*.{js,mjs}` with `oxlint --fix`, then runs `oxfmt` on staged JS and `*.md` files; bypass with `git commit --no-verify`
@@ -31,12 +31,12 @@ If you find yourself sitting on `main` with uncommitted work, switch to a featur
 
 ## Test runner quirks
 
-- Tests are `src/**/*.spec.js`, colocated with source (not in a `test/` dir)
-- Uses `@open-wc/testing` + `sinon`; assertions use `.to.be` / `.to.equal` (Chai style)
+- Tests are `src/**/*.spec.js`, `src/editor/**/*.spec.js`, and `playground/**/*.spec.js`, colocated with source (not in a `test/` dir). The WTR glob in `wtr.config.js` covers all three.
+- Uses `@open-wc/testing` + `sinon`; assertions use `.to.be` / `.to.equal` (Chai style). The `<hydra-editor>` element is registered via side-effect import on `editor-panel.js` (or its own `index.js` in editor specs).
 - `wtr.config.js` uses Playwright's bundled Chromium — install with `pnpm exec playwright install chromium` if tests fail to launch
 - Tests register the custom element themselves via `window.customElements.define`
 - **A failing sinon-chai assertion hangs the session instead of reporting red.** `expect(spy).to.have.been.calledOnce` etc., when false, makes WTR time out after 120s ("Browser tests did not finish", 0 passed 0 failed) — the AssertionError carries the cyclic spy object and the reporter never settles. Plain chai failures (`expect(1).to.equal(2)`) report fine. When debugging a suspected assertion failure, assert on primitives instead (`expect(spy.callCount).to.equal(1)`) or wrap the assertion in try/catch to print `e.message`
-- WTR + the Vite plugin occasionally fail a file with "Failed to fetch dynamically imported module" on the first run after files are added/removed (stale dep cache) — a clean re-run passes
+- WTR + the Vite plugin occasionally fail a file with "Failed to fetch dynamically imported module" on the first run after files are added/removed (stale dep cache) — a clean re-run passes. The new `src/editor/` module + the Vite alias trigger this more often; if a fresh `src/editor/*.spec.js` or `playground/editor-panel-extensions.spec.js` test fails on first run, re-run once before debugging.
 
 ## Conventions
 
