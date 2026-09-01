@@ -302,6 +302,23 @@ target.addEventListener('hydra-eval', () => {
 
 The playground does this automatically (see `playground/components/editor-panel.js`).
 
+**Inline error bar.** The editor exposes `markError({ line, message })` /
+`clearErrors()`. Wire them to the element's `hydra-eval` event — failures
+carry a best-effort `line` in the evaluated code, successes clear the bar:
+
+```js
+target.addEventListener('hydra-eval', e => {
+  if (e.detail.success) editor.clearErrors()
+  else
+    editor.markError({
+      line: e.detail.line,
+      message: e.detail.error?.message ?? String(e.detail.error),
+    })
+})
+```
+
+The playground does this automatically too (same file).
+
 **Public surface** (TypeScript types in `hydra-editor/dist/hydra-editor.d.ts`):
 
 | API                    | Type / Detail                                                                                                       |

@@ -26,6 +26,11 @@
  *     so the value is written without dispatching `code-apply` again).
  *   - Listens for `code-apply` from the element (Ctrl/Cmd+Enter) and
  *     pushes the code to `target.code`.
+ *   - Listens for `hydra-eval` (bubbling) on `document` and routes it to
+ *     the editor's inline error bar when it comes from the active target:
+ *     failures call `editor.markError({ line, message })` (the line is the
+ *     best-effort user-code line from the event detail), successes call
+ *     `editor.clearErrors()`. Events from other slots are ignored.
  *
  * Extension-aware completion: after every successful eval, the panel diffs
  * `Object.keys(target.synth.synth)` against the baseline wordlist and
@@ -253,6 +258,16 @@ class EditorPanel extends HTMLElement {
     this.#harvestExtensionWords()
   }
 
+  #onEval = e => {
+    if (e.target !== this.#target) return
+    const { success, error, line } = e.detail || {}
+    if (success) {
+      this.#editor.clearErrors()
+    } else {
+      this.#editor.markError({ line, message: error?.message ?? String(error) })
+    }
+  }
+
   #onInput = () => {
     this.#allSlots.set(this.#slot, this.#editor.value)
     this.#persist()
@@ -292,11 +307,13 @@ class EditorPanel extends HTMLElement {
     this.#hydrateFromStorage()
     document.addEventListener('target-change', this.#onTargetChange)
     document.addEventListener('preset-change', this.#onPresetChange)
+    document.addEventListener('hydra-eval', this.#onEval)
   }
 
   disconnectedCallback() {
     document.removeEventListener('target-change', this.#onTargetChange)
     document.removeEventListener('preset-change', this.#onPresetChange)
+    document.removeEventListener('hydra-eval', this.#onEval)
     document.removeEventListener('code-apply', this.#onCodeApply)
     try {
       this.#editor?.destroy?.()
