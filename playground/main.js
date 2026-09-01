@@ -21,6 +21,7 @@ import './components/multi-log.js'
 import './components/editor-panel.js'
 import './components/cfg-form.js'
 import './components/preset-selector.js'
+import './components/extensions-panel.js'
 
 import { PRESETS } from './presets.js'
 
