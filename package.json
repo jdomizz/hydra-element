@@ -58,6 +58,7 @@
     "dev": "vite --config vite.playground.config.js --host",
     "dev:playground": "vite --config vite.playground.config.js --host",
     "test": "wtr --config wtr.config.js",
+    "test:browser": "WTR_BROWSER=1 wtr --config wtr.config.js",
     "build": "vite build",
     "postbuild": "test -f dist/hydra-element.d.ts && test -f dist/eval.d.ts",
     "build:playground": "vite build --config vite.playground.config.js",
