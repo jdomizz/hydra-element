@@ -17,13 +17,12 @@
   "bugs": {
     "url": "https://github.com/jdomizz/hydra-element/issues"
   },
-"license": "AGPL-3.0-or-later",
+  "license": "AGPL-3.0-or-later",
   "author": "Jesús Domínguez Díaz",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jdomizz/hydra-element.git"
   },
-  "packageManager": "pnpm@11.9.0",
   "sponsor": {
     "url": "https://opencollective.com/hydra-synth"
   },
@@ -59,21 +58,17 @@
     "dev:playground": "vite --config vite.playground.config.js --host",
     "test": "wtr --config wtr.config.js",
     "test:browser": "WTR_BROWSER=1 wtr --config wtr.config.js",
-    "build": "vite build",
+    "test:node": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "build": "vite build && tsc -p tsconfig.build.json",
     "postbuild": "test -f dist/hydra-element.d.ts && test -f dist/eval.d.ts",
     "build:playground": "vite build --config vite.playground.config.js",
     "preview:playground": "vite preview --config vite.playground.config.js",
     "lint": "oxlint --fix .",
-    "check": "pnpm lint && pnpm test && pnpm build",
     "format": "oxfmt .",
+    "format:check": "oxfmt --check .",
+    "check": "pnpm lint && pnpm format:check && pnpm test && pnpm test:node && pnpm build",
     "prepare": "husky"
-  },
-  "lint-staged": {
-    "*.{js,m}": [
-      "oxlint --fix",
-      "oxfmt"
-    ],
-    "*.md": "oxfmt"
   },
   "dependencies": {
     "hydra-synth": "^1.4.0"
@@ -90,6 +85,16 @@
     "oxfmt": "0.48.0",
     "oxlint": "1.80.0",
     "sinon": "^21.0.1",
-    "vite": "^7.3.1"
-  }
+    "typescript": "^7.0.2",
+    "vite": "^7.3.1",
+    "vitest": "^5.0.0"
+  },
+  "lint-staged": {
+    "*.{js,m}": [
+      "oxlint --fix",
+      "oxfmt"
+    ],
+    "*.md": "oxfmt"
+  },
+  "packageManager": "pnpm@11.9.0"
 }
