@@ -36,14 +36,18 @@ export const DEFAULT_RUNTIME_OPTIONS: HydraRuntimeOptions = {
 
 /**
  * Reads every observed attribute from the host and folds them into the
- * default runtime options.
+ * default runtime options. Absent attributes keep their default — `null` is
+ * NOT parsed (`parseNumber(null)` is `0`, which would clobber `numSources`/
+ * `numOutputs` back to zero).
  */
 export function parseHydraAttrs(host: {
   getAttribute(name: string): string | null
 }): HydraRuntimeOptions {
   let options: HydraRuntimeOptions = { ...DEFAULT_RUNTIME_OPTIONS }
   for (const name of HYDRA_ATTRS) {
-    options = parseHydraAttr(name, host.getAttribute(name), options)
+    const value = host.getAttribute(name)
+    if (value === null) continue
+    options = parseHydraAttr(name, value, options)
   }
   return options
 }

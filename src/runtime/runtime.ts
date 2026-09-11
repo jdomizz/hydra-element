@@ -66,7 +66,7 @@ export class HydraRuntime implements CanvasRuntime {
     this.#wireListeners()
     this.#observeAttributes()
     host.notifyReady({ synth: this.synth })
-    if (this.#options.autoLoop) this.#core?.start()
+    if (this.#options.autoLoop && host.isConnected) this.#core?.start()
     if (!hadCore && this.#code !== '') this.#eval(this.#code)
   }
 
