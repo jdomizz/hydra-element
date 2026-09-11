@@ -59,6 +59,25 @@ synth.s0.initCam()
 synth.bpm = 120
 ```
 
+## Architecture
+
+The package ships three layers behind one public surface:
+
+- **`hydra-element/core`** — a headless, DOM-free engine core
+  (`createHydraCore`, `hydraEval`, `userCodeLine`, a scheduler-injectable
+  `Loop`). Orchestrate a Hydra engine in Node against an injected engine
+  factory, no browser required.
+- **`<hydra-element>`** — a DOM-only custom-element shell (canvas + lifecycle +
+  FOUC guard) that carries zero Hydra vocabulary in its own logic.
+- **hydra runtime adapter** — reads the element's Hydra attributes, drives the
+  core (resize, context-loss recovery, eval events), and bridges `loadScript`.
+
+```js
+import { createHydraCore } from 'hydra-element/core'
+```
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for the seam contracts.
+
 ## Common patterns
 
 ### Camera, screen, image, video

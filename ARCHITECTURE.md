@@ -7,103 +7,115 @@ maintainers and contributors; if you just want to use the element, read
 ## Big picture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  <hydra-element>                                                │
-│  src/element.js (HTMLElement facade)                            │
-│                                                                 │
-│  ┌─────────────┐  ┌──────────────┐  ┌────────────┐  ┌──────────┐ │
-│  │  Attribute │  │    Canvas    │  │   Hydra    │  │   Loop   │ │
-│  │   Handler  │  │   Manager    │  │  Manager   │  │  Ctrl    │ │
-│  │ attrs.js   │  │  canvas.js   │  │  hydra.js  │  │  loop.js │ │
-│  └────────────┘  └──────────────┘  └────────────┘  └──────────┘ │
-│                              │                                  │
-│                              ▼                                  │
-│                    ┌────────────────┐                           │
-│                    │   src/eval.js  │  hydraEval() scope proxy  │
-│                    └────────────────┘                           │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-                  ┌─────────────────────────┐
-                  │   hydra-synth (peer)    │
-                  │   + src/globals.js      │  transient bridge
-                  └─────────────────────────┘
+src/index.ts ── the main entry: registers the engine factory (hydra-synth)
+   │            + the runtime factory, defines <hydra-element>, exports types
+   │
+   ├─▶ src/element/ ── the DOM-only shell (zero hydra vocabulary)
+   │     element.ts   HydraElement: lifecycle, canvas, FOUC guard, delegation
+   │     canvas.ts    CanvasManager: canvas + resize + context-loss dispatch
+   │     events.ts    the public event-name constants
+   │     runtime.ts   the CanvasRuntime seam { attach, detach, destroy, ... }
+   │        ▲  delegates every engine-touching behavior to the slot below
+   │
+   └─▶ src/runtime/ ── the hydra adapter (implements CanvasRuntime)
+         runtime.ts   HydraRuntime: attrs, eval events, resize, context-loss
+         attributes.ts  pure attr parsing · globals.ts  publishHydraGlobals
+            ▲  drives the core, bridges loadScript
+            │
+            └─▶ src/core/ ── the headless engine core (zero DOM, zero hydra)
+                  core.ts  HydraCore + createHydraCore + setDefaultHydraFactory
+                  eval.ts  hydraEval + userCodeLine · queue.ts · loop.ts
+                          │
+                          ▼
+                    hydra-synth (peer) — built through the injected factory
 ```
 
-`element.js` is a thin facade: it owns lifecycle (connect/disconnect/
-destroy, attribute change handling) and wires together four focused
-managers. Each manager owns one concern and knows nothing about the
-others except through the element.
+Imports flow one way — `index → element + runtime`, `runtime → core`,
+`element → parse/types` only — and nothing imports the element except the main
+entry. The shell carries zero hydra vocabulary; the runtime carries zero DOM;
+the core carries neither. `hydra-synth` is imported exactly once (the engine
+factory in `index.ts`).
 
 ## Modules
 
-### `src/element.js` — the facade
+### `src/core/` — the headless engine core (`hydra-element/core`)
 
-The custom element class. It owns:
+Zero DOM, zero events, zero `hydra-synth` import. Orchestration is testable
+in Node against an injected engine factory + scheduler.
 
-- attribute observation (`observedAttributes` + `attributeChangedCallback`)
-- lifecycle callbacks (`connectedCallback`, `disconnectedCallback`)
-- `#initHydra()` — orchestrates canvas + Hydra manager creation (the single owner of old-manager teardown: every reset path goes through it, so the previous manager is destroyed exactly once)
-- the `code`, `canvas`, `synth`, `ready`, `loadScript`, `destroy` public surface
-- event dispatch for `hydra-ready`, `hydra-eval`, `hydra-element-resize`, `hydra-context-lost`
+- `types.ts` — the structural contracts: `SynthLike`, `HydraLike`,
+  `HydraFactory`, `EngineOptions`, `CreateHydraCoreOptions` (factory +
+  scheduler + persistent-scope seams).
+- `eval.ts` — `hydraEval(code, synth, scope)` + `userCodeLine(error, code)`
+  (see [hydraEval](#hydraeval) below).
+- `queue.ts` — `EvalQueue`: a serialized promise chain whose tail swallows
+  errors, so one failed eval never kills the queue.
+- `loop.ts` — `Loop`: a scheduler-injected rAF clock (`Scheduler =
+'raf' | RafScheduler`); `start()` is a no-op in Node without injection.
+- `core.ts` — `HydraCore`: builds the engine through the factory, wires the
+  non-enumerable `s`/`o` arrays, owns the persistent user scope, exposes
+  `evalAsync` (queue-submit + line attach), `start`/`stop`/`tick`/
+  `setResolution`/`loadScript`, and `destroy()`. Facade: `createHydraCore` +
+  `setDefaultHydraFactory` (throws when no factory is registered).
+- `index.ts` — the subpath entry.
 
-The facade does **not** know how canvas sizing or evaluation works. It
-delegates to managers and reacts to their outcomes.
+### `src/element/` — the DOM-only shell
 
-### `src/canvas.js` — `CanvasManager`
+Carries zero hydra vocabulary in its own logic; delegates every
+engine-touching behavior to the runtime held in its `#runtime` slot.
 
-Owns the canvas lifecycle inside the shadow root:
+- `events.ts` — the public event-name constants (`hydra-element-resize`,
+  `hydra-context-lost`).
+- `canvas.ts` — `CanvasManager`: canvas creation/resizing/preservation,
+  ResizeObserver → `hydra-element-resize`, and a **non-once**
+  `webglcontextlost` handler (dispatches `hydra-context-lost`; survives
+  repeated losses).
+- `runtime.ts` — the `CanvasRuntime` seam `{ attach, detach, destroy,
+handleCanvasSwap? }` + `setDefaultRuntimeFactory`/`getDefaultRuntimeFactory`.
+- `element.ts` — `HydraElement` (the shell): observes only `width`/`height`;
+  `code`/`synth`/`scope`/`transforms`/`loadScript`/`canvas` delegate to the
+  runtime slot; `ready` is a live getter; `seedCode` + `notifyReady` +
+  `runtime` + `canvasManager` are `@internal` seams (stripped from the
+  generated d.ts); the FOUC guard is injected at module load.
 
-- `init(width, height)` — create the internal `<canvas>` (with `role="img"`, `aria-label`), attach a one-shot `webglcontextlost` listener
-- `preserveCustomCanvas(canvas)` — adopt a user-supplied canvas into the shadow root, mark it `part="canvas"`, observe its CSS size unless it has explicit `width`/`height` attributes
-- `resize(w, h)` — set the backing-store resolution
-- `refreshFromCss()` — re-read the host's CSS bounding rect and resize accordingly (used when `width`/`height` attributes are removed)
-- `removeInternalCanvas()`, `removeAnalyzerCanvases()`, `tagAnalyzerCanvases()` — clean up internal vs. Hydra-created canvases
-- `#observeResize()` — wires a `ResizeObserver` on the host and applies `#handleResize` entries; precedence: explicit `width`/`height` host attribute > CSS > 1280×720 fallback
+### `src/runtime/` — the hydra adapter
 
-### `src/hydra.js` — `HydraManager`
+`HydraRuntime` implements `CanvasRuntime` and is wired in by the main entry.
 
-Wraps a `hydra-synth` instance and dispatches `hydra-ready` /
-`hydra-eval` events on the host.
+- `attributes.ts` (pure) — `parseHydraAttrs` / `parseHydraAttr` /
+  `parseResetAttr` + `HYDRA_ATTRS` / `RESET_ATTRS` / `DEFAULT_RUNTIME_OPTIONS`.
+  Absent attributes keep their default — `parseNumber(null)` is `0` and must
+  not clobber `numSources`/`numOutputs`.
+- `globals.ts` — `publishHydraGlobals` (see [the bridge](#loadscript-bridge)).
+- `runtime.ts` — `HydraRuntime`: `attach` (read seed, parse attrs, init core,
+  wire resize → `core.setResolution` and context-loss → `core.stop` + a
+  re-armed one-shot `webglcontextrestored` handler, MutationObserver on the
+  hydra attributes, dispatch `hydra-ready`), `#eval` (dispatch `hydra-eval`),
+  `#flushSynthReset` (coalesce → recreate → re-eval), `handleCanvasSwap`, the
+  `loadScript` bridge, and `detach`/`destroy`.
 
-- `init()` — `new Hydra({ ...options, autoLoop: false })`; bind `scope.loadScript` to the bridge
-- `loadScript(url)` — **transient bridge**: publish globals, await `hydra.loadScript(url)`, restore in `finally`. See [the bridge section](#loadscript-bridge) below.
-- `evaluate(code)` — queue-based, see [eval queue](#eval-queue-and-coalescing)
-- `destroy()` — clear sources, stop audio, drop the instance
-- `tick(dt)`, `setResolution(w, h)` — drive the synth forward
+### `src/parse.ts` + `src/types.ts`
 
-### `src/loop.js` — `LoopController`
+Shared, layer-agnostic:
 
-A minimal requestAnimationFrame loop:
+- `parse.ts` — `parseNumber` / `parseJSON` / `parseOption`.
+- `types.ts` — the public detail types (`HydraReadyDetail`, `HydraEvalDetail`,
+  `HydraResizeDetail`, `HydraTransformFunction`) + the
+  `HTMLElementTagNameMap` / `HTMLElementEventMap` global augmentations.
 
-- `start()` / `stop()`
-- invokes the provided `tick(dt)` callback each frame
+### `src/index.ts` + `src/eval.ts` — the entries
 
-`element.js` owns the lifecycle decision (when to start/stop based on
-`autoLoop` and the connected flag); the controller is just the clock.
+- `index.ts` — registers `setDefaultHydraFactory(opts => new Hydra({
+...opts, autoLoop: false }))` (the **only** `hydra-synth` import — the core
+  owns the loop, so the engine must not self-loop), registers the runtime
+  factory, defines `<hydra-element>`, re-exports `HydraElement` + the types.
+- `eval.ts` — re-exports `hydraEval` / `userCodeLine` (the `hydra-element/eval`
+  subpath).
 
-### `src/attributes.js` — `AttributeHandler`
+## `hydraEval`
 
-Parses raw attribute strings into typed options and tells the element
-which attributes force a synth reset (`global`, `audio`, `sources`,
-`outputs`, `precision`). Pure, DOM-free.
-
-- `parse(attr, value)` → `{ width, height, makeGlobal, ... }`
-- `update(attr, value)` → mutates and returns the new options object
-- `hasSynthResettingAttribute(attr)` → boolean
-
-### `src/parse.js`
-
-Three small parsers used by `AttributeHandler`:
-
-- `parseNumber(value, default, min, max)` — `Number(value)` inside `[min, max]`, else default
-- `parseJSON(value, default)` — `JSON.parse(value)`; treats `null`/`undefined`/`''` as "no value" and returns the default (important for attribute-removal semantics)
-- `parseOption(value, default, allowed)` — picks from `allowed` or returns default
-
-### `src/eval.js` — `hydraEval`
-
-The heart of user-code evaluation. Exported as a standalone function
-under `hydra-element/eval` for users who want to drive their own loops.
+The heart of user-code evaluation (`src/core/eval.ts`), exported under
+`hydra-element/eval` for users who want to drive their own loops.
 
 ```js
 export function hydraEval(code, synth, scope) {
@@ -124,56 +136,40 @@ identifiers resolve through the proxy. The proxy:
 **This is not a sandbox.** `globalThis` is reachable. Only evaluate
 trusted code. Real isolation requires an iframe with a separate origin.
 
-### `src/globals.js` — transient bridge
-
-`publishHydraGlobals(hydra)` snapshots the current `window` state for
-`_hydra`, `synth`, and every function key of `hydra.synth`, writes the
-element's values, and returns a `restore()` closure. The helper is
-shared between:
-
-- **Global mode** (the element's `#initHydra`): persistent exposure for editor/extension workflows
-- **`loadScript` bridge** (`hydra.loadScript`): transient publish while a script loads, restore on completion (success or error)
-
-The `restore()` closure restores pre-existing values and deletes keys
-the helper introduced — so a script loaded into one element cannot
-clobber a page-level `window.render`.
-
-Private methods use `#` syntax (ES2022). They are unreachable from
-outside the class even by name; underscore prefixes are reserved for
-data fields and module-level locals only.
-
 ## Lifecycle
 
 ### Connection
 
 `connectedCallback` initializes the element **once** (the `#initialized`
-flag). Subsequent reconnects (DOM moves, attribute changes that trigger
-a synth reset) preserve the same Hydra instance — moving the element
-around is now cheap.
+flag) and mounts the runtime. Subsequent reconnects (DOM moves, attribute
+changes that trigger a synth reset) re-attach the preserved runtime without
+recreating the engine — moving the element around is cheap.
 
 ### Disconnection
 
-`disconnectedCallback` only stops the loop and disconnects the
-ResizeObserver; **the synth stays alive** so DOM moves are no-ops for
-the WebGL context.
+`disconnectedCallback` calls `runtime.detach()` — stop the loop, disconnect
+the ResizeObserver and the attribute observer, remove the resize/context-loss
+listeners; **the engine stays alive** so DOM moves are no-ops for the WebGL
+context.
 
 ### Reset
 
 Several attributes force a fresh synth (`global`, `audio`, `sources`,
-`outputs`, `precision`). On change:
+`outputs`, `precision`). The runtime's MutationObserver detects them; on
+change:
 
-1. The change is queued in a plain object and a microtask is scheduled
-2. After the current task, `#flushSynthReset` applies all pending changes in a single batch
-3. The previous `HydraManager` is destroyed (no WebGL context leak) before a new one is built — teardown happens inside `#initHydra`, exactly once per reset
+1. The change is queued and a microtask is scheduled
+2. After the current task, `HydraRuntime.#flushSynthReset` applies all pending changes in a single batch
+3. `#initCore` destroys the previous core (no WebGL context leak) before building a new one — teardown happens exactly once per reset
 
 This pairs with the `lifecycle-resource-leaks` spec — every reset path
-must destroy the old manager before creating the new one.
+must destroy the old core before creating the new one.
 
 ### Destruction
 
 `el.destroy()` does what `disconnectedCallback` used to do, plus:
 
-- destroys the current `HydraManager` (clears sources, stops audio)
+- destroys the runtime (which destroys the core: clears sources, stops audio)
 - removes analyzer canvases from the shadow root
 - resets `#initialized = false` and the `ready` promise so a later reconnect initializes fresh
 
@@ -183,24 +179,21 @@ must destroy the old manager before creating the new one.
 
 ```js
 get ready() {
-  return this.#hydraManager ? Promise.resolve({ synth: this.synth }) : this.#readyPromise
+  return this.#runtime ? Promise.resolve({ synth: this.synth }) : this.#readyPromise
 }
 ```
 
 It always resolves to the **current** synth, even after a reset or
-reconnect. Before the first `#initHydra`, it returns the constructor
-promise (which resolves when `hydra-ready` fires).
+reconnect. Before the runtime mounts, it returns the constructor promise
+(which `notifyReady` resolves at the end of `attach`).
 
 ## Eval queue and coalescing
 
 ### Async evaluations
 
-`HydraManager.evaluate` chains onto a promise queue so two rapid
-`el.code = …` assignments run in submission order, not parallel:
-
-```js
-this.#evalQueue = this.#evalQueue.then(() => this.#evaluate(code)).then(handleResult, dispatchError)
-```
+`HydraCore.evalAsync` submits onto the `EvalQueue` promise chain so two rapid
+`el.code = …` assignments run in submission order, not parallel. The queue
+keeps a swallowed-error tail, so one failed eval never kills the chain.
 
 This matters for live-coding editors that fire many keystrokes per
 second — without the queue, the earlier evaluation can finish after
@@ -217,9 +210,9 @@ caps WebGL context churn at one per tick.
 
 ```js
 async loadScript(url) {
-  const restore = publishHydraGlobals(this.hydra)
+  const restore = publishHydraGlobals(this.core.hydra)
   try {
-    await this.hydra.loadScript(url)
+    await this.core.loadScript(url)
   } finally {
     restore()
   }
@@ -243,22 +236,23 @@ animation) fall outside the bridge window and need `global="true"`.
 ## Build and distribution
 
 - ES module only (`"type": "module"`, `vite.config.js`)
-- Two entry points (`vite.config.js`):
+- Three entry points (`vite.config.js`):
   - `dist/hydra-element.js` — the element + everything (default import)
   - `dist/eval.js` — just `hydraEval` for users driving their own loop (subpath import `hydra-element/eval`)
+  - `dist/core.js` — the headless engine core (subpath import `hydra-element/core`)
 - Single runtime dependency: `hydra-synth`
-- TypeScript declarations hand-written in `src/hydra-element.d.ts` and `src/eval.d.ts`, copied to `dist/hydra-element.d.ts` and `dist/eval.d.ts` by a custom Vite plugin in `vite.config.js`. The `synth` property is typed as `unknown` because `hydra-synth` does not yet publish its own `.d.ts`; narrow when it does.
-- `package.json` declares `sideEffects: ["./dist/hydra-element.js"]` — only the element entry has a module-load side effect (`customElements.define`); the pure `dist/eval.js` subpath stays tree-shakeable
-- `exports` map exposes `.`, `./eval`, and `./package.json` (the last so bundlers can resolve the package manifest)
+- TypeScript declarations are emitted by `tsc -p tsconfig.build.json` (`dist/index.d.ts`, `dist/core/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/` trees); the `postbuild` script asserts the three public entry points. The `synth` property is typed as `unknown` because `hydra-synth` does not yet publish its own `.d.ts`; narrow when it does.
+- `package.json` declares `sideEffects: ["./dist/hydra-element.js"]` — only the element entry has a module-load side effect (`customElements.define`); the pure `dist/eval.js` and `dist/core.js` subpaths stay tree-shakeable
+- `exports` map exposes `.`, `./eval`, `./core`, and `./package.json` (the last so bundlers can resolve the package manifest)
 
 ## Events
 
-| Event                  | Source          | When                                                   |
-| ---------------------- | --------------- | ------------------------------------------------------ |
-| `hydra-ready`          | `HydraManager`  | First (or fresh) synth is ready                        |
-| `hydra-eval`           | `HydraManager`  | After every `evaluate()`, `{ success, error?, line? }` |
-| `hydra-element-resize` | `CanvasManager` | Canvas backing-store resolution changes                |
-| `hydra-context-lost`   | `CanvasManager` | WebGL context for the internal canvas was lost         |
+| Event                  | Source          | When                                                  |
+| ---------------------- | --------------- | ----------------------------------------------------- |
+| `hydra-ready`          | `HydraRuntime`  | First (or fresh) synth is ready                       |
+| `hydra-eval`           | `HydraRuntime`  | After every `evalAsync`, `{ success, error?, line? }` |
+| `hydra-element-resize` | `CanvasManager` | Canvas backing-store resolution changes               |
+| `hydra-context-lost`   | `CanvasManager` | WebGL context for the internal canvas was lost        |
 
 All events bubble (`bubbles: true`) so a single document-level listener
 can watch every element.
@@ -273,18 +267,19 @@ so it doesn't break accessibility audits.
 
 ## Test strategy
 
-Tests live next to the code they exercise (`src/**/*.spec.js`), use
-`@open-wc/testing` + `sinon`, and run in a real browser via Web Test
-Runner with Playwright's Chromium. The element is registered in each
-spec file (`customElements.define`) so tests are self-contained and can
-run independently.
+Tests live next to the code they exercise. Two lanes:
 
-All manager state is private (`#` fields). Tests that need to reach
-internals use the **test seams** — read-only getters on the element
-(`canvasManager`, `attributeHandler`, `hydraManager`, `scope`) and on
-the managers (`CanvasManager.resizeObserver`, `HydraManager.hydra`,
-`HydraManager.scope`). They exist for the suite only and are not part
-of the public API.
+- **Browser (WTR)** — `src/**/*.spec.js` + `playground/**/*.spec.js`, real
+  Chromium via `@open-wc/testing` + `sinon`. Each spec imports the main entry
+  (`./index`) to register the runtime + engine factories and define the element.
+- **Node (vitest)** — `src/core/**/*.spec.ts` (`pnpm test:node`), exercising the
+  headless core against an injected engine factory + scheduler — no DOM, no
+  hydra-synth import.
+
+Class state is private (`#` fields). Tests that need to reach internals use the
+**test seams** — `@internal` getters on the shell (`canvasManager`, `runtime`)
+and on the runtime (`core`) — plus `CanvasManager.resizeObserver`. They exist
+for the suite only and are stripped from the generated d.ts (`stripInternal`).
 
 For full test details and the WTR quirks (e.g. installing Playwright's
 Chromium, the failing-sinon-assertion hang), see
@@ -417,7 +412,7 @@ environment). Documented in `CONTRIBUTING.md` as the refresh protocol.
 per-entry `window.*` access analysis identifies two `not-yet` entries
 (hydra-vertex, hydra-datamosh) reading `window.hydraSynth` not
 currently published. Recommended fix: `bridge-globals-unification.md`
-mini-spec adds `'hydraSynth'` to `src/globals.js`'s published set
+mini-spec adds `'hydraSynth'` to `src/runtime/globals.ts`'s published set
 (single-line addition; the snapshot/restore in `publishHydraGlobals`
 preserves pre-existing keys and deletes only what was introduced).
 **Out of scope for the catalog commit** — the catalog ships with the

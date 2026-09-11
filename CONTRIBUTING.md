@@ -94,44 +94,53 @@ leaves the affected entry labeled by the static analysis from
 
 ## Commands
 
-| Command       | What it does                                                 |
-| ------------- | ------------------------------------------------------------ |
-| `pnpm dev`    | Serve `playground/index.html` with Vite (HMR)                |
-| `pnpm test`   | Run all tests via Web Test Runner (headless Chromium)        |
-| `pnpm build`  | Bundle to `dist/hydra-element.js`, `dist/eval.js` (ESM)      |
-| `pnpm lint`   | Lint with oxlint (auto-fixes where safe)                     |
-| `pnpm format` | Format with oxfmt                                            |
-| `pnpm check`  | `lint` + `test` + `build` in order — the pre-PR gate CI runs |
+| Command          | What it does                                                        |
+| ---------------- | ------------------------------------------------------------------- |
+| `pnpm dev`       | Serve `playground/index.html` with Vite (HMR)                       |
+| `pnpm test`      | Run browser specs via Web Test Runner (headless Chromium)           |
+| `pnpm test:node` | Run the Node-lane core/eval specs via vitest                        |
+| `pnpm typecheck` | `tsc --noEmit` (strict)                                             |
+| `pnpm build`     | Bundle `dist/{hydra-element,eval,core}.js` + tsc-emitted d.ts       |
+| `pnpm lint`      | Lint with oxlint (auto-fixes where safe)                            |
+| `pnpm format`    | Format with oxfmt                                                   |
+| `pnpm check`     | `lint` + `format:check` + `test` + `test:node` + `build` — the gate |
 
-`pnpm build` produces two artifacts:
+`pnpm build` produces three artifacts:
 
-- `dist/hydra-element.js` (≈ 327 KB) — the main `<hydra-element>` element; bundles `hydra-synth` + regl.
+- `dist/hydra-element.js` (≈ 330 KB) — the main `<hydra-element>` entry; bundles `hydra-synth` + regl.
 - `dist/eval.js` — the `hydraEval` standalone eval subpath.
+- `dist/core.js` — the headless `hydra-element/core` subpath.
 
-The main entry's runtime dependency is `hydra-synth` only. The `postbuild` script asserts both `.d.ts` declarations exist (`dist/hydra-element.d.ts`, `dist/eval.d.ts`); if either is missing the build fails.
+The main entry's runtime dependency is `hydra-synth` only. TypeScript declarations are emitted by `tsc` (`dist/index.d.ts`, `dist/core/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/` trees); the `postbuild` script asserts the three public `.d.ts` entry points exist.
 
 Per ο (2026-09-01), the `<hydra-editor>` element extracted from `hydra-element` into a new standalone npm package `hydra-editor`. The playground adopts `<hydra-editor>` from the `hydra-editor` package (devDependency `file:../hydra-editor`).
 
 ## Conventions
 
-- **Plain JavaScript** with JSDoc — no TypeScript source
+- **TypeScript (strict)** for sources — `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax`. The existing `.spec.js` files stay plain JS (WTR + Vite transpiles the `.ts` sources they import); only _new_ specs are TS (the Node lane).
 - Linting: oxlint (config in `.oxlintrc.json`)
 - Formatting: oxfmt (config in `.oxfmtrc.json`); a pre-commit hook runs `oxlint --fix` and `oxfmt` on staged files automatically (bypass with `git commit --no-verify`)
 - `hydra-synth` is the sole runtime dependency — keep it that way.
 - `playground/index.html` is the dev playground, not part of the library — don't import from it
-- Source modules are `src/*.js` (lib). Tests live next to them as `*.spec.js` (plus `playground/*.spec.js` for playground-data fixtures and the editor-panel adoption tests).
+- Source modules are `src/*.ts` in three layers: `core/` (headless — zero DOM, zero hydra-synth import), `element/` (DOM-only shell — zero hydra vocabulary), `runtime/` (the hydra adapter wiring the two), plus the shared `parse.ts` / `types.ts`. Tests live next to them (`*.spec.js` in the browser lane, `core/*.spec.ts` in the Node lane).
 
 ## Test strategy
 
-Tests are colocated with source (`src/**/*.spec.js`), use
-`@open-wc/testing` + `sinon`, and assert with Chai style
-(`.to.equal`, `.to.be.a('function')`). Playground tests
-(`playground/**/*.spec.js`) use the same setup — picked up by
-the WTR glob in `wtr.config.js` — for cases where the fixture
-is playground data (e.g. `playground/presets.spec.js` pinning
-preset self-containment) rather than lib behavior.
+Two lanes:
 
-Each spec registers the custom element itself:
+- **Browser lane (WTR)** — `src/**/*.spec.js` + `playground/**/*.spec.js`, run
+  in real Chromium. Covers the DOM shell, the canvas lifecycle, the runtime
+  adapter's events, context-loss recovery, and the playground.
+- **Node lane (vitest)** — `src/core/**/*.spec.ts`, run with
+  `pnpm test:node`. Covers the headless core (orchestration, eval Proxy, the
+  queue, the loop) against an injected engine factory + scheduler — no DOM, no
+  hydra-synth import.
+
+Tests are colocated with source, use `@open-wc/testing` + `sinon` (browser) or
+`vitest` (Node), and assert with Chai style (`.to.equal`, `.to.be.a('function')`).
+
+Each browser spec imports the main entry (`./index`) to register the runtime +
+engine factories and define the element:
 
 ```js
 if (!customElements.get('hydra-element')) {

@@ -7,8 +7,10 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 ## Commands
 
 - `pnpm dev` — serve `playground/index.html` with Vite (HMR). The playground imports `<hydra-editor>` from the `hydra-editor` npm package (devDependency `file:../hydra-editor`).
-- `pnpm test` — run all tests via Web Test Runner (headless Chromium). The glob covers `src/**/*.spec.js` and `playground/**/*.spec.js` (incl. `playground/editor-panel-extensions.spec.js` for the extension-aware `addWords` demo, `playground/extensions.spec.js` for the catalog data shape + panel rendering + click/keyboard dispatch, and `playground/editor-error-wiring.spec.js` for the `hydra-eval` → `markError`/`clearErrors` wiring — pending the `hydra-editor` dist exposing those methods).
-- `pnpm build` — bundles two artifacts: `dist/hydra-element.js` (main element), `dist/eval.js` (standalone eval). Both hand-written `.d.ts` files (`src/hydra-element.d.ts`, `src/eval.d.ts`) are copied to `dist/` by the `copyDeclarations` Vite plugin. `postbuild` asserts both `.d.ts` exist.
+- `pnpm test` — run the browser specs via Web Test Runner (headless Chromium; browser launch is opt-in — `pnpm test:browser` sets `WTR_BROWSER=1`). The glob covers `src/**/*.spec.js` and `playground/**/*.spec.js` (incl. `playground/editor-panel-extensions.spec.js` for the extension-aware `addWords` demo, `playground/extensions.spec.js` for the catalog data shape + panel rendering + click/keyboard dispatch, and `playground/editor-error-wiring.spec.js` for the `hydra-eval` → `markError`/`clearErrors` wiring — pending the `hydra-editor` dist exposing those methods).
+- `pnpm test:node` — run the Node-lane `src/core/**/*.spec.ts` via vitest.
+- `pnpm typecheck` — `tsc --noEmit` (strict).
+- `pnpm build` — bundles three artifacts: `dist/hydra-element.js` (main entry), `dist/eval.js` (standalone eval), `dist/core.js` (headless core). TypeScript declarations are emitted by `tsc` (`dist/index.d.ts`, `dist/core/index.d.ts`, `dist/eval.d.ts`); `postbuild` asserts the three public `.d.ts` entry points exist.
 - `pnpm lint` — lint with oxlint
 - `pnpm format` — format with oxfmt
 - Pre-commit hook (husky + lint-staged) auto-fixes `*.{js,mjs}` with `oxlint --fix`, then runs `oxfmt` on staged JS and `*.md` files; bypass with `git commit --no-verify`
@@ -40,7 +42,8 @@ If you find yourself sitting on `main` with uncommitted work, switch to a featur
 
 ## Conventions
 
-- No TypeScript — follow existing JSDoc + plain JS style
+- TypeScript (strict) for sources — `noUnusedLocals`, `noUnusedParameters`, `verbatimModuleSyntax`. The existing `.spec.js` files stay plain JS (WTR + Vite transpiles the `.ts` sources they import); only _new_ specs are TS (the Node lane).
+- Source layout is three layers: `src/core/` (headless — zero DOM, zero hydra-synth import), `src/element/` (DOM-only shell — zero hydra vocabulary), `src/runtime/` (the hydra adapter), plus shared `parse.ts` / `types.ts`.
 - Linting: oxlint (config in `.oxlintrc.json`)
 - Formatting: oxfmt (config in `.oxfmtrc.json`)
 - `hydra-synth` is the sole runtime dependency; keep it that way
