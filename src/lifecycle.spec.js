@@ -1,6 +1,7 @@
 import { html, fixture, expect } from '@open-wc/testing'
 import sinon from 'sinon'
-import { HydraElement } from './element'
+import './index'
+import { HydraElement } from './element/element'
 
 if (!customElements.get('hydra-element')) {
   customElements.define('hydra-element', HydraElement)
@@ -63,7 +64,7 @@ describe('connected-callback-reentry', () => {
 describe('lifecycle-resource-leaks', () => {
   it('destroys the previous manager before resetting the synth', async () => {
     const el = await fixture(html`<hydra-element></hydra-element>`)
-    const old = el.hydraManager
+    const old = el.runtime.core
     const destroySpy = sinon.spy(old, 'destroy')
     el.setAttribute('global', 'true')
     await wait(10)

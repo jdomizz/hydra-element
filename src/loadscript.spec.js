@@ -1,8 +1,9 @@
 import { expect } from '@open-wc/testing'
 import { stub } from 'sinon'
-import { hydraEval } from './eval'
+import { hydraEval } from './core/eval'
 import { createHydraElement } from './test-helpers'
-import { HydraElement } from './element'
+import './index'
+import { HydraElement } from './element/element'
 
 if (!customElements.get('hydra-element')) {
   customElements.define('hydra-element', HydraElement)
@@ -52,7 +53,7 @@ describe('loadScript in non-global scope', () => {
     const el = await createHydraElement()
     const appendChild = stubAppendChild()
     try {
-      await hydraEval('await loadScript("https://example.com/lib.js")', el.synth, el.hydraManager.scope)
+      await hydraEval('await loadScript("https://example.com/lib.js")', el.synth, el.runtime.scope)
       expect(appendChild).to.have.been.calledOnce
       const [script] = appendChild.firstCall.args
       expect(script.src).to.equal('https://example.com/lib.js')
@@ -71,6 +72,6 @@ describe('loadScript in non-global scope', () => {
     expect(success).to.be.true
     expect(error).to.be.undefined
     expect(window.__fixtureLib).to.be.a('function')
-    expect(el.hydraManager.scope.result).to.equal(42)
+    expect(el.runtime.scope.result).to.equal(42)
   })
 })

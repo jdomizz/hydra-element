@@ -14,7 +14,7 @@
  * Pure helpers (`encodeForUrl`, `decodeUrlCodes`) are exported so they
  * can be unit-tested directly without booting the whole page.
  */
-import { HydraElement } from '../src/element.js'
+import '../src/index'
 
 import './components/stats-strip.js'
 import './components/multi-log.js'
@@ -25,12 +25,8 @@ import './components/extensions-panel.js'
 
 import { PRESETS } from './presets.js'
 
-// Register the custom element for the playground. The npm entry
-// (`index.js` at the repo root) does the same — the playground registers
-// here because Vite's `root: 'playground'` (in dev mode) cannot resolve
-// paths outside the playground tree, so the npm entry is unreachable
-// from `playground/index.html`.
-window.customElements.define('hydra-element', HydraElement)
+// The main entry (`../src/index`) registers the runtime + engine factories
+// and defines `<hydra-element>` as a side effect of the import above.
 
 export const STORAGE_KEY_PREFIX = 'hydra-element:editor'
 export const NUM_SLOTS = 4

@@ -1,7 +1,7 @@
 import { expect, fixture, html } from '@open-wc/testing'
 import sinon from 'sinon'
-import { CanvasManager } from './canvas'
-import { HydraElement } from './element'
+import { CanvasManager } from './element/canvas'
+import { HydraElement } from './element/element'
 
 if (!customElements.get('hydra-element')) {
   customElements.define('hydra-element', HydraElement)

@@ -1,5 +1,5 @@
 import { expect } from '@open-wc/testing'
-import { publishHydraGlobals } from './globals'
+import { publishHydraGlobals } from './runtime/globals'
 
 function makeSynth() {
   const synth = {

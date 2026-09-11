@@ -1,5 +1,5 @@
 import { html, fixture, oneEvent, expect } from '@open-wc/testing'
-import { HydraElement } from '../src/element.js'
+import { HydraElement } from '../src/index'
 import { PRESETS } from './presets.js'
 
 if (!customElements.get('hydra-element')) {

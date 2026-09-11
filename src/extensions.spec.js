@@ -1,5 +1,6 @@
 import { html, fixture, expect } from '@open-wc/testing'
-import { HydraElement } from './element.js'
+import './index'
+import { HydraElement } from './element/element'
 
 if (!customElements.get('hydra-element')) {
   customElements.define('hydra-element', HydraElement)

@@ -1,5 +1,6 @@
 import { expect } from '@open-wc/testing'
-import { HydraElement } from './element'
+import './index'
+import { HydraElement } from './element/element'
 import { createHydraElement } from './test-helpers'
 
 if (!customElements.get('hydra-element')) {

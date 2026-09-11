@@ -1,5 +1,5 @@
 import { html, fixture, expect, oneEvent } from '@open-wc/testing'
-import { HydraElement } from '../src/element.js'
+import { HydraElement } from '../src/index'
 import {
   encodeForUrl,
   decodeUrlCodes,
