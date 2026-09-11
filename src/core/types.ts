@@ -43,4 +43,10 @@ export interface EngineOptions {
 export interface CreateHydraCoreOptions extends EngineOptions {
   hydraFactory?: HydraFactory
   scheduler?: Scheduler
+  /**
+   * Persistent user scope for eval. The runtime passes its own object so bare
+   * assignments survive engine (re)initialization — defaults to a fresh
+   * null-prototype object when omitted.
+   */
+  scope?: Record<string, unknown>
 }

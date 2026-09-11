@@ -37,7 +37,7 @@ export class HydraCore {
   constructor(options: CreateHydraCoreOptions, factory: HydraFactory) {
     this.#options = options
     this.#factory = factory
-    this.#scope = Object.create(null) as Record<string, unknown>
+    this.#scope = options.scope ?? (Object.create(null) as Record<string, unknown>)
   }
 
   /**
