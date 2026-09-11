@@ -62,8 +62,7 @@
      The .cell.is-active rule below switches border-color to the accent;
      outline-color follows the :focus-visible accent when the cell is
      keyboard-focused (matches the active state). */
-  transition:
-    border-color var(--hydra-duration-fast) var(--hydra-easing);
+  transition: border-color var(--hydra-duration-fast) var(--hydra-easing);
 }
 
 .cell:hover {
@@ -99,7 +98,7 @@
 }
 
 @media (max-width: 900px) {
-.app {
+  .app {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto auto;
     grid-template-areas:

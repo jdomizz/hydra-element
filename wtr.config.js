@@ -27,4 +27,12 @@ export default {
   files: ['src/**/*.spec.js', 'playground/**/*.spec.js'],
   plugins: [vitePlugin()],
   browsers,
+  // The WebGL-heavy specs (canvas init + real hydra-synth + rAF waits) flake
+  // at mocha's 2s default under load; 15s gives them headroom without masking
+  // real hangs (which the sinon-chai quirk surfaces as a 120s browser timeout).
+  testFramework: {
+    config: {
+      timeout: 15000,
+    },
+  },
 }
