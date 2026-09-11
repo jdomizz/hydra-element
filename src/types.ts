@@ -2,12 +2,9 @@
  * Public hydra-element type surface. Lives at the package root so both the
  * DOM shell (`element/`) and the runtime adapter (`runtime/`) can import it
  * without crossing layers.
- *
- * The `declare global` augmentations (`HTMLElementTagNameMap` /
- * `HTMLElementEventMap`) are added in Step 4 when the old hand-written
- * `src/hydra-element.d.ts` leaves the tree — both cannot declare the same
- * global names in one compile unit.
  */
+
+import type { HydraElement } from './element/element'
 
 /** Payload of the `hydra-ready` event and the `ready` promise. */
 export interface HydraReadyDetail {
@@ -44,4 +41,17 @@ export interface HydraTransformFunction {
   type: 'src' | 'coord' | 'color' | 'combine' | 'combineCoord'
   inputs: Array<{ name: string; type: string; default: unknown }>
   glsl: string
+}
+
+declare global {
+  interface HTMLElementTagNameMap {
+    'hydra-element': HydraElement
+  }
+
+  interface HTMLElementEventMap {
+    'hydra-ready': CustomEvent<HydraReadyDetail>
+    'hydra-eval': CustomEvent<HydraEvalDetail>
+    'hydra-element-resize': CustomEvent<HydraResizeDetail>
+    'hydra-context-lost': CustomEvent<void>
+  }
 }

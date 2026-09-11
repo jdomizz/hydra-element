@@ -19,6 +19,9 @@ declare module 'hydra-synth' {
     precision?: string | null
     numSources?: number
     numOutputs?: number
+    /** Whether hydra-synth runs its own rAF loop. The core owns the loop, so
+     *  the browser entry always passes `false`. */
+    autoLoop?: boolean
     [key: string]: unknown
   }
 

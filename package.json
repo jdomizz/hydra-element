@@ -28,10 +28,7 @@
   },
   "qna": "https://github.com/jdomizz/hydra-element/discussions",
   "files": [
-    "dist/hydra-element.js",
-    "dist/hydra-element.d.ts",
-    "dist/eval.js",
-    "dist/eval.d.ts",
+    "dist",
     "README.md",
     "LICENSE"
   ],
@@ -41,15 +38,19 @@
   ],
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
-  "types": "dist/hydra-element.d.ts",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/hydra-element.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/hydra-element.js"
     },
     "./eval": {
       "types": "./dist/eval.d.ts",
       "import": "./dist/eval.js"
+    },
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core.js"
     },
     "./package.json": "./package.json"
   },
@@ -61,7 +62,7 @@
     "test:node": "vitest run",
     "typecheck": "tsc --noEmit",
     "build": "vite build && tsc -p tsconfig.build.json",
-    "postbuild": "test -f dist/hydra-element.d.ts && test -f dist/eval.d.ts",
+    "postbuild": "test -f dist/index.d.ts && test -f dist/core/index.d.ts && test -f dist/eval.d.ts",
     "build:playground": "vite build --config vite.playground.config.js",
     "preview:playground": "vite preview --config vite.playground.config.js",
     "lint": "oxlint --fix .",

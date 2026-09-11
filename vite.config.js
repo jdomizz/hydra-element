@@ -1,14 +1,9 @@
 import { defineConfig } from 'vite'
-import { copyFileSync, mkdirSync } from 'node:fs'
-import { resolve, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 /**
  * The library build (`build.lib`) emits `dist/hydra-element.js` +
- * `dist/eval.js` for npm. `package.json` declares
- * `"files": ["dist", ...]` — *anything* we add to `dist/` ships to npm.
+ * `dist/eval.js` + `dist/core.js` for npm. Declaration files are emitted by
+ * `tsc -p tsconfig.build.json` (not copied here) — see `tsconfig.build.json`.
  *
  * `root` is intentionally not set here: this config is consumed by
  * `pnpm build` (lib mode) and by `@remcovaes/web-test-runner-vite-plugin`
@@ -17,31 +12,13 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
  * `vite.playground.config.js` instead, which `pnpm dev` uses directly.
  */
 
-/** Copy the hand-written .d.ts files into dist/ after each Vite build. */
-function copyDeclarations() {
-  return {
-    name: 'hydra-element-copy-declarations',
-    closeBundle() {
-      const pairs = [
-        ['src/hydra-element.d.ts', 'dist/hydra-element.d.ts'],
-        ['src/eval.d.ts', 'dist/eval.d.ts'],
-      ]
-      for (const [src, dst] of pairs) {
-        const dstDir = dirname(resolve(__dirname, dst))
-        mkdirSync(dstDir, { recursive: true })
-        copyFileSync(resolve(__dirname, src), resolve(__dirname, dst))
-      }
-    },
-  }
-}
-
 export default defineConfig({
-  plugins: [copyDeclarations()],
   build: {
     lib: {
       entry: {
-        'hydra-element': 'index.js',
-        eval: 'src/eval.js',
+        'hydra-element': 'src/index.ts',
+        eval: 'src/eval.ts',
+        core: 'src/core/index.ts',
       },
       formats: ['es'],
       fileName: (format, entryName) => `${entryName}.js`,
