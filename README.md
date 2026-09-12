@@ -173,7 +173,6 @@ el.addEventListener('hydra-eval', e => {
 
 - `hydra-element/eval` — `hydraEval(code, synth, scope)` for your own editor/REPL.
 - `hydra-element/core` — the headless engine core (`createHydraCore`), testable in Node.
-- [`hydra-editor`](https://www.npmjs.com/package/hydra-editor) — a ready-made code editor, separate package.
 
 ## Limitations
 
