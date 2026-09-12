@@ -45,7 +45,8 @@ in Node against an injected engine factory + scheduler.
 
 - `types.ts` — the structural contracts: `SynthLike`, `HydraLike`,
   `HydraFactory`, `EngineOptions`, `CreateHydraCoreOptions` (factory +
-  scheduler + persistent-scope seams).
+  scheduler + an injectable `scope` — the runtime passes one persistent object
+  so bare assignments survive engine resets).
 - `eval.ts` — `hydraEval(code, synth, scope)` + `userCodeLine(error, code)`
   (see [hydraEval](#hydraeval) below).
 - `queue.ts` — `EvalQueue`: a serialized promise chain whose tail swallows

@@ -26,7 +26,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `textContent`) is now evaluated on mount — the documented "you're live"
   behavior the dev code previously lacked; context-loss recovery is fixed (the
   loss handler is non-once, so a second `webglcontextlost` is recoverable, and
-  `webglcontextrestored` is awaited before re-initialization).
+  `webglcontextrestored` is awaited before re-initialization); global-mode code
+  now evaluates through the same scoped `hydraEval` proxy as non-global mode
+  (the old `hydra-synth` sandbox branch was dropped — the core has no sandbox
+  path). `CreateHydraCoreOptions` gains an optional `scope` so a persistent user
+  scope survives engine resets (the old element kept `#scope` across resets).
 
 - **ο extraction (2026-09-01):** The `<hydra-editor>` element + Hydra config extract from `hydra-element` into a new standalone npm package `hydra-editor` (unscoped, AGPL-3.0-or-later). `hydra-element` 0.7.0 ships **without** the editor subpath. Removed: `src/editor/` (editor.js, hydra-config.js, index.js, specs, d.ts), `src/hydra-editor.d.ts`, `./editor` export from package.json, editor lib entry from vite.config.js, editor devDeps (@jdomizz/truss-editor, codejar, prismjs). Added: `hydra-editor: file:../hydra-editor` as devDependency. Playground imports `<hydra-editor>` from the `hydra-editor` package. Spec: `hydra-editor/backlog/hydra-editor-extraction.md`.
 
