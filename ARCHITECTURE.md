@@ -104,21 +104,21 @@ Shared, layer-agnostic:
   `HydraResizeDetail`, `HydraTransformFunction`) + the
   `HTMLElementTagNameMap` / `HTMLElementEventMap` global augmentations.
 
-### `src/index.ts` + `src/eval.ts` — the entries
+### `src/index.ts` + `src/context.ts` — the entries
 
 - `index.ts` — registers `setDefaultHydraFactory(opts => new Hydra({
 ...opts, autoLoop: false }))` (the **only** `hydra-synth` import — the core
   owns the loop, so the engine must not self-loop), registers the runtime
   factory, defines `<hydra-element>`, re-exports `HydraElement` + the types.
-- `eval.ts` — re-exports `createSession` / `hydraEval` / `userCodeLine`
-  (the `hydra-element/eval` subpath).
+- `context.ts` — re-exports `createContext` / `hydraEval` / `userCodeLine`
+  (the `hydra-element/context` subpath).
 
 ## `hydraEval`
 
 The heart of user-code evaluation (`src/core/eval.ts`), exported under
-`hydra-element/eval` for users who want to drive their own loops. The ergonomic
-wrapper is `createSession(synth)` — an eval session with a persistent
-scope (bare assignments survive across calls, exposed as `.scope`).
+`hydra-element/context` for users who want to drive their own loops. The
+ergonomic wrapper is `createContext(synth)` — an evaluation context with a
+persistent scope (bare assignments survive across calls, exposed as `.scope`).
 
 ```js
 export function hydraEval(code, synth, scope) {
@@ -241,11 +241,11 @@ animation) fall outside the bridge window and need `global="true"`.
 - ES module only (`"type": "module"`, `vite.config.js`)
 - Two entry points (`vite.config.js`):
   - `dist/hydra-element.js` — the element + everything (default import)
-  - `dist/eval.js` — the `hydra-element/eval` subpath (`createSession`, `hydraEval`, `userCodeLine`)
+  - `dist/context.js` — the `hydra-element/context` subpath (`createContext`, `hydraEval`, `userCodeLine`)
 - Single runtime dependency: `hydra-synth`
-- TypeScript declarations are emitted by `tsc -p tsconfig.build.json` (`dist/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/`/`core/` trees — the internal layers ship their `.d.ts` for the entry's relative imports); the `postbuild` script asserts the two public entry points. The `synth` property is typed as `unknown` because `hydra-synth` does not yet publish its own `.d.ts`; narrow when it does.
-- `package.json` declares `sideEffects: ["./dist/hydra-element.js"]` — only the element entry has a module-load side effect (`customElements.define`); the pure `dist/eval.js` subpath stays tree-shakeable
-- `exports` map exposes `.`, `./eval`, and `./package.json` (the last so bundlers can resolve the package manifest)
+- TypeScript declarations are emitted by `tsc -p tsconfig.build.json` (`dist/index.d.ts`, `dist/context.d.ts` plus the `element/`/`runtime/`/`core/` trees — the internal layers ship their `.d.ts` for the entry's relative imports); the `postbuild` script asserts the two public entry points. The `synth` property is typed as `unknown` because `hydra-synth` does not yet publish its own `.d.ts`; narrow when it does.
+- `package.json` declares `sideEffects: ["./dist/hydra-element.js"]` — only the element entry has a module-load side effect (`customElements.define`); the pure `dist/context.js` subpath stays tree-shakeable
+- `exports` map exposes `.`, `./context`, and `./package.json` (the last so bundlers can resolve the package manifest)
 
 ## Events
 

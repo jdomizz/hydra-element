@@ -18,11 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Rearchitect into three layers (TypeScript).** The element splits into a
   headless engine core + a DOM-only `<hydra-element>` shell + a hydra runtime
   adapter that wires them. Sources are now TypeScript (strict) with
-  tsc-emitted declarations (`dist/index.d.ts`, `dist/eval.d.ts`); the public
-  contract is unchanged (tag, attributes, properties, events, `./eval` subpath),
-  and the internal core is **not** exported as a subpath. The `./eval` subpath
-  gains a `createSession(synth)` factory — an eval session with a
-  persistent `.scope`, the ergonomic wrapper over `hydraEval`. Behavioral
+  tsc-emitted declarations (`dist/index.d.ts`, `dist/context.d.ts`); the public
+  contract is unchanged (tag, attributes, properties, events, `./context`
+  subpath — formerly `./eval`), and the internal core is **not** exported as a
+  subpath. The `./context` subpath gains a `createContext(synth)` factory — an
+  evaluation context with a persistent `.scope`, the ergonomic wrapper over
+  `hydraEval`. Behavioral
   deltas: seed code (element `textContent`) is now evaluated on mount — the
   documented "you're live" behavior the dev code previously lacked;
   context-loss recovery is fixed (the loss handler is non-once, so a second

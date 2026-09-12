@@ -55,19 +55,19 @@ export function hydraEval(
   }
 }
 
-/** A stateful eval session: evaluates code against a synth, remembering bare
+/** An evaluation context: evaluates code against a synth, remembering bare
  *  assignments across calls. Read and seed values via `.scope`. */
-export interface Session {
+export interface Context {
   eval(code: string): Promise<unknown>
   readonly scope: Record<string, unknown>
 }
 
 /**
- * Creates an eval session with a persistent scope — the ergonomic wrapper over
- * `hydraEval`. Bare assignments (`x = 5`) persist across calls, and `.scope`
- * lets you seed values before eval or read them out after.
+ * Creates an evaluation context with a persistent scope — the ergonomic
+ * wrapper over `hydraEval`. Bare assignments (`x = 5`) persist across calls,
+ * and `.scope` lets you seed values before eval or read them out after.
  */
-export function createSession(synth: unknown): Session {
+export function createContext(synth: unknown): Context {
   const scope = Object.create(null) as Record<string, unknown>
   return {
     eval: (code: string) => hydraEval(code, synth, scope),

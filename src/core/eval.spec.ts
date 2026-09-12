@@ -4,7 +4,7 @@
  * scope contract is pure and needs no DOM.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { createSession, hydraEval } from './eval'
+import { createContext, hydraEval } from './eval'
 
 describe('hydraEval', () => {
   it('should prioritize synth properties over window', async () => {
@@ -171,30 +171,30 @@ describe('hydraEval', () => {
   })
 })
 
-describe('createSession', () => {
+describe('createContext', () => {
   it('persists bare assignments across calls', async () => {
     const synth = { osc: vi.fn() }
-    const session = createSession(synth)
-    await session.eval('x = 42')
-    await session.eval('osc(x)')
+    const context = createContext(synth)
+    await context.eval('x = 42')
+    await context.eval('osc(x)')
     expect(synth.osc).toHaveBeenCalledOnce()
     expect(synth.osc).toHaveBeenCalledWith(42)
   })
 
   it('seeds and reads through the exposed scope', async () => {
     const synth = { osc: vi.fn() }
-    const session = createSession(synth)
-    session.scope.y = 7
-    await session.eval('osc(y)')
+    const context = createContext(synth)
+    context.scope.y = 7
+    await context.eval('osc(y)')
     expect(synth.osc).toHaveBeenCalledWith(7)
-    await session.eval('result = 42')
-    expect(session.scope.result).toBe(42)
+    await context.eval('result = 42')
+    expect(context.scope.result).toBe(42)
   })
 
-  it('isolates each session from the others', async () => {
+  it('isolates each context from the others', async () => {
     const synth = { osc: vi.fn() }
-    const a = createSession(synth)
-    const b = createSession(synth)
+    const a = createContext(synth)
+    const b = createContext(synth)
     await a.eval('x = 1')
     await b.eval('osc(x)')
     expect(synth.osc).toHaveBeenCalledWith(undefined)

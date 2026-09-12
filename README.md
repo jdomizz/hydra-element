@@ -171,24 +171,24 @@ el.addEventListener('hydra-eval', e => {
 
 ## Drive hydra yourself
 
-Skip the tag and drive a bare `hydra-synth` with `hydra-element/eval`:
+Skip the tag and drive a bare `hydra-synth` with `hydra-element/context`:
 
 ```js
 import Hydra from 'hydra-synth'
-import { createSession } from 'hydra-element/eval'
+import { createContext } from 'hydra-element/context'
 
 const hydra = new Hydra({ canvas, makeGlobal: false }) // nothing lands on window
-const session = createSession(hydra.synth)
+const context = createContext(hydra.synth)
 
-await session.eval('osc().out()')
-await session.eval('x = 5')
-await session.eval('osc(x)') // x persists, still isolated
+await context.eval('osc().out()')
+await context.eval('x = 5')
+await context.eval('osc(x)') // x persists, still isolated
 
-session.scope.y = 2 // seed a value before eval
-await session.eval('osc(y)')
+context.scope.y = 2 // seed a value before eval
+await context.eval('osc(y)')
 ```
 
-`createSession` keeps a scope, so bare assignments persist across evals —
+`createContext` keeps a scope, so bare assignments persist across evals —
 isolated from `window` and the synth. Need the raw one-shot or error lines?
 `hydraEval(code, synth, scope?)` and `userCodeLine(error, code)` are exported too.
 
