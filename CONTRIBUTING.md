@@ -100,20 +100,19 @@ leaves the affected entry labeled by the static analysis from
 | `pnpm test`      | Run browser specs via Web Test Runner (headless Chromium)           |
 | `pnpm test:node` | Run the Node-lane core/eval specs via vitest                        |
 | `pnpm typecheck` | `tsc --noEmit` (strict)                                             |
-| `pnpm build`     | Bundle `dist/{hydra-element,eval,core}.js` + tsc-emitted d.ts       |
+| `pnpm build`     | Bundle `dist/{hydra-element,eval}.js` + tsc-emitted d.ts            |
 | `pnpm lint`      | Lint with oxlint (auto-fixes where safe)                            |
 | `pnpm format`    | Format with oxfmt                                                   |
 | `pnpm check`     | `lint` + `format:check` + `test` + `test:node` + `build` — the gate |
 
-`pnpm build` produces three artifacts:
+`pnpm build` produces two artifacts:
 
 - `dist/hydra-element.js` (≈ 330 KB) — the main `<hydra-element>` entry; bundles `hydra-synth` + regl.
-- `dist/eval.js` — the `hydraEval` standalone eval subpath.
-- `dist/core.js` — the headless `hydra-element/core` subpath.
+- `dist/eval.js` — the `hydra-element/eval` subpath (`createEvaluator`, `hydraEval`, `userCodeLine`).
 
-The main entry's runtime dependency is `hydra-synth` only. TypeScript declarations are emitted by `tsc` (`dist/index.d.ts`, `dist/core/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/` trees); the `postbuild` script asserts the three public `.d.ts` entry points exist.
+The main entry's runtime dependency is `hydra-synth` only. TypeScript declarations are emitted by `tsc` (`dist/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/`/`core/` trees); the `postbuild` script asserts the two public `.d.ts` entry points exist.
 
-Per ο (2026-09-01), the `<hydra-editor>` element extracted from `hydra-element` into a new standalone npm package `hydra-editor`. The playground adopts `<hydra-editor>` from the `hydra-editor` package (devDependency `file:../hydra-editor`).
+Per ο (2026-09-01), the `<hydra-editor>` element extracted from `hydra-element` into a standalone, unpublished repo `hydra-editor`. The playground adopts `<hydra-editor>` from that local repo (devDependency `file:../hydra-editor`).
 
 ## Conventions
 

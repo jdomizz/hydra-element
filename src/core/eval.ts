@@ -55,13 +55,29 @@ export function hydraEval(
   }
 }
 
+/** A stateful hydra evaluator: evaluates code against a synth, remembering
+ *  bare assignments across calls. Read and seed values via `.scope`. */
+export interface HydraEvaluator {
+  (code: string): Promise<unknown>
+  readonly scope: Record<string, unknown>
+}
+
+/**
+ * Creates a stateful evaluator with a persistent scope — the ergonomic
+ * wrapper over `hydraEval`. Bare assignments (`x = 5`) persist across calls,
+ * and `.scope` lets you seed values before eval or read them out after.
+ */
+export function createEvaluator(synth: unknown): HydraEvaluator {
+  const scope = Object.create(null) as Record<string, unknown>
+  return Object.assign((code: string) => hydraEval(code, synth, scope), { scope })
+}
+
 /**
  * V8 compiles `new Function` bodies with a two-line synthetic prologue
  * (`function anonymous(<args>\n) {\n`), so every `error.stack` line inside
  * the wrapper sits this many lines below the line the user wrote.
  */
 const WRAPPER_LINE_OFFSET = 2
-
 /**
  * Extracts the user-code line from an eval error, best-effort.
  *

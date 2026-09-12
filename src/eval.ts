@@ -1,5 +1,6 @@
 /**
- * The `hydra-element/eval` subpath entry — the standalone eval helper.
+ * The `hydra-element/eval` subpath entry — standalone eval helpers.
  */
 
-export { hydraEval, userCodeLine } from './core/eval'
+export { createEvaluator, hydraEval, userCodeLine } from './core/eval'
+export type { HydraEvaluator } from './core/eval'

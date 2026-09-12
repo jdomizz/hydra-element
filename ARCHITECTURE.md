@@ -24,7 +24,7 @@ src/index.ts ── the main entry: registers the engine factory (hydra-synth)
             │
             └─▶ src/core/ ── the headless engine core (zero DOM, zero hydra)
                   core.ts  HydraCore + createHydraCore + setDefaultHydraFactory
-                  eval.ts  hydraEval + userCodeLine · queue.ts · loop.ts
+                  eval.ts  hydraEval + createEvaluator · queue.ts · loop.ts
                           │
                           ▼
                     hydra-synth (peer) — built through the injected factory
@@ -38,7 +38,7 @@ factory in `index.ts`).
 
 ## Modules
 
-### `src/core/` — the headless engine core (`hydra-element/core`)
+### `src/core/` — the headless engine core (internal)
 
 Zero DOM, zero events, zero `hydra-synth` import. Orchestration is testable
 in Node against an injected engine factory + scheduler.
@@ -47,8 +47,8 @@ in Node against an injected engine factory + scheduler.
   `HydraFactory`, `EngineOptions`, `CreateHydraCoreOptions` (factory +
   scheduler + an injectable `scope` — the runtime passes one persistent object
   so bare assignments survive engine resets).
-- `eval.ts` — `hydraEval(code, synth, scope)` + `userCodeLine(error, code)`
-  (see [hydraEval](#hydraeval) below).
+- `eval.ts` — `hydraEval(code, synth, scope)` + `createEvaluator(synth)` +
+  `userCodeLine(error, code)` (see [hydraEval](#hydraeval) below).
 - `queue.ts` — `EvalQueue`: a serialized promise chain whose tail swallows
   errors, so one failed eval never kills the queue.
 - `loop.ts` — `Loop`: a scheduler-injected rAF clock (`Scheduler =
@@ -58,7 +58,7 @@ in Node against an injected engine factory + scheduler.
   `evalAsync` (queue-submit + line attach), `start`/`stop`/`tick`/
   `setResolution`/`loadScript`, and `destroy()`. Facade: `createHydraCore` +
   `setDefaultHydraFactory` (throws when no factory is registered).
-- `index.ts` — the subpath entry.
+- `index.ts` — the internal barrel (re-exports the above; not a public subpath).
 
 ### `src/element/` — the DOM-only shell
 
@@ -110,13 +110,15 @@ Shared, layer-agnostic:
 ...opts, autoLoop: false }))` (the **only** `hydra-synth` import — the core
   owns the loop, so the engine must not self-loop), registers the runtime
   factory, defines `<hydra-element>`, re-exports `HydraElement` + the types.
-- `eval.ts` — re-exports `hydraEval` / `userCodeLine` (the `hydra-element/eval`
-  subpath).
+- `eval.ts` — re-exports `createEvaluator` / `hydraEval` / `userCodeLine`
+  (the `hydra-element/eval` subpath).
 
 ## `hydraEval`
 
 The heart of user-code evaluation (`src/core/eval.ts`), exported under
-`hydra-element/eval` for users who want to drive their own loops.
+`hydra-element/eval` for users who want to drive their own loops. The ergonomic
+wrapper is `createEvaluator(synth)` — a stateful evaluator with a persistent
+scope (bare assignments survive across calls, exposed as `.scope`).
 
 ```js
 export function hydraEval(code, synth, scope) {
@@ -237,14 +239,13 @@ animation) fall outside the bridge window and need `global="true"`.
 ## Build and distribution
 
 - ES module only (`"type": "module"`, `vite.config.js`)
-- Three entry points (`vite.config.js`):
+- Two entry points (`vite.config.js`):
   - `dist/hydra-element.js` — the element + everything (default import)
-  - `dist/eval.js` — just `hydraEval` for users driving their own loop (subpath import `hydra-element/eval`)
-  - `dist/core.js` — the headless engine core (subpath import `hydra-element/core`)
+  - `dist/eval.js` — the `hydra-element/eval` subpath (`createEvaluator`, `hydraEval`, `userCodeLine`)
 - Single runtime dependency: `hydra-synth`
-- TypeScript declarations are emitted by `tsc -p tsconfig.build.json` (`dist/index.d.ts`, `dist/core/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/` trees); the `postbuild` script asserts the three public entry points. The `synth` property is typed as `unknown` because `hydra-synth` does not yet publish its own `.d.ts`; narrow when it does.
-- `package.json` declares `sideEffects: ["./dist/hydra-element.js"]` — only the element entry has a module-load side effect (`customElements.define`); the pure `dist/eval.js` and `dist/core.js` subpaths stay tree-shakeable
-- `exports` map exposes `.`, `./eval`, `./core`, and `./package.json` (the last so bundlers can resolve the package manifest)
+- TypeScript declarations are emitted by `tsc -p tsconfig.build.json` (`dist/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/`/`core/` trees — the internal layers ship their `.d.ts` for the entry's relative imports); the `postbuild` script asserts the two public entry points. The `synth` property is typed as `unknown` because `hydra-synth` does not yet publish its own `.d.ts`; narrow when it does.
+- `package.json` declares `sideEffects: ["./dist/hydra-element.js"]` — only the element entry has a module-load side effect (`customElements.define`); the pure `dist/eval.js` subpath stays tree-shakeable
+- `exports` map exposes `.`, `./eval`, and `./package.json` (the last so bundlers can resolve the package manifest)
 
 ## Events
 
@@ -353,22 +354,20 @@ hardcoded scenes and no editor) is retired. The file persists as a 4-line
 cited in `backlog/launch-week-comms.md`) doesn't 404 for external links.
 The redirect is rendered by Vite alongside the index page.
 
-## `<hydra-editor>` — separate package
+## `<hydra-editor>` — separate repo (unpublished)
 
 Per ο (2026-09-01), the `<hydra-editor>` element + Hydra config extracted
-from `hydra-element` into a new standalone npm package
-[`hydra-editor`](https://www.npmjs.com/package/hydra-editor) (unscoped,
-AGPL-3.0-or-later). `hydra-element` 0.7.0 ships **without** the editor
-subpath.
+from `hydra-element` into a standalone repo `hydra-editor` (AGPL-3.0-or-later),
+consumed as a local `file:` devDependency. It is **not** published to npm;
+`hydra-element` 0.7.0 ships without the editor subpath.
 
-The playground adopts `<hydra-editor>` from the `hydra-editor` package
-(devDependency `file:../hydra-editor` until R1 publish, then `^0.1.0`).
-The panel keeps its per-slot `localStorage` Map, `target-change` rebind,
-`preset-change` routing, and storage fallback. The element's `code-apply`
-event triggers `target.code = ...`, and after each eval the panel diffs
-the synth keys against the 96-entry baseline and calls
-`editor.addWords(newNames)` — so loading an extension grows the completion
-dropdown automatically.
+The playground adopts `<hydra-editor>` from the local repo
+(devDependency `file:../hydra-editor`). The panel keeps its per-slot
+`localStorage` Map, `target-change` rebind, `preset-change` routing, and
+storage fallback. The element's `code-apply` event triggers
+`target.code = ...`, and after each eval the panel diffs the synth keys
+against the 96-entry baseline and calls `editor.addWords(newNames)` — so
+loading an extension grows the completion dropdown automatically.
 
 See the [`hydra-editor` README](https://github.com/jdomizz/hydra-editor#readme)
 for the element's API, architecture, and scope discipline.

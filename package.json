@@ -48,10 +48,6 @@
       "types": "./dist/eval.d.ts",
       "import": "./dist/eval.js"
     },
-    "./core": {
-      "types": "./dist/core/index.d.ts",
-      "import": "./dist/core.js"
-    },
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -62,7 +58,7 @@
     "test:node": "vitest run",
     "typecheck": "tsc --noEmit",
     "build": "vite build && tsc -p tsconfig.build.json",
-    "postbuild": "test -f dist/index.d.ts && test -f dist/core/index.d.ts && test -f dist/eval.d.ts",
+    "postbuild": "test -f dist/index.d.ts && test -f dist/eval.d.ts",
     "build:playground": "vite build --config vite.playground.config.js",
     "preview:playground": "vite preview --config vite.playground.config.js",
     "lint": "oxlint --fix .",

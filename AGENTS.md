@@ -6,11 +6,11 @@ is [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## Commands
 
-- `pnpm dev` — serve `playground/index.html` with Vite (HMR). The playground imports `<hydra-editor>` from the `hydra-editor` npm package (devDependency `file:../hydra-editor`).
+- `pnpm dev` — serve `playground/index.html` with Vite (HMR). The playground imports `<hydra-editor>` from the local `hydra-editor` repo (unpublished; devDependency `file:../hydra-editor`).
 - `pnpm test` — run the browser specs via Web Test Runner (headless Chromium; browser launch is opt-in — `pnpm test:browser` sets `WTR_BROWSER=1`). The glob covers `src/**/*.spec.js` and `playground/**/*.spec.js` (incl. `playground/editor-panel-extensions.spec.js` for the extension-aware `addWords` demo, `playground/extensions.spec.js` for the catalog data shape + panel rendering + click/keyboard dispatch, and `playground/editor-error-wiring.spec.js` for the `hydra-eval` → `markError`/`clearErrors` wiring — pending the `hydra-editor` dist exposing those methods).
 - `pnpm test:node` — run the Node-lane `src/core/**/*.spec.ts` via vitest.
 - `pnpm typecheck` — `tsc --noEmit` (strict).
-- `pnpm build` — bundles three artifacts: `dist/hydra-element.js` (main entry), `dist/eval.js` (standalone eval), `dist/core.js` (headless core). TypeScript declarations are emitted by `tsc` (`dist/index.d.ts`, `dist/core/index.d.ts`, `dist/eval.d.ts`); `postbuild` asserts the three public `.d.ts` entry points exist.
+- `pnpm build` — bundles two artifacts: `dist/hydra-element.js` (main entry) and `dist/eval.js` (`hydra-element/eval` — `createEvaluator`/`hydraEval`/`userCodeLine`). TypeScript declarations are emitted by `tsc` (`dist/index.d.ts`, `dist/eval.d.ts`); `postbuild` asserts the two public `.d.ts` entry points exist. The internal `src/core/` layer is bundled into the main entry, not exported as a subpath.
 - `pnpm lint` — lint with oxlint
 - `pnpm format` — format with oxfmt
 - Pre-commit hook (husky + lint-staged) auto-fixes `*.{js,mjs}` with `oxlint --fix`, then runs `oxfmt` on staged JS and `*.md` files; bypass with `git commit --no-verify`
@@ -34,7 +34,7 @@ If you find yourself sitting on `main` with uncommitted work, switch to a featur
 ## Test runner quirks
 
 - Tests are `src/**/*.spec.js` and `playground/**/*.spec.js`, colocated with source (not in a `test/` dir). The WTR glob in `wtr.config.js` covers both.
-- Uses `@open-wc/testing` + `sinon`; assertions use `.to.be` / `.to.equal` (Chai style). The `<hydra-editor>` element (from the `hydra-editor` package) is registered via side-effect import on `editor-panel.js`.
+- Uses `@open-wc/testing` + `sinon`; assertions use `.to.be` / `.to.equal` (Chai style). The `<hydra-editor>` element (from the local `hydra-editor` repo) is registered via side-effect import on `editor-panel.js`.
 - `wtr.config.js` uses Playwright's bundled Chromium — install with `pnpm exec playwright install chromium` if tests fail to launch
 - Tests register the custom element themselves via `window.customElements.define`
 - **A failing sinon-chai assertion hangs the session instead of reporting red.** `expect(spy).to.have.been.calledOnce` etc., when false, makes WTR time out after 120s ("Browser tests did not finish", 0 passed 0 failed) — the AssertionError carries the cyclic spy object and the reporter never settles. Plain chai failures (`expect(1).to.equal(2)`) report fine. When debugging a suspected assertion failure, assert on primitives instead (`expect(spy.callCount).to.equal(1)`) or wrap the assertion in try/catch to print `e.message`

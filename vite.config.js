@@ -2,7 +2,7 @@ import { defineConfig } from 'vite'
 
 /**
  * The library build (`build.lib`) emits `dist/hydra-element.js` +
- * `dist/eval.js` + `dist/core.js` for npm. Declaration files are emitted by
+ * `dist/eval.js` for npm. Declaration files are emitted by
  * `tsc -p tsconfig.build.json` (not copied here) — see `tsconfig.build.json`.
  *
  * `root` is intentionally not set here: this config is consumed by
@@ -18,7 +18,6 @@ export default defineConfig({
       entry: {
         'hydra-element': 'src/index.ts',
         eval: 'src/eval.ts',
-        core: 'src/core/index.ts',
       },
       formats: ['es'],
       fileName: (format, entryName) => `${entryName}.js`,

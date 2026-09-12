@@ -169,10 +169,28 @@ el.addEventListener('hydra-eval', e => {
 })
 ```
 
-## Build your own tooling
+## Drive hydra yourself
 
-- `hydra-element/eval` — `hydraEval(code, synth, scope)` for your own editor/REPL.
-- `hydra-element/core` — the headless engine core (`createHydraCore`), testable in Node.
+Skip the tag and drive a bare `hydra-synth` with `hydra-element/eval`:
+
+```js
+import Hydra from 'hydra-synth'
+import { createEvaluator } from 'hydra-element/eval'
+
+const hydra = new Hydra({ canvas, makeGlobal: false }) // nothing lands on window
+const evaluate = createEvaluator(hydra.synth)
+
+await evaluate('osc().out()')
+await evaluate('x = 5')
+await evaluate('osc(x)') // x persists, still isolated
+
+evaluate.scope.y = 2 // seed a value before eval
+await evaluate('osc(y)')
+```
+
+`createEvaluator` keeps a scope, so bare assignments persist across evals —
+isolated from `window` and the synth. Need the raw one-shot or error lines?
+`hydraEval(code, synth, scope?)` and `userCodeLine(error, code)` are exported too.
 
 ## Limitations
 

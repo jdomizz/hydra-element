@@ -4,7 +4,7 @@
  * scope contract is pure and needs no DOM.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { hydraEval } from './eval'
+import { createEvaluator, hydraEval } from './eval'
 
 describe('hydraEval', () => {
   it('should prioritize synth properties over window', async () => {
@@ -168,5 +168,35 @@ describe('hydraEval', () => {
       // Just verify it doesn't throw
       expect(scope.notARealThing).toBe(1)
     })
+  })
+})
+
+describe('createEvaluator', () => {
+  it('persists bare assignments across calls', async () => {
+    const synth = { osc: vi.fn() }
+    const evaluate = createEvaluator(synth)
+    await evaluate('x = 42')
+    await evaluate('osc(x)')
+    expect(synth.osc).toHaveBeenCalledOnce()
+    expect(synth.osc).toHaveBeenCalledWith(42)
+  })
+
+  it('seeds and reads through the exposed scope', async () => {
+    const synth = { osc: vi.fn() }
+    const evaluate = createEvaluator(synth)
+    evaluate.scope.y = 7
+    await evaluate('osc(y)')
+    expect(synth.osc).toHaveBeenCalledWith(7)
+    await evaluate('result = 42')
+    expect(evaluate.scope.result).toBe(42)
+  })
+
+  it('isolates each evaluator from the others', async () => {
+    const synth = { osc: vi.fn() }
+    const a = createEvaluator(synth)
+    const b = createEvaluator(synth)
+    await a('x = 1')
+    await b('osc(x)')
+    expect(synth.osc).toHaveBeenCalledWith(undefined)
   })
 })
