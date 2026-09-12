@@ -55,21 +55,24 @@ export function hydraEval(
   }
 }
 
-/** A stateful hydra evaluator: evaluates code against a synth, remembering
- *  bare assignments across calls. Read and seed values via `.scope`. */
-export interface HydraEvaluator {
-  (code: string): Promise<unknown>
+/** A stateful eval session: evaluates code against a synth, remembering bare
+ *  assignments across calls. Read and seed values via `.scope`. */
+export interface Session {
+  eval(code: string): Promise<unknown>
   readonly scope: Record<string, unknown>
 }
 
 /**
- * Creates a stateful evaluator with a persistent scope — the ergonomic
- * wrapper over `hydraEval`. Bare assignments (`x = 5`) persist across calls,
- * and `.scope` lets you seed values before eval or read them out after.
+ * Creates an eval session with a persistent scope — the ergonomic wrapper over
+ * `hydraEval`. Bare assignments (`x = 5`) persist across calls, and `.scope`
+ * lets you seed values before eval or read them out after.
  */
-export function createEvaluator(synth: unknown): HydraEvaluator {
+export function createSession(synth: unknown): Session {
   const scope = Object.create(null) as Record<string, unknown>
-  return Object.assign((code: string) => hydraEval(code, synth, scope), { scope })
+  return {
+    eval: (code: string) => hydraEval(code, synth, scope),
+    scope,
+  }
 }
 
 /**

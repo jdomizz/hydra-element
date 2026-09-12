@@ -24,7 +24,7 @@ src/index.ts ── the main entry: registers the engine factory (hydra-synth)
             │
             └─▶ src/core/ ── the headless engine core (zero DOM, zero hydra)
                   core.ts  HydraCore + createHydraCore + setDefaultHydraFactory
-                  eval.ts  hydraEval + createEvaluator · queue.ts · loop.ts
+                  eval.ts  hydraEval + createSession · queue.ts · loop.ts
                           │
                           ▼
                     hydra-synth (peer) — built through the injected factory
@@ -47,7 +47,7 @@ in Node against an injected engine factory + scheduler.
   `HydraFactory`, `EngineOptions`, `CreateHydraCoreOptions` (factory +
   scheduler + an injectable `scope` — the runtime passes one persistent object
   so bare assignments survive engine resets).
-- `eval.ts` — `hydraEval(code, synth, scope)` + `createEvaluator(synth)` +
+- `eval.ts` — `hydraEval(code, synth, scope)` + `createSession(synth)` +
   `userCodeLine(error, code)` (see [hydraEval](#hydraeval) below).
 - `queue.ts` — `EvalQueue`: a serialized promise chain whose tail swallows
   errors, so one failed eval never kills the queue.
@@ -110,14 +110,14 @@ Shared, layer-agnostic:
 ...opts, autoLoop: false }))` (the **only** `hydra-synth` import — the core
   owns the loop, so the engine must not self-loop), registers the runtime
   factory, defines `<hydra-element>`, re-exports `HydraElement` + the types.
-- `eval.ts` — re-exports `createEvaluator` / `hydraEval` / `userCodeLine`
+- `eval.ts` — re-exports `createSession` / `hydraEval` / `userCodeLine`
   (the `hydra-element/eval` subpath).
 
 ## `hydraEval`
 
 The heart of user-code evaluation (`src/core/eval.ts`), exported under
 `hydra-element/eval` for users who want to drive their own loops. The ergonomic
-wrapper is `createEvaluator(synth)` — a stateful evaluator with a persistent
+wrapper is `createSession(synth)` — an eval session with a persistent
 scope (bare assignments survive across calls, exposed as `.scope`).
 
 ```js
@@ -241,7 +241,7 @@ animation) fall outside the bridge window and need `global="true"`.
 - ES module only (`"type": "module"`, `vite.config.js`)
 - Two entry points (`vite.config.js`):
   - `dist/hydra-element.js` — the element + everything (default import)
-  - `dist/eval.js` — the `hydra-element/eval` subpath (`createEvaluator`, `hydraEval`, `userCodeLine`)
+  - `dist/eval.js` — the `hydra-element/eval` subpath (`createSession`, `hydraEval`, `userCodeLine`)
 - Single runtime dependency: `hydra-synth`
 - TypeScript declarations are emitted by `tsc -p tsconfig.build.json` (`dist/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/`/`core/` trees — the internal layers ship their `.d.ts` for the entry's relative imports); the `postbuild` script asserts the two public entry points. The `synth` property is typed as `unknown` because `hydra-synth` does not yet publish its own `.d.ts`; narrow when it does.
 - `package.json` declares `sideEffects: ["./dist/hydra-element.js"]` — only the element entry has a module-load side effect (`customElements.define`); the pure `dist/eval.js` subpath stays tree-shakeable

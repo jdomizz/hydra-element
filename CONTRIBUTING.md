@@ -108,7 +108,7 @@ leaves the affected entry labeled by the static analysis from
 `pnpm build` produces two artifacts:
 
 - `dist/hydra-element.js` (≈ 330 KB) — the main `<hydra-element>` entry; bundles `hydra-synth` + regl.
-- `dist/eval.js` — the `hydra-element/eval` subpath (`createEvaluator`, `hydraEval`, `userCodeLine`).
+- `dist/eval.js` — the `hydra-element/eval` subpath (`createSession`, `hydraEval`, `userCodeLine`).
 
 The main entry's runtime dependency is `hydra-synth` only. TypeScript declarations are emitted by `tsc` (`dist/index.d.ts`, `dist/eval.d.ts` plus the `element/`/`runtime/`/`core/` trees); the `postbuild` script asserts the two public `.d.ts` entry points exist.
 

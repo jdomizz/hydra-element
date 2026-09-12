@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tsc-emitted declarations (`dist/index.d.ts`, `dist/eval.d.ts`); the public
   contract is unchanged (tag, attributes, properties, events, `./eval` subpath),
   and the internal core is **not** exported as a subpath. The `./eval` subpath
-  gains a `createEvaluator(synth)` factory — a stateful evaluator with a
+  gains a `createSession(synth)` factory — an eval session with a
   persistent `.scope`, the ergonomic wrapper over `hydraEval`. Behavioral
   deltas: seed code (element `textContent`) is now evaluated on mount — the
   documented "you're live" behavior the dev code previously lacked;

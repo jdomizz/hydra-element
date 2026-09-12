@@ -4,7 +4,7 @@
  * factory and scheduler.
  */
 export { HydraCore, createHydraCore, setDefaultHydraFactory } from './core'
-export { createEvaluator, hydraEval, userCodeLine, type HydraEvaluator } from './eval'
+export { createSession, hydraEval, userCodeLine, type Session } from './eval'
 export { EvalQueue } from './queue'
 export { Loop, type RafScheduler, type Scheduler } from './loop'
 export type {
