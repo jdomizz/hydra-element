@@ -1,223 +1,236 @@
-import { expect } from '@open-wc/testing'
-import { spy } from 'sinon'
-import { hydraEval } from './eval'
+import { describe, expect, it, vi } from 'vitest'
+import { hydraEval, bindScope, userCodeLine } from './eval'
 
 describe('hydraEval', () => {
-
-  it('should call noise', () => {
-    const synth = { noise: spy() }
-    hydraEval('noise(10, 0.1)', synth)
-    expect(synth.noise).to.have.been.calledOnceWith(10, 0.1)
+  it('should prioritize synth properties over window', async () => {
+    const synth = { time: 42, osc: vi.fn() }
+    await hydraEval('osc(time)', synth)
+    expect(synth.osc).toHaveBeenCalledTimes(1)
+    expect(synth.osc).toHaveBeenCalledWith(42)
   })
 
-  it('should call voronoi', () => {
-    const synth = { voronoi: spy() }
-    hydraEval('voronoi(5, 0.3, 0.3)', synth)
-    expect(synth.voronoi).to.have.been.calledOnceWith(5, 0.3, 0.3)
+  it('should fall back to window for globals like Math', async () => {
+    const synth = { osc: vi.fn() }
+    await hydraEval('osc(Math.PI)', synth)
+    expect(synth.osc).toHaveBeenCalledWith(Math.PI)
   })
 
-  it('should call osc', () => {
-    const synth = { osc: spy() }
-    hydraEval('osc(30, 0.1)', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(30, 0.1)
+  it('should expose the synth instance as `synth`', async () => {
+    const synth = { osc: vi.fn() }
+    const scope = Object.create(null)
+    await hydraEval('result = synth', synth, scope)
+    expect(scope.result).toBe(synth)
   })
 
-  it('should call shape', () => {
-    const synth = { shape: spy() }
-    hydraEval('shape(3, 0.5, 0.001)', synth)
-    expect(synth.shape).to.have.been.calledOnceWith(3, 0.5, 0.001)
+  for (const prop of ['time', 'speed', 'bpm']) {
+    it(`should resolve \`${prop}\` live after synth.${prop} changes`, async () => {
+      const synth = { [prop]: 0 }
+      const scope = Object.create(null)
+      await hydraEval(`captured = () => ${prop}`, synth, scope)
+      synth[prop] = 42
+      expect(scope.captured()).toBe(42)
+    })
+  }
+
+  it('should preserve `this` when calling synth methods bare', async () => {
+    const synth = {
+      base: 21,
+      double() {
+        return this.base * 2
+      },
+    }
+    const scope = Object.create(null)
+    await hydraEval('result = double()', synth, scope)
+    expect(scope.result).toBe(42)
   })
 
-  it('should call gradient', () => {
-    const synth = { gradient: spy() }
-    hydraEval('gradient(2)', synth)
-    expect(synth.gradient).to.have.been.calledOnceWith(2)
+  it('should bind bare globals so `this` is globalThis (not the proxy)', async () => {
+    globalThis.checkThis = function () {
+      return this === globalThis
+    }
+    const scope = Object.create(null)
+    await hydraEval('result = checkThis()', {}, scope)
+    expect(scope.result).toBe(true)
+    delete globalThis.checkThis
   })
 
-  it('should call solid', () => {
-    const synth = { solid: spy() }
-    hydraEval('solid(0, 1, 0, 1)', synth)
-    expect(synth.solid).to.have.been.calledOnceWith(0, 1, 0, 1)
+  it('should call chained methods', async () => {
+    const out = vi.fn()
+    const synth = { osc: () => ({ out }) }
+    await hydraEval('osc(10, 0.2).out()', synth)
+    expect(out).toHaveBeenCalledTimes(1)
   })
 
-  it('should call prev', () => {
-    const synth = { prev: spy() }
-    hydraEval('prev()', synth)
-    expect(synth.prev).to.have.been.calledOnceWith()
+  it('should access source buffers', async () => {
+    const init = vi.fn()
+    const synth = { s0: { init } }
+    await hydraEval('s0.init({})', synth)
+    expect(init).toHaveBeenCalledTimes(1)
+    expect(init).toHaveBeenCalledWith({})
   })
 
-  it('should init s0', () => {
-    const synth = { s0: { init: spy() }, src: spy() }
-    hydraEval('s0.init({}); src(s0)', synth)
-    expect(synth.s0.init).to.have.been.calledOnceWith({})
-    expect(synth.src).to.have.been.calledOnceWith(synth.s0)
+  it('should access audio properties', async () => {
+    const synth = { osc: vi.fn(), a: { fft: [0.5, 0.3] } }
+    await hydraEval('osc(a.fft[0])', synth)
+    expect(synth.osc).toHaveBeenCalledWith(0.5)
   })
 
-  it('should init s1', () => {
-    const synth = { s1: { init: spy() }, src: spy() }
-    hydraEval('s1.init({}); src(s1)', synth)
-    expect(synth.s1.init).to.have.been.calledOnceWith({})
-    expect(synth.src).to.have.been.calledOnceWith(synth.s1)
+  it('should handle nested property access', async () => {
+    const synth = { osc: vi.fn(), mouse: { x: 100, y: 200 } }
+    await hydraEval('osc(mouse.x, mouse.y)', synth)
+    expect(synth.osc).toHaveBeenCalledWith(100, 200)
   })
 
-  it('should init s2', () => {
-    const synth = { s2: { init: spy() }, src: spy() }
-    hydraEval('s2.init({}); src(s2)', synth)
-    expect(synth.s2.init).to.have.been.calledOnceWith({})
-    expect(synth.src).to.have.been.calledOnceWith(synth.s2)
+  it('should handle method chaining with nested calls', async () => {
+    const out = vi.fn()
+    const synth = { osc: () => ({ manipulate: () => ({ out }) }) }
+    await hydraEval('osc(10).manipulate(osc(5)).out()', synth)
+    expect(out).toHaveBeenCalledTimes(1)
   })
 
-  it('should init s3', () => {
-    const synth = { s3: { init: spy() }, src: spy() }
-    hydraEval('s3.init({}); src(s3)', synth)
-    expect(synth.s3.init).to.have.been.calledOnceWith({})
-    expect(synth.src).to.have.been.calledOnceWith(synth.s3)
+  describe('async support', () => {
+    it('should support async/await syntax', async () => {
+      const synth = { osc: vi.fn(), speed: 1 }
+      await hydraEval('await Promise.resolve(); osc(42); speed = 3', synth)
+      expect(synth.osc).toHaveBeenCalledWith(42)
+      expect(synth.speed).toBe(3)
+    })
+
+    it('should always return a promise', () => {
+      expect(hydraEval('42', {})).toBeInstanceOf(Promise)
+    })
+
+    it('should reject on syntax errors', async () => {
+      await expect(hydraEval('(((((', {})).rejects.toBeInstanceOf(SyntaxError)
+    })
+
+    it('should not be fooled by a trailing line comment', async () => {
+      const out = vi.fn()
+      const synth = { osc: () => ({ out }) }
+      await hydraEval('osc(1).out() // trailing comment', synth)
+      expect(out).toHaveBeenCalledTimes(1)
+    })
   })
 
-  it('should render o0', () => {
-    const synth = { o0: spy(), render: spy() }
-    hydraEval('render(o0)', synth)
-    expect(synth.render).to.have.been.calledOnceWith(synth.o0)
+  describe('scope isolation', () => {
+    it('should not pollute the synth with bare assignments', async () => {
+      const synth = { osc: vi.fn() }
+      await hydraEval('x = 42; osc(x)', synth)
+      expect(synth.x).toBeUndefined()
+      expect(synth.osc).toHaveBeenCalledWith(42)
+    })
+
+    for (const prop of ['speed', 'bpm']) {
+      it(`should mirror \`${prop}\` assignment onto the synth`, async () => {
+        const synth = { [prop]: 1 }
+        await hydraEval(`${prop} = 2`, synth)
+        expect(synth[prop]).toBe(2)
+      })
+    }
   })
 
-  it('should render o1', () => {
-    const synth = { o1: spy(), render: spy() }
-    hydraEval('render(o1)', synth)
-    expect(synth.render).to.have.been.calledOnceWith(synth.o1)
+  describe('persistent scope', () => {
+    it('should persist bare assignments between evals with a shared scope', async () => {
+      const synth = { osc: vi.fn() }
+      const scope = Object.create(null)
+      await hydraEval('myVar = 42', synth, scope)
+      await hydraEval('osc(myVar)', synth, scope)
+      expect(synth.osc).toHaveBeenCalledWith(42)
+    })
+
+    it('should persist function definitions between evals', async () => {
+      const synth = { osc: vi.fn() }
+      const scope = Object.create(null)
+      await hydraEval('myFunc = (x) => x * 2', synth, scope)
+      await hydraEval('osc(myFunc(21))', synth, scope)
+      expect(synth.osc).toHaveBeenCalledWith(42)
+    })
+
+    it('should isolate variables without a shared scope', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const synth = { osc: vi.fn() }
+      await hydraEval('myVar = 42', synth)
+      await hydraEval('osc(myVar)', synth)
+      expect(synth.osc).toHaveBeenCalledWith(undefined)
+      warn.mockRestore()
+    })
+
+    for (const keyword of ['let', 'const']) {
+      it(`should not persist \`${keyword}\` declarations (block-scoped)`, async () => {
+        const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+        const synth = { osc: vi.fn() }
+        const scope = Object.create(null)
+        await hydraEval(`${keyword} myVar = 42`, synth, scope)
+        await hydraEval('osc(myVar)', synth, scope)
+        expect(synth.osc).toHaveBeenCalledWith(undefined)
+        warn.mockRestore()
+      })
+    }
   })
 
-  it('should render o2', () => {
-    const synth = { o2: spy(), render: spy() }
-    hydraEval('render(o2)', synth)
-    expect(synth.render).to.have.been.calledOnceWith(synth.o2)
+  describe('live engine-owned names', () => {
+    it('does not pin time/width/height assignments', async () => {
+      const synth = { time: 10, width: 640, height: 480 }
+      const scope = Object.create(null)
+      await hydraEval('time = 0; width = 100; height = 200', synth, scope)
+      synth.time = 42
+      synth.width = 1280
+      synth.height = 720
+      await hydraEval('result = [time, width, height]', synth, scope)
+      expect(scope.result).toEqual([42, 1280, 720])
+    })
+
+    it('reads user props live after external synth mutations (e.g. hush)', async () => {
+      const synth = { speed: 1, update: () => 0 }
+      const scope = Object.create(null)
+      await hydraEval('speed = 3; captured = () => speed', synth, scope)
+      synth.speed = 9
+      expect(scope.captured()).toBe(9)
+    })
+
+    it('lets an explicitly bound value override the live read', async () => {
+      const synth = { time: 10 }
+      const scope = Object.create(null)
+      bindScope(scope, 'time', 5)
+      await hydraEval('result = time', synth, scope)
+      expect(scope.result).toBe(5)
+    })
   })
 
-  it('should render o3', () => {
-    const synth = { o3: spy(), render: spy() }
-    hydraEval('render(o3)', synth)
-    expect(synth.render).to.have.been.calledOnceWith(synth.o3)
+  describe('undefined identifier warnings', () => {
+    it('warns once per scope, not per page', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+      const scopeA = Object.create(null)
+      const scopeB = Object.create(null)
+      await hydraEval('aMissingThing', {}, scopeA)
+      await hydraEval('aMissingThing', {}, scopeA)
+      await hydraEval('aMissingThing', {}, scopeB)
+      expect(warn).toHaveBeenCalledTimes(2)
+      warn.mockRestore()
+    })
+  })
+})
+
+describe('userCodeLine', () => {
+  it('maps a thrown error back to its line in the user code', async () => {
+    const code = ['const a = 1', 'const b = 2', 'throw new Error("boom")'].join('\n')
+    let error
+    try {
+      await hydraEval(code, {})
+    } catch (e) {
+      error = e
+    }
+    expect(error).toBeInstanceOf(Error)
+    expect(userCodeLine(error, code)).toBe(3)
   })
 
-  it('should call audio setSmooth', () => {
-    const synth = { a: { setSmooth: spy() } }
-    hydraEval('a.setSmooth(0.8)', synth)
-    expect(synth.a.setSmooth).to.have.been.calledOnceWith(0.8)
+  it('returns undefined when the error carries no user-code position', async () => {
+    let error
+    try {
+      await hydraEval('(((', {})
+    } catch (e) {
+      error = e
+    }
+    expect(userCodeLine(error, '(((')).toBeUndefined()
   })
-
-  it('should call audio setCutoff', () => {
-    const synth = { a: { setCutoff: spy() } }
-    hydraEval('a.setCutoff(4)', synth)
-    expect(synth.a.setCutoff).to.have.been.calledOnceWith(4)
-  })
-
-  it('should call audio setBins', () => {
-    const synth = { a: { setBins: spy() } }
-    hydraEval('a.setBins(8)', synth)
-    expect(synth.a.setBins).to.have.been.calledOnceWith(8)
-  })
-
-  it('should call audio setScale', () => {
-    const synth = { a: { setScale: spy() } }
-    hydraEval('a.setScale(5)', synth)
-    expect(synth.a.setScale).to.have.been.calledOnceWith(5)
-  })
-
-  it('should call audio hide', () => {
-    const synth = { a: { hide: spy() } }
-    hydraEval('a.hide()', synth)
-    expect(synth.a.hide).to.have.been.calledOnceWith()
-  })
-
-  it('should call audio show', () => {
-    const synth = { a: { show: spy() } }
-    hydraEval('a.show()', synth)
-    expect(synth.a.show).to.have.been.calledOnceWith()
-  })
-
-  it('should get audio fft', () => {
-    const synth = { osc: spy(), a: { fft: [0.1] } }
-    hydraEval('osc(a.fft[0])', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(0.1)
-  })
-
-  it('should get mouse position', () => {
-    const synth = { osc: spy(), mouse: { x: 5, y: 200 } }
-    hydraEval('osc(mouse.x, mouse.y)', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(5, 200)
-  })
-
-  it('should get speed', () => {
-    const synth = { osc: spy(), speed: 1 }
-    hydraEval('osc(speed)', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(1)
-  })
-
-  it('should get bpm', () => {
-    const synth = { osc: spy(), bpm: 30 }
-    hydraEval('osc(bpm)', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(30)
-  })
-
-  it('should get width', () => {
-    const synth = { osc: spy(), width: 500 }
-    hydraEval('osc(width)', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(500)
-  })
-
-  it('should get height', () => {
-    const synth = { osc: spy(), height: 500 }
-    hydraEval('osc(height)', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(500)
-  })
-
-  it('should get time', () => {
-    const synth = { osc: spy(), time: 1350.55 }
-    hydraEval('osc(time)', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(1350.55)
-  })
-
-  it('should get stats', () => {
-    const synth = { osc: spy(), stats: { fps: 60 } }
-    hydraEval('osc(stats.fps)', synth)
-    expect(synth.osc).to.have.been.calledOnceWith(60)
-  })
-
-  it('should call setFunction', () => {
-    const synth = { setFunction: spy() }
-    hydraEval('setFunction({})', synth)
-    expect(synth.setFunction).to.have.been.calledOnceWith({})
-  })
-
-  it('should call setResolution', () => {
-    const synth = { setResolution: spy() }
-    hydraEval('setResolution(500, 500)', synth)
-    expect(synth.setResolution).to.have.been.calledOnceWith(500, 500)
-  })
-
-  it('should call update', () => {
-    const synth = { update: spy() }
-    hydraEval('update()', synth)
-    expect(synth.update).to.have.been.calledOnceWith()
-  })
-
-  it('should call hush', () => {
-    const synth = { hush: spy() }
-    hydraEval('hush()', synth)
-    expect(synth.hush).to.have.been.calledOnceWith()
-  })
-
-  it('should call screencap', () => {
-    const synth = { screencap: spy() }
-    hydraEval('screencap()', synth)
-    expect(synth.screencap).to.have.been.calledOnceWith()
-  })
-
-  it('should call vidRecorder', () => {
-    const synth = { vidRecorder: { start: spy(), stop: spy() } }
-    hydraEval('vidRecorder.start()', synth)
-    expect(synth.vidRecorder.start).to.have.been.calledOnceWith()
-    hydraEval('vidRecorder.stop()', synth)
-    expect(synth.vidRecorder.stop).to.have.been.calledOnceWith()
-  })
-
 })
