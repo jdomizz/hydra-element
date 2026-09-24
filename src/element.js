@@ -1,27 +1,14 @@
 import Hydra from 'hydra-synth'
-import { parseJSON, parseNumber, parseOption } from './helper'
-import { hydraEval } from './eval'
+import { CanvasManager } from './canvas'
+import { bindLiveScope, bindScope, hydraEval, unbindScope, userCodeLine } from './eval'
+import { publishHydraGlobals } from './globals'
+import { Loop } from './loop'
+import { parseJSON, parseNumber, parseOption } from './parser'
+import { EvalQueue } from './queue'
 
-/**
- * Default options for Hydra Element.
- * @typedef {Object} DEFAULT_OPTIONS
- * @property {HTMLCanvasElement} canvas - The canvas element to render on.
- * @property {number} width - The width of the canvas.
- * @property {number} height - The height of the canvas.
- * @property {boolean} autoLoop - Whether to automatically loop the animation.
- * @property {boolean} makeGlobal - Whether to make the hydra instance global.
- * @property {boolean} detectAudio - Whether to detect audio input.
- * @property {number} numSources - The number of audio sources.
- * @property {number} numOutputs - The number of audio outputs.
- * @property {Array} extendTransforms - An array of custom transform functions.
- * @property {number} precision - The precision of the rendering.
- * @property {Object} pb - The instance of `rtc-patch-bay` for streaming.
- * @property {boolean} useAudioAnalyzer - Whether to use the Hydra audio analyzer UI.
- */
+/** Default options for creating a Hydra instance. */
 const DEFAULT_OPTIONS = {
   canvas: null,
-  width: window.innerWidth,
-  height: window.innerHeight,
   autoLoop: true,
   makeGlobal: false,
   detectAudio: false,
@@ -30,7 +17,39 @@ const DEFAULT_OPTIONS = {
   extendTransforms: [],
   precision: null,
   pb: null,
-  useAudioAnalyzer: true,
+  dpr: 2,
+}
+
+/** Maps each `hydra-element` attribute to a function that parses it into options. */
+const ATTR_PARSERS = {
+  global: (options, value) => ({
+    ...options,
+    makeGlobal: parseJSON(value, DEFAULT_OPTIONS.makeGlobal),
+  }),
+  audio: (options, value) => ({
+    ...options,
+    detectAudio: parseJSON(value, DEFAULT_OPTIONS.detectAudio),
+  }),
+  sources: (options, value) => ({
+    ...options,
+    numSources: Math.floor(parseNumber(value, DEFAULT_OPTIONS.numSources, 0, 16)),
+  }),
+  outputs: (options, value) => ({
+    ...options,
+    numOutputs: Math.floor(parseNumber(value, DEFAULT_OPTIONS.numOutputs, 0, 16)),
+  }),
+  precision: (options, value) => ({
+    ...options,
+    precision: parseOption(value, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']),
+  }),
+  dpr: (options, value) => ({
+    ...options,
+    dpr: parseNumber(value, DEFAULT_OPTIONS.dpr, 1),
+  }),
+  loop: (options, value) => ({
+    ...options,
+    autoLoop: parseJSON(value, DEFAULT_OPTIONS.autoLoop),
+  }),
 }
 
 /**
@@ -38,222 +57,355 @@ const DEFAULT_OPTIONS = {
  * @extends HTMLElement
  */
 export class HydraElement extends HTMLElement {
-
   /**
-   * An array of attribute names to observe on the custom element.
-   * @returns {string[]}
+   * Overridable engine factory (test seam).
+   * @param {Object} options
    */
+  static hydraFactory = options => new Hydra({ ...options, autoLoop: false })
+
+  /** @returns {string[]} */
   static get observedAttributes() {
-    return [
-      'width',
-      'height',
-      'global',
-      'analyzer',
-      'audio',
-      'sources',
-      'outputs',
-      'precision',
-    ]
+    return ['width', 'height', 'global', 'audio', 'sources', 'outputs', 'precision', 'dpr', 'loop']
   }
 
+  #code = ''
+  #options = { ...DEFAULT_OPTIONS }
+  #scope = Object.create(null)
+  #loop = null
+  #hydra = null
+  #initialized = false
+  #readyPromise
+  #resolveReady
+  #canvasManager
+  #queue = new EvalQueue()
+  #globalsRestore = null
+
   /**
-   * Creates an instance of Element.
-   * @constructor
+   * Follows a canvas resolution change.
+   * @param {CustomEvent} event
    */
+  #onResize = event => {
+    const synth = this.#hydra?.synth
+    if (!synth) return
+    synth.setResolution(event.detail.width, event.detail.height)
+    synth.width = event.detail.width
+    synth.height = event.detail.height
+  }
+
   constructor() {
     super()
-    this._code = ''
-    this._options = { ...DEFAULT_OPTIONS }
+    this.#readyPromise = this.#createReadyPromise()
     this.attachShadow({ mode: 'open' })
+    this.#canvasManager = new CanvasManager(this, this.shadowRoot)
+    this.addEventListener('hydra-element-resize', this.#onResize)
   }
 
   /**
-   * Returns the canvas element associated with this element.
-   * @returns {HTMLCanvasElement} The canvas element.
+   * The hydra-synth DSL instance, or `undefined` before init / after destroy.
+   * @returns {unknown}
+   */
+  get synth() {
+    return this.#hydra?.synth
+  }
+
+  /**
+   * Resolves once Hydra is initialized with `{ synth }`.
+   * @returns {Promise<{ synth: unknown }>}
+   */
+  get ready() {
+    return this.#readyPromise
+  }
+
+  /**
+   * The persistent eval scope (bare assignments, bound values, and `loadScript` survive engine resets).
+   * @returns {Object}
+   */
+  get scope() {
+    return this.#scope
+  }
+
+  /** Binds a static value into the eval scope; the bound name wins over live engine-owned reads (`time`, `width`, `height`, `speed`, …). */
+  bind(name, value) {
+    bindScope(this.#scope, name, value)
+  }
+
+  /** Binds a live getter into the eval scope, re-read on every access (read-only inside the sketch). */
+  bindLive(name, provider) {
+    bindLiveScope(this.#scope, name, provider)
+  }
+
+  /** Removes a previously bound value or provider from the eval scope. */
+  unbind(name) {
+    unbindScope(this.#scope, name)
+  }
+
+  /**
+   * The canvas element backing the render.
+   * @returns {HTMLCanvasElement}
    */
   get canvas() {
-    return this._options.canvas;
+    return this.#options.canvas
   }
 
-  /**
-   * Setter for the canvas property.
-   * @param {HTMLCanvasElement} value - The canvas element to set.
-   */
+  /** @param {HTMLCanvasElement} value */
   set canvas(value) {
-    if (this._options.canvas) {
-      this.shadowRoot?.getElementById('hydra-element-canvas')?.remove()
-    }
-    this._options.canvas = value;
-    if (this._hydra) {
-      this._initHydra()
+    this.#canvasManager.preserveCustomCanvas(value)
+    this.#options.canvas = value
+    if (this.#hydra) {
+      this.#initHydra()
     }
   }
 
   /**
-   * Get the transforms of the element.
-   * @returns {Array<Function>} The extended transforms.
+   * The custom GLSL transforms.
+   * @returns {Array<Function>}
    */
   get transforms() {
-    return this._options.extendTransforms;
+    return this.#options.extendTransforms
   }
 
-  /**
-   * Setter for the transforms property.
-   * @param {Array<Function>} value - An array of functions to extend the transforms.
-   */
+  /** @param {Array<Function>} value */
   set transforms(value) {
-    this._options.extendTransforms = value;
-    if (this._hydra) {
-      this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))
+    this.#options.extendTransforms = value
+    if (this.#hydra) {
+      this.#options.extendTransforms.forEach(fn => this.#hydra.synth.setFunction(fn))
     }
   }
 
   /**
-   * Gets the value of pb.
-   *
-   * @returns {Object} The value of pb.
+   * The rtc-patch-bay instance for streaming.
+   * @returns {Object}
    */
   get pb() {
-    return this._options.pb;
+    return this.#options.pb
   }
 
-  /**
-   * Sets the value of pb option.
-   * @param {Object} value - The value to set for pb.
-   */
+  /** @param {Object} value */
   set pb(value) {
-    this._options.pb = value;
-    if (this._hydra) {
-      this._initHydra()
+    this.#options.pb = value
+    if (this.#hydra) {
+      this.#initHydra()
     }
   }
 
   /**
-   * Get the code of the element.
-   * @returns {string} The code of the element.
+   * The scene code.
+   * @returns {string}
    */
   get code() {
-    return this._code;
+    return this.#code
   }
 
   /**
-   * Setter for the code property.
-   * @param {string} value - The code to be set.
+   * Sets the code and evaluates it.
+   * @param {string} value
    */
   set code(value) {
-    this._code = value;
-    if (this._hydra) {
-      this._evalCode()
+    this.#code = value
+    if (this.#hydra) {
+      this.#evalCode()
+    }
+  }
+
+  /** Tears the element down (loop, sources, engine) without removing it from the DOM. */
+  destroy() {
+    this.#teardown()
+    this.#initialized = false
+    this.#readyPromise = this.#createReadyPromise()
+  }
+
+  /**
+   * Loads an extension script into the element's eval scope, publishing the engine's surface on the global scope while it runs.
+   * @param {string} url
+   */
+  async loadScript(url) {
+    if (!this.#hydra) {
+      throw new Error('[hydra-element] loadScript before the engine is initialized')
+    }
+    const restore = publishHydraGlobals(this.#hydra)
+    try {
+      const text = await this.#fetchText(url)
+      if (text === null) {
+        await this.#hydra.loadScript(url)
+      } else {
+        await hydraEval(text, this.#hydra.synth, this.#scope)
+      }
+    } finally {
+      restore()
     }
   }
 
   /**
-   * Called when an observed attribute has been added, removed, updated, or replaced.
-   * @param {string} attrName - The name of the attribute that was changed.
-   * @param {string|null} oldValue - The previous value of the attribute, or null if it didn't exist before.
-   * @param {string|null} newValue - The new value of the attribute, or null if it was removed.
+   * Fetches script text; `null` on non-OK (dead URL) or CORS failure, signalling a `script`-tag fallback.
+   * @param {string} url
+   * @returns {Promise<string | null>}
+   */
+  async #fetchText(url) {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) {
+        console.warn(`[hydra-element] loadScript failed: ${res.status} ${url}`)
+        return null
+      }
+      return res.text()
+    } catch {
+      return null
+    }
+  }
+
+  /** @returns {Promise<{ synth: unknown }>} */
+  #createReadyPromise() {
+    return new Promise(resolve => {
+      this.#resolveReady = resolve
+    })
+  }
+
+  /** Stops the loop and drops the engine, without resetting the initialized flag. */
+  #teardown() {
+    this.#loop?.stop()
+    this.#loop = null
+    this.#canvasManager.disconnect()
+    this.#canvasManager.removeAnalyzerCanvases()
+    this.#hydra?.s?.forEach(source => source.clear?.())
+    this.#globalsRestore?.()
+    this.#globalsRestore = null
+    this.#hydra = null
+  }
+
+  /**
+   * @param {string} attrName
+   * @param {string|null} oldValue
+   * @param {string|null} newValue
    */
   attributeChangedCallback(attrName, oldValue, newValue) {
-    if (newValue !== oldValue) {
-      this._options = this._getNewOptions(attrName, newValue)
-      this._initCanvas()
-      this._initHydra()
-      this._evalCode()
+    if (oldValue === newValue || !this.#initialized) return
+
+    if (attrName === 'width' || attrName === 'height') {
+      this.#canvasManager.refresh()
+      return
     }
+    if (attrName === 'dpr') {
+      this.#options = this.#getNewOptions('dpr', newValue)
+      this.#canvasManager.refresh(this.#options.dpr)
+      return
+    }
+
+    this.#options = this.#getNewOptions(attrName, newValue)
+    if (attrName === 'loop') {
+      if (this.#options.autoLoop) this.#startLoop()
+      else this.#stopLoop()
+      return
+    }
+
+    this.#initHydra()
+    this.#evalCode()
   }
 
-  /**
-   * Invoked each time the custom element is appended into a document-connected element.
-   * If the element has a code block in its textContent, it will be evaluated and rendered on the canvas.
-   * If the canvas or hydra instance are not initialized, they will be initialized.
-   * @returns {void}
-   */
+  /** Initializes once on connect and evaluates the code. */
   connectedCallback() {
-    if (this._code === '' && this.textContent) {
-      this._code = this.textContent
+    if (this.#code === '' && this.textContent) {
+      this.#code = this.textContent
       this.textContent = ''
     }
-    if (!this._options.canvas) {
-      this._initCanvas()
+    if (!this.#initialized) {
+      this.#initialized = true
+      this.#parseInitialAttrs()
+      this.#initCanvas()
+      this.#initHydra()
     }
-    if (!this._hydra) {
-      this._initHydra()
+    if (this.#code !== '') {
+      this.#evalCode()
     }
-    if (this._code !== '') {
-      this._evalCode()
+  }
+
+  /** Folds the present attributes into the options once. */
+  #parseInitialAttrs() {
+    for (const name of HydraElement.observedAttributes) {
+      const value = this.getAttribute(name)
+      if (value === null) continue
+      this.#options = this.#getNewOptions(name, value)
     }
   }
 
   /**
-   * Updates the element's state based on the elapsed time since the last tick.
-   * @param {number} dt - The elapsed time in seconds.
+   * Forwards a tick to the engine.
+   * @param {number} dt
    */
   tick(dt) {
-    if (this._hydra) {
-      this._hydra.tick(dt)
+    if (this.#hydra) {
+      this.#hydra.tick(dt)
     }
   }
 
-  /**
-   * Initializes the canvas element for the element.
-   * @private
-   */
-  _initCanvas() {
-    this.shadowRoot?.querySelectorAll('canvas').forEach(canvas => canvas.remove());
-    this._options.canvas = document.createElement('canvas')
-    this._options.canvas.id = 'hydra-element-canvas'
-    this._options.canvas.width = this._options.width
-    this._options.canvas.height = this._options.height
-    this._options.canvas.style.width = "100%"
-    this._options.canvas.style.height = "100%"
-    this.shadowRoot?.appendChild(this._options.canvas)
+  /** Creates the canvas. */
+  #initCanvas() {
+    this.#canvasManager.init(this.#options)
+    this.#options.canvas = this.#canvasManager.canvas
   }
 
-  /**
-   * Initializes the Hydra instance with the provided options and extends the transforms with the provided functions.
-   * @private
-   */
-  _initHydra() {
-    this._hydra = new Hydra({ ...this._options })
-    this._options.extendTransforms.forEach(fn => this._hydra.synth.setFunction(fn))    
-    if (!this._options.useAudioAnalyzer) {
-      this.shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => canvas.remove());
+  /** Creates the engine, tearing down any previous one. */
+  #initHydra() {
+    this.#teardown()
+    this.#hydra = HydraElement.hydraFactory({ ...this.#options })
+    this.#options.extendTransforms.forEach(fn => this.#hydra.synth.setFunction(fn))
+    this.#canvasManager.tagAnalyzerCanvases()
+    this.#scope.loadScript = url => this.loadScript(url)
+    this.#scope._hydra = this.#hydra
+    this.#scope.hydraSynth = this.#hydra
+    if (this.#options.makeGlobal) {
+      this.#globalsRestore = publishHydraGlobals(this.#hydra)
     }
-    globalThis._hydra = this._hydra
-  }
-
-  /**
-   * Evaluates the code in a new async function and executes it.
-   * @private
-   */
-  _evalCode() {
-    const code = `(async () => { ${this._code} })()`
-    if (this._options.makeGlobal) {
-      this._hydra.sandbox.eval(code)
-    } else {
-      hydraEval(code, this._hydra.synth)
+    this.#dispatch('hydra-ready', { synth: this.#hydra.synth })
+    this.#resolveReady?.({ synth: this.#hydra.synth })
+    if (this.#options.autoLoop) {
+      this.#startLoop()
     }
   }
 
-  /**
-   * Returns a new options object with the updated value for the specified attribute.
-   * @param {string} attrName - The name of the attribute to update.
-   * @param {any} newValue - The new value for the attribute.
-   * @returns {Object} - A new options object with the updated attribute value.
-   * @private
-   */
-  _getNewOptions(attrName, newValue) {    
-    switch (attrName) {
-      case 'width': return { ...this._options, width: parseNumber(newValue, DEFAULT_OPTIONS.width, 0) }
-      case 'height': return { ...this._options, height: parseNumber(newValue, DEFAULT_OPTIONS.height, 0) }
-      case 'global': return { ...this._options, makeGlobal: parseJSON(newValue, DEFAULT_OPTIONS.makeGlobal) }
-      case 'analyzer': return { ...this._options, useAudioAnalyzer: parseJSON(newValue, DEFAULT_OPTIONS.useAudioAnalyzer) }
-      case 'audio': return { ...this._options, detectAudio: parseJSON(newValue, DEFAULT_OPTIONS.detectAudio) }
-      case 'sources': return { ...this._options, numSources: parseNumber(newValue, DEFAULT_OPTIONS.numSources, 0) }
-      case 'outputs': return { ...this._options, numOutputs: parseNumber(newValue, DEFAULT_OPTIONS.numOutputs, 0) }
-      case 'precision': return { ...this._options, precision: parseOption(newValue, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']) }
-      default: return { ...this._options }
+  /** Starts the render loop, creating it lazily. */
+  #startLoop() {
+    if (!this.#loop) {
+      this.#loop = new Loop({ onTick: dt => this.tick(dt) })
     }
+    this.#loop.start()
   }
 
+  /** Stops the render loop. */
+  #stopLoop() {
+    this.#loop?.stop()
+  }
+
+  /** Evaluates the code and dispatches `hydra-eval` with the outcome. */
+  #evalCode() {
+    const code = this.#code
+    this.#queue
+      .submit(() => hydraEval(code, this.#hydra.synth, this.#scope))
+      .then(() => this.#dispatch('hydra-eval', { success: true }))
+      .catch(error => {
+        this.#dispatch('hydra-eval', {
+          success: false,
+          error: error instanceof Error ? error.message : String(error),
+          line: userCodeLine(error, code),
+        })
+      })
+  }
+
+  /**
+   * Dispatches a bubbling event.
+   * @param {string} name
+   * @param {Object} detail
+   */
+  #dispatch(name, detail) {
+    this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }))
+  }
+
+  /**
+   * @param {string} attrName
+   * @param {string|null} newValue
+   * @returns {Object}
+   */
+  #getNewOptions(attrName, newValue) {
+    const parse = ATTR_PARSERS[attrName]
+    return parse ? parse(this.#options, newValue) : this.#options
+  }
 }

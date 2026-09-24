@@ -1,3 +1,7 @@
 import { HydraElement } from './src/element.js'
 
-window.customElements.define('hydra-element', HydraElement)
+if (!customElements.get('hydra-element')) {
+  customElements.define('hydra-element', HydraElement)
+}
+
+export { HydraElement }
