@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-09-24
+
+### Added
+
+- `synth` and `ready` properties plus a `destroy()` method
+- `loadScript(url)` method — load extensions without the `global` attribute
+- `hydra-ready` and `hydra-eval` events
+- `dpr` attribute and `::part(canvas)`/`::part(analyzer)` CSS parts
+- `bind(name, value)`, `bindLive(name, provider)`, and `unbind(name)` — feed static values or live getters into the eval scope; bound names win over engine-owned reads (`time`, `width`, `height`, `speed`, …)
+- headless context module (`hydra-element/context`): `createContext(hydra, options)` exposing `eval`/`bind`/`bindLive`/`unbind`, plus `loadScript` and re-exports of `hydraEval`/`userCodeLine`
+- `editorGlobals: false` option to `createContext` to skip binding `_hydra`/`hydraSynth` into the scope
+
+### Changed
+
+- `hydraEval` now resolves the DSL through a scope proxy, so `time`, `bpm`, `speed`, extra buffers and custom transforms work without `synth.`
+- identifier resolution follows: bound name → live engine read → persistent scope → synth → `globalThis`
+- evaluations are serialized through a queue
+- `loop` attribute now toggles the loop without recreating the engine
+- `width`/`height`/`dpr` changes resize without recreating the engine
+- toolchain moved to pnpm + vitest + oxc-standard
+- dev dependencies updated: vite 8, oxlint 1.85 (oxfmt stays on 0.48 for the oxc-standard peer)
+
+### Fixed
+
+- leaked running loops/WebGL contexts on re-initialization
+- created one engine per initial attribute instead of one
+- `parseJSON(null)` returned `null` instead of the default value
+- `ready` kept resolving to a destroyed engine after `destroy()`
+- warnings for invalid `width`/`height` attributes now dedupe per element instead of globally
+
+### Removed
+
+- `analyzer` attribute — hide the audio analyzer via `::part(analyzer)`
+
 ## [0.6.0] - 2026-02-14
 
 ### Added

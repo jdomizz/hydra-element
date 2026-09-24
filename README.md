@@ -1,259 +1,253 @@
 # 🍬 \<hydra-element>
 
-A custom element for wrapping the [hydra-synth](https://github.com/hydra-synth/hydra-synth) engine.
+A DOM-native Web Component for the Hydra visual synthesizer.
 
-## Rationale
+![image](/image.png)
 
-[Hydra](https://hydra.ojack.xyz/) is a video synth and coding environment that runs in the browser. It stands out for its elegant DSL, modeled on a fluent interface.
+Create generative visuals with [Hydra](https://hydra.ojack.xyz/) in any HTML page.
 
-This project aims to simplify the render of Hydra scripts in HTML documents embedding [hydra-synth](https://github.com/hydra-synth/hydra-synth) (Hydra's video synthesizer and shader compiler) in a [custom element](https://developer.mozilla.org/en-US/docs/Web/API/Web_components). 
+```html
+<script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element"></script>
 
-By default each `hydra-element` contains its own `hydra-synth` (with its own sources, functions and outputs). In this way, several elements can be used in the same HTML document without collisions.
+<hydra-element>osc(10, 0.2, 0.5).out()</hydra-element>
+```
 
-## Installation
+That's it — write Hydra code between the tags and you're live. Each element runs
+its own engine, so several on one page don't interfere.
 
-This package is published in the [npm](https://www.npmjs.com/) registry as `hydra-element`. You can load it via CDN (the easiest way) or install it with a package manager.
+## Demo
 
-### CDN
+Want to poke around without setting up a project? Open the CodePen 
+[example](https://codepen.io/editor/jdomizz/pen/01a0d310-226b-78dc-b5b1-cb56f2ad4150) 
+for a ready-to-edit playground and quick tests.
 
-Load the custom element via CDN adding the following script to your HTML file.
+## Install
 
 ```html
 <script type="module" src="https://cdn.jsdelivr.net/npm/hydra-element"></script>
 ```
 
-### Package
-
-Install the package from [npm](https://docs.npmjs.com/cli/commands/npm) with the following command.
+or
 
 ```sh
-npm install hydra-element
+npm install hydra-element   # or pnpm / yarn
 ```
-
-Once you’ve done that, import the custom element in your JavaScript module.
 
 ```js
-import "hydra-element"
+import 'hydra-element'
 ```
 
-## Usage
+The class is also exported if you need it directly:
 
-Include your code between the element tags.
+```js
+import { HydraElement } from 'hydra-element'
+```
+
+## Write code
+
+The full Hydra DSL works between the tags (`osc()`, `noise()`, `solid()`,
+`setFunction()`, sources `s0`–`s3`, outputs `o0`–`o3`, `time`, `bpm`, `speed`,
+`mouse`) — no `synth.` prefix needed. `await` works too, so async sources and
+`loadScript(...)` are supported.
 
 ```html
 <hydra-element>
-  s0.initImage("https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg")
-
-  osc(30,0.01,1)
-    .mult(osc(() => (100 * Math.sin(time * 0.1)),-0.1,1).modulate(noise(3,1)).rotate(0.7))
+  osc(30, 0.01, 1)
+    .mult(osc(() => 100 * Math.sin(time * 0.1), -0.1, 1).modulate(noise(3, 1)).rotate(0.7))
     .blend(src(s0))
-    .posterize([3,10,2].fast(0.5).smooth(1))
-    .modulateRotate(o0, () => mouse.x * 0.003)
+    .posterize([3, 10, 2].fast(0.5).smooth(1))
     .out()
 </hydra-element>
 ```
 
-If you need to update the code, use the `code` property with JavaScript.
+Change the scene from JS:
 
 ```js
-document.querySelector('hydra-element').code = 'osc().out()'
+document.querySelector('hydra-element').code = 'osc(20).out()'
 ```
 
-Finally, use CSS to style the element.
-
-```css
-hydra-element {
-  width: 15rem;
-  height: 15rem;
-  color: white;
-}
-```
-You can see and remix a live example [here](https://glitch.com/edit/#!/hydra-element).
-
-## Configuration
-
-By default the embedded `hydra-synth` engine is created with these settings:
+Or drive the synth directly once it's ready:
 
 ```js
-canvas: null,
-width: window.innerWidth,
-height: window.innerHeight,
-autoLoop: true,
-makeGlobal: false,
-detectAudio: false,
-numSources: 4,
-numOutputs: 4,
-extendTransforms: [],
-precision: null,
-pb: null
+const el = document.querySelector('hydra-element')
+const { synth } = await el.ready
+synth.s0.initImage('...')
+synth.bpm = 120
 ```
 
-You can use the following attributes and properties to configure these options. Read the `hydra-synth` [API](https://github.com/hydra-synth/hydra-synth#api) documentation for more information.
+> **This is not a sandbox** — code runs in your page, so only evaluate code you trust.
 
-### Attributes `width` and `height`
+## Binding values
 
-In addition to the engine, the custom element also takes care of the canvas. By default it creates one the size of the window, which is useful for many cases. If this is not yours, you can use the `width` and `height` attributes to modify the canvas size. 
+Feed values from your page into the sketch without touching `globalThis`. 
+Bound names can also shadow the engine's own built-ins (`time`, `width`, `speed`, `mouse`, `a` …), 
+so you can override those or add entirely new ones:
+
+```js
+const el = document.querySelector('hydra-element')
+const slider = document.querySelector('#freq')
+
+// static — a pinned value; shadows the engine's own `speed` read
+el.bind('speed', 1.5)
+// live — a getter re-read on every access: moving the slider updates the scene
+el.bindLive('freq', () => Number(slider.value))
+// remove it; the engine's own `speed` read applies from then on
+el.unbind('speed')
+```
 
 ```html
-<hydra-element width="250" height="250"></hydra-element>
+<hydra-element>osc(() => freq, 0.1, speed).out()</hydra-element>
+<input id="freq" type="range" min="1" max="120" value="30">
 ```
 
-### Property `canvas`
+Parameters re-evaluate per frame only when passed as functions: `osc(freq, …)`
+pins the value at eval time, `osc(() => freq, …)` stays live. A bound getter is
+read-only inside the sketch — assigning it throws.
 
-If you prefer to take care of the canvas yourself, use the `canvas` property to specify a canvas element to render on. In this case the component does not create any canvas but uses the assigned one.
+## Attributes
 
-```js
-document.querySelector('hydra-element').canvas = yourCanvasElement
-```
+| Attribute | Default | What it does |
+| --- | --- | --- |
+| `width` / `height` | CSS | Canvas backing size in pixels (overrides the CSS size). |
+| `dpr` | `2` | Cap for the device-pixel-ratio used by auto-sized canvases. |
+| `precision` | default | Shader precision: `highp`, `mediump`, `lowp`. |
+| `sources` / `outputs` | `4` | Number of source/output buffers (0–16). Extra buffers are `s4`, `s5`, …. |
+| `audio` | `false` | Enable audio analysis (`a.fft`, …) — requests microphone access. |
+| `global` | `false` | Keep Hydra globals on `window`. Use **at most one** per document. |
+| `loop` | `true` | Whether the element drives its own render loop. |
 
-### Attribute `loop`
+Auto-sized canvases follow the layout via `ResizeObserver` and scale by
+`min(devicePixelRatio, dpr)`, so they stay sharp on retina. Changing
+`width`/`height`/`dpr` resizes in place — no engine recreation.
 
-If you want to use your own render loop for triggering Hydra updates, set the `loop` attribute to `false`.
+Turn `loop` off and drive frames yourself with `tick`:
 
 ```html
 <hydra-element loop="false"></hydra-element>
 ```
 
-Note you will need to call the `tick` method, where `dt` is the time elapsed in milliseconds since the last update.
+```js
+const el = document.querySelector('hydra-element')
+function frame(now) {
+  el.tick(now - last)
+  last = now
+  requestAnimationFrame(frame)
+}
+```
+
+You can toggle `loop` at runtime too — it starts/stops the loop without
+recreating the engine.
+
+## API
+
+| Member | Type | Description |
+| --- | --- | --- |
+| `code` | get/set | The scene source. Setting it (re)evaluates the sketch. |
+| `ready` | get (read-only) | `Promise<{ synth }>` that resolves once the engine is initialized. |
+| `tick(dt)` | method | Manual frame tick (ms) — used when `loop="false"`. |
+| `canvas` | get/set | The backing `<canvas>`. Assign your own to take over rendering. |
+| `synth` | get (read-only) | The hydra-synth engine (`el.synth.osc`, `el.synth.s0`, …). |
+| `transforms` | get/set | Array of custom GLSL functions (`setFunction` under the hood). |
+| `pb` | get/set | An `rtc-patch-bay` instance for streaming (recreates the engine). |
+| `scope` | get | The persistent eval scope — bare assignments, bound values, and `_hydra`/`hydraSynth` live here. |
+| `bind(name, value)` | method | Binds a static value into the eval scope; wins over live engine-owned reads (`time`, `width`, …). |
+| `bindLive(name, fn)` | method | Binds a getter re-read on every access (read-only inside the sketch). |
+| `unbind(name)` | method | Removes a previously bound value or live getter. |
+| `loadScript(url)` | method | Loads an extension script, scoped to this element. |
+| `destroy()` | method | Tears the element down (engine, loop, canvas) without removing it from the DOM. |
+
+## Events
+
+Bubbling `CustomEvent`s dispatched on the element:
+
+| Event | Detail |
+| --- | --- |
+| `hydra-eval` | `{ success, error?, line? }` — after each `code` assignment. |
+| `hydra-ready` | `{ synth }` — after every engine (re)initialization. |
+| `hydra-element-resize` | `{ width, height }` — when the canvas backing store resizes. |
 
 ```js
-document.querySelector('hydra-element').tick(dt)
+el.addEventListener('hydra-eval', e => {
+  if (!e.detail.success) console.error(e.detail.error)
+})
 ```
 
-### Attribute `global`
+## Styling with `::part`
 
-If you set the `global` attribute to `true` all sources, functions and outputs of the synthesizer will be stored in the `window` object, so they will be directly available. You should use this option if you need to extend the functionality of the synthesizer by loading extensions or external libraries with `loadScript`.
+The internal canvas and the audio analyzer are exposed as CSS parts:
 
-```html
-<hydra-element global="true">
-  await loadScript("https://cdn.statically.io/gl/metagrowing/extra-shaders-for-hydra/main/lib/lib-noise.js")
-  
-  warp().out()
-</hydra-element>
+```css
+hydra-element::part(canvas) {
+  border-radius: 0.5rem;
+}
+
+/* hide the audio analyzer overlay */
+hydra-element::part(analyzer) {
+  display: none;
+}
 ```
 
-> **Warning**
-> You must not use more than one `hydra-element` with `global` set to `true` in the same HTML document.
+## Extensions
 
-### Attribute `audio`
-
-Hydra's audio capabilities are disabled by default because they require requesting microphone permissions and not all scripts use them, so don't forget to set the `audio` attribute to `true` if you use the `a` object in your script.
+Load any Hydra extension with `loadScript` — no `global` attribute needed. The
+script is fetched and evaluated inside the element's scope:
 
 ```html
-<hydra-element audio="true">
-  a.show()
+<hydra-element>
+  await loadScript("https://cdn.jsdelivr.net/gh/geikha/hyper-hydra@latest/hydra-arithmetics.js")
 
-  osc(10, 0, () => a.fft[0]*4).out()
-</hydra-element>
-```
-
-### Attribute `analyzer`
-
-You can use the `analyzer` attribute if you need to disable the Hydra audio analyzer UI.
-
-```html
-<hydra-element audio="true" analyzer="false"></hydra-element>
-```
-
-### Attribute `sources`
-
-You can use the `sources` attribute to set the number of source buffers available for multimedia resources. The default value is `4`. Extra buffers are available via the `synth` object.
-
-```html
-<hydra-element sources="8">
-  const { s6, s7 } = synth
-
-  s0.initCam()
-  s1.initScreen()
-  s6.initImage('https://upload.wikimedia.org/wikipedia/commons/2/25/Hydra-Foto.jpg')
-  s7.initVideo('https://media.giphy.com/media/AS9LIFttYzkc0/giphy.mp4')
-
-  src(s0)
-    .blend(src(s1))
-    .blend(src(s6))
-    .blend(src(s7))
+  osc(10,.1,2)
+    .mod(gradient().asin().cos())
+    .step(noise(2).unipolar().div(o0))
+    .blend(o0,.2)
     .out()
 </hydra-element>
 ```
 
-### Attribute `outputs`
+> **Note** — extensions built for the classic single-global editor read
+> `window._hydra`, `window.hydraSynth`, `window.update`, etc. Alone they work fine,
+> but across several isolated elements the bridge may resolve to the wrong engine.
+> And anything global by nature — APIs exposed on `window` or UI appended to
+> `document.body` (MIDI monitor, audio analyzer, …) — can collide between elements.
 
-You can use the `outputs` attribute to set the number of output buffers to use. The default value is `4`. Extra buffers are available via the `synth` object.
+## Headless context
 
-```html
-<hydra-element outputs="8">
-  const { o7 } = synth
-
-  osc().out(o7)
-
-  render(o7)
-</hydra-element>
-```
-
-> **Warning**
-> Note that `hydra-synth` itself has only been tested with `4` outputs, so use this attribute with caution.
-
-### Attribute `precision`
-
-You can use the `precision` attribute to force precision of shaders. By default no precision is specified, so the engine will use `highp` for iOS and `mediump` for everything else. Avaiblable options are `highp`, `mediump` and `lowp`.
-
-```html
-<hydra-element precision="highp"></hydra-element>
-```
-
-### Property `transforms`
-
-You can add custom GLSL functions setting the `transforms` property with JavaScript.
+Don't need the `<hydra-element>` tag in the page? The evaluation core is
+available headless from `hydra-element/context`:
 
 ```js
-document.querySelector('hydra-element').transforms = [{
-  name: 'yourNoise',
-  type: 'src',
-  inputs: [
-    { type: 'float', name: 'scale', default: 5 },
-    { type: 'float', name: 'offset', default: 0.5 }
-  ],
-  glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`
-}]
+import Hydra from 'hydra-synth'
+import { createContext, loadScript } from 'hydra-element/context'
+
+const hydra = new Hydra({ canvas, makeGlobal: false })
+const context = createContext(hydra)
+
+context.bind('speed', 1.5)
+context.bindLive('freq', () => 20 + 10 * Math.sin(Date.now() / 1000))
+
+await context.eval('osc(() => freq, 0.1, speed).out()')
+await loadScript('https://…/lib-noise.js', { hydra, scope: context.scope })
 ```
 
-Once done, you can use the new functions in your script. Generator functions (those of type `src`) will be available via the `synth` object.
+By default the context also binds `_hydra`/`hydraSynth` into its scope; pass
+`{ editorGlobals: false }` to `createContext` to skip that.
 
-```html
-<hydra-element>
-  const { yourNoise } = synth
+Exports: `createContext`, `loadScript`, `hydraEval`, `userCodeLine` (V8-only — parses `error.stack` frame format).
 
-  yourNoise().out()
-</hydra-element>
-```
+## Notes and limitations
 
-### Property `pb`
+- **~16 WebGL contexts per browser** — ~12+ elements on one page may hit it.
+- `hydra-synth` itself is only tested with 4 outputs; raise `outputs` with caution.
 
-If you have access to an instance of `rtc-patch-bay` for streaming, you can assign it to the `pb` property with JavaScript.
+## Acknowledgements
 
-```js
-document.querySelector('hydra-element').pb = yourRtcPatchBayInstance
-```
-
-## Limitations
-
-- The `loadScript` function is only available when `global` is `true`.
-- It is not possible to work with [p5.js](https://p5js.org) as in the Hydra web editor.
+- [Olivia Jack](https://ojack.xyz/) for creating [Hydra](https://hydra.ojack.xyz/) 🌈
+- The Hydra community for the extensions and ecosystem that surround it 🧩
 
 ## Development
 
-This project uses [Vite](https://vitejs.dev/) for development and [Web Test Runner](https://modern-web.dev/docs/test-runner/overview/) for testing. The following `npm` scripts are available:
-
-- `dev`: serves `index.html` for _development_ (reloading on file changes)
-- `test`: runs the test suites in a headless chrome
-- `build`: bundles the custom element for _distribution_ (in the `dist` directory)
-
-## Credits
-
-- [Naoto Hieda](https://naotohieda.com/) for improving the usability of the custom element 🪄
-- [Olivia Jack](https://ojack.xyz/) for creating such a fun tool as Hydra 🌈
-- The Hydra community for turning the tool into something even more fun 🧩
+See [CONTRIBUTING.md](./CONTRIBUTING.md) and [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ## License
 
-Distributed under the GNU Affero General Public License.
+[AGPL-3.0-or-later](LICENSE).
