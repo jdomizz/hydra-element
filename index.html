@@ -5,53 +5,323 @@
     <title>&lt;hydra-element&gt;</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍬</text></svg>">
     <style>
+      html,
       body {
-        margin: 0;
-        font-family: monospace;
-        background-color: #242427;
-      }
-
-      textarea {
-        width: 100%;
         height: 100%;
-        z-index: 1;
-        position: fixed;
-        color: #d6bb21;
-        background: transparent;
-        border: 0;
+        margin: 0;
       }
 
-      textarea:focus {
-        outline: none;
+      body {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+        padding: 2rem;
+        box-sizing: border-box;
+        font-family: monospace;
+        background-color: #363636;
+        overflow: hidden;
+      }
+
+      #toolbar {
+        flex: 0 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      #toolbar h1 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: normal;
+        color: #d9d9d9;
+      }
+
+      #toolbar .controls {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+      }
+
+      #toolbar select,
+      #toolbar button {
+        font-family: inherit;
+        font-size: 0.9rem;
+        color: #d9d9d9;
+        background: #363636;
+        border: 1px solid #cacaca;
+        border-radius: 0.5rem;
+        padding: 0.3rem 0.5rem;
+      }
+
+      #toolbar button {
+        cursor: pointer;
+      }
+
+      #grid {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        gap: 2rem;
       }
 
       hydra-element {
         width: 100%;
-        height: 100vh;
-        display: flex;
+        height: 100%;
+        display: block;
+        overflow: hidden;
+        background-color: #000;
+        border-radius: 1rem;
       }
     </style>
-    <script defer>
-      const keypressHandler = (event) => {
-        if (event.key === '\n') {
-          document.querySelector('hydra-element').code = document.querySelector('textarea').value
-        }
-      }
-
-      window.onload = () => document.querySelector('hydra-element').transforms = [{
-        name: 'noixe',
-        type: 'src',
-        inputs: [
-          { type: 'float', name: 'scale', default: 5 },
-          { type: 'float', name: 'offset', default: 0.5 }
-        ],
-        glsl: `return vec4(vec3(_noise(vec3(_st*scale, offset*time))), 0.5);`
-      }]   
-    </script>
     <script type="module" src="./index.js"></script>
   </head>
-  <body onkeypress="keypressHandler(event)">
-    <textarea name="editor" spellcheck="false"></textarea>
-    <hydra-element audio="true"></hydra-element>
+  <body>
+    <header id="toolbar">
+      <h1>&lt;hydra-element&gt;</h1>
+      <div class="controls">
+        <select id="element"></select>
+        <select id="sketch"></select>
+        <button id="eval">eval</button>
+      </div>
+    </header>
+    <div id="grid">
+      <hydra-element></hydra-element>
+      <hydra-element></hydra-element>
+      <hydra-element></hydra-element>
+      <hydra-element></hydra-element>
+    </div>
+
+    <script>
+      const sketches = [
+        {
+          name: 'mouse - ojack',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEElMkYlMkYlMjBieSUyME9saXZpYSUyMEphY2slMEElMkYlMkYlMjAlNDBfb2phY2tfJTBBJTBBb3NjKDIwJTJDJTIwMC4wMSUyQyUyMDEuMSklMEElMDkua2FsZWlkKDUpJTBBJTA5LmNvbG9yKDIuODMlMkMwLjkxJTJDMC4zOSklMEElMDkucm90YXRlKDAlMkMlMjAwLjEpJTBBJTA5Lm1vZHVsYXRlKG8wJTJDJTIwKCklMjAlM0QlM0UlMjBtb3VzZS54JTIwKiUyMDAuMDAwMyklMEElMDkuc2NhbGUoMS4wMSklMEElMjAlMjAlMDkub3V0KG8wKQ%3D%3D',
+        },
+        {
+          name: 'pixelscape - marianne teixido',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEElMkYlMkZQaXhlbHNjYXBlJTBBJTJGJTJGTWFyaWFubmUlMjBUZWl4aWRvJTBBJTJGJTJGaHR0cHMlM0ElMkYlMkZnaXRodWIuY29tJTJGTWFyaWFubmVUZWl4aWRvJTBBJTBBc3JjKG8wKSUwQSUyMC5zYXR1cmF0ZSgxLjAxKSUwQSUyMC5zY2FsZSguOTk5KSUwQSUyMC5jb2xvcigxLjAxJTJDMS4wMSUyQzEuMDEpJTBBJTIwLmh1ZSguMDEpJTBBJTIwLm1vZHVsYXRlSHVlKHNyYyhvMSkuaHVlKC4zKS5wb3N0ZXJpemUoLTEpLmNvbnRyYXN0KC43KSUyQzIpJTBBJTIwJTIwLmxheWVyKHNyYyhvMSklMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAubHVtYSgpJTBBJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwLm11bHQoZ3JhZGllbnQoMSklMEElMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAlMjAuc2F0dXJhdGUoLjkpKSklMEElMjAlMjAub3V0KG8wKSUwQSUwQW5vaXNlKDElMkMlMjAuMiklMEElMjAlMjAucm90YXRlKDIlMkMuNSklMEElMjAlMjAubGF5ZXIoc3JjKG8wKSUwQSUyMCUyMC5zY3JvbGxYKC4yKSklMEElMjAlMjAub3V0KG8xKSUwQSUwQXJlbmRlcihvMCklMEE%3D',
+        },
+        {
+          name: 'slit scan - flor de fuego',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEElMkYlMkZIeWRyYSUyMEdsaXRjaHklMjBTbGl0JTIwU2NhbiUwQSUyRiUyRkZsb3IlMjBkZSUyMEZ1ZWdvJTBBJTJGJTJGaHR0cHMlM0ElMkYlMkZmbG9yZGVmdWVnby5naXRodWIuaW8lMkYlMjAlMEFzMC5pbml0Q2FtKCklMEFzcmMoczApLnNhdHVyYXRlKDIpLmNvbnRyYXN0KDEuMykubGF5ZXIoc3JjKG8wKS5tYXNrKHNoYXBlKDQlMkMyKS5zY2FsZSgwLjUlMkMwLjcpLnNjcm9sbFgoMC4yNSkpLnNjcm9sbFgoMC4wMDEpKS5tb2R1bGF0ZShvMCUyQzAuMDAxKS5vdXQobzApJTBBJTBBJTBB',
+        },
+        {
+          name: 'tropical juice - ritchse',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEElMkYlMkYlMjB0cm9waWNhbCUyMGp1aWNlJTBBJTJGJTJGJTIwYnklMjBSaXRjaHNlJTBBJTJGJTJGJTIwaW5zdGFncmFtLmNvbSUyRnJpdGNoc2UlMEF2b3Jvbm9pKDIlMkMlMjAwLjA5MSUyQyUyMDAuMiklMEElMDkuc2hpZnQoMC41KSUwQSUwOS5tb2R1bGF0ZVBpeGVsYXRlKHZvcm9ub2koNy45OTklMkMlMjAwLjIpJTJDJTIwMTMuOCUyQyUyMDIpJTBBJTA5LnNjYWxlKCgpJTIwJTNEJTNFJTIwMSUyMCUyQiUyME1hdGguc2luKHRpbWUlMjAqJTIwMi41KSUyMColMjAwLjA1KSUwQSUwOS5kaWZmKHZvcm9ub2koMyklMEElMDklMDkuc2hpZnQoMC4yOTkpKSUwQSUwOS5kaWZmKG9zYygyJTJDJTIwMC4xNSUyQyUyMDEuMSklMEElMDklMDkucm90YXRlKCkpJTBBJTA5LmJyaWdodG5lc3MoMC4xNTgpJTBBJTA5LmNvbnRyYXN0KDEuMiklMEElMDkuc2F0dXJhdGUoMS4yNzQpJTBBJTA5Lm91dCgpJTNCJTBBc3BlZWQlMjAlM0QlMjAwLjMzMyUzQg%3D%3D',
+        },
+        {
+          name: 'glitch river - flor de fuego',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEElMkYlMkZHbGl0Y2glMjBSaXZlciUwQSUyRiUyRkZsb3IlMjBkZSUyMEZ1ZWdvJTBBJTJGJTJGaHR0cHMlM0ElMkYlMkZmbG9yZGVmdWVnby5naXRodWIuaW8lMkYlMEF2b3Jvbm9pKDglMkMxKSUwQS5tdWx0KG9zYygxMCUyQzAuMSUyQygpJTNEJTNFTWF0aC5zaW4odGltZSkqMykuc2F0dXJhdGUoMykua2FsZWlkKDIwMCkpJTBBLm1vZHVsYXRlKG8wJTJDMC41KSUwQS5hZGQobzAlMkMwLjgpJTBBLnNjcm9sbFkoLTAuMDEpJTBBLnNjYWxlKDAuOTkpJTBBLm1vZHVsYXRlKHZvcm9ub2koOCUyQzEpJTJDMC4wMDgpJTBBLmx1bWEoMC4zKSUwQS5vdXQoKSUwQSUwQSUwQXNwZWVkJTIwJTNEJTIwMC4xJTBBJTBB',
+        },
+        {
+          name: 'abbreviations - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLWFiYnJldmlhdGlvbnMuanMlMjIlMjklMEElMEFvJTI4MTAlMkMlMjAwLjElMkMlMjAxLjIlMjkuYmwlMjhucyUyODMlMjklMjkuZGYlMjhzaCUyODQlMkMlMjAwLjYlMjkucnQlMjgwJTJDJTIwMC4xJTI5JTI5Lm91dCUyOCUyOQ==',
+        },
+        {
+          name: 'arithmetics - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS1hcml0aG1ldGljcy5qcyUyMiklMEElMEFvc2MoMTAlMkMuMSUyQzIpJTBBJTA5Lm1vZChncmFkaWVudCgpLmFzaW4oKS5jb3MoKSklMEElMDkuc3RlcChub2lzZSgyKS51bmlwb2xhcigpLmRpdihvMCkpJTBBJTA5LmJsZW5kKG8wJTJDLjIpJTBBJTA5Lm91dCgpJTBB',
+        },
+        {
+          name: 'arrays - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLWFycmF5cy5qcyUyMiUyOSUwQSUwQWdyYWRpZW50JTI4JTI5JTBBJTA5LmRpZmYlMjhvMCUyOSUwQSUwOS5odWUlMjglNUIwJTJDMiUyQzMlMkM4JTVELmRpdiUyODEwJTI5LmFkZFdyYXAlMjglNUIwLjIlMkMwLjElNUQlMjkuc21vb3RoJTI4JTI5JTI5JTBBJTA5LnJvdGF0ZSUyOEFycmF5LnJ1biUyODglMjkubXVsdCUyOE1hdGguUEklMkEyJTJGOCUyOSUyOSUwQSUwOS5hZGQlMjglMEElMjAlMjAlMDklMDlzaGFwZSUyODY0JTJDLjAyJTI5JTBBJTIwJTIwJTA5JTA5JTA5LnNjcm9sbFglMjhBcnJheS5yYW5kb20lMjgxNiUyQy0wLjQlMkMwLjQlMjkuc21vb3RoJTI4JTI5JTI5JTBBJTIwJTIwJTA5JTA5JTA5LnNjcm9sbFklMjhBcnJheS5yYW5kb20lMjgxNiUyQy0wLjQlMkMwLjQlMjkuc21vb3RoJTI4JTI5JTI5JTBBJTA5JTI5JTBBJTA5LmJsZW5kJTI4bzAlMkMuNiUyOSUwQSUwOS5vdXQlMjglMjklMEFicG0lMjAlM0QlMjA1MA==',
+        },
+        {
+          name: 'blend - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS1ibGVuZC5qcyUyMiklMEElMEFvc2MoMzApJTBBJTA5LnNjcmVlbihub2lzZSgzJTJDMSkucG0oKSklMEElMDkubGluZWFyQnVybihncmFkaWVudCgxKS5odWUoLjMpKSUwQSUwOS5vdXQoKSUwQQ%3D%3D',
+        },
+        {
+          name: 'colorspaces - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLWNvbG9yc3BhY2VzLmpzJTIyJTI5JTBBJTBBZ3JhZGllbnQlMjglMjkucmdiLmFTZXQlMjgwJTI5JTBBJTIwJTIwJTA5LmNteWsuZnJvbSUyOCUyOSUwQSUwOS5oc3YuaE9mZnNldEZyb20lMjhub2lzZSUyODElMkMxJTI5JTJDLjMlMjklMEElMDkueXV2JTI4MSUyQy41JTI5JTBBJTA5Lm91dCUyOCUyOQ==',
+        },
+        {
+          name: 'convolutions - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS1jb252b2x1dGlvbnMuanMlMjIpJTBBJTBBdm9yb25vaSgpJTBBJTA5Lm91dChvMSklMEElMEFzaGFycGVuT25ZKG8xJTJDMiUyQzQpJTBBJTA5LmJsZW5kKGJsdXIobzAlMkMyKS5zY2FsZSguOSkuY29udHJhc3QoMS4xKSUyQy42KSUwQSUwOS5vdXQobzApJTBB',
+        },
+        {
+          name: 'debug - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLWRlYnVnLmpzJTIyJTI5JTBBJTBBb3NjJTI4JTI5LnJvdGF0ZSUyOCUyOS5vdXQlMjglMjklMjAlMkYlMkYlMjB0cnklMjB0byUyMCU2MGRlYnVnJTYwJTIwbWUlMjAlMjElMjElMEElMEElMkYlMkYlMjBvc2MlMjglMjkucm90YXRlJTI4JTI5LmRlYnVnJTI4bzAlMjk=',
+        },
+        {
+          name: 'fractals - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS1mcmFjdGFscy5qcyUyMiklMEElMEElMkYlMkZhd2FpdCUyMGxvYWRTY3JpcHQoJTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLW91dHB1dHMuanMlMjIpJTBBJTBBJTJGJTJGb1Muc2V0TGluZWFyKCklMEElMEFzcmMobzApJTBBJTA5LnNjYWxlKC43NSklMEElMDkuYWRkKG5vaXNlKDIlMkMxKSUyQy40KSUwQSUwOS5pbnZlcnQoKSUwQSUwOS5pbnZlcnNpb24oKSUwQSUwOS5taXJyb3JYMigpJTBBJTA5LmJsZW5kKG8wJTJDLjMpJTBBJTA5Lm91dCgpJTBBJTBB',
+        },
+        {
+          name: 'glsl - geikha *',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLWdsc2wuanMlMjIlMjklMEElMEFnbHNsJTI4JTI3dmVjNCUyOHNpbiUyOHV2LnglMkFpMCUyQiUyOHRpbWUlMkFpMSUyQXZlYzMlMjhpMiUyQ2kyJTJBMi4lMkNpMiUyQTMuJTI5JTI5JTI5JTJDMS4wJTI5JTI3JTJDMTYlMkMyJTJDLjMlMjklMEElMDkuZ2xzbENvbG9yJTI4JTI3dmVjNCUyOGMwLmJyZy0lMjhzaW4lMjhjMC5iJTI5JTJBaTAlMjklMkMxLiUyOSUyNyUyQyUyOCUyOSUzRCUzRU1hdGguY29zJTI4dGltZSUyOSUyOSUwQSUwOS5vdXQlMjglMjk=',
+        },
+        {
+          name: 'gradientmap - geikha *',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGaHlkcmEtZXh0ZW5zaW9ucy5nbGl0Y2gubWUlMkZoeWRyYS1ncmFkaWVudHMuanMlMjIpJTBBJTBBY29uc3QlMjBteUdyYWRpZW50JTIwJTNEJTIwY3JlYXRlR3JhZGllbnQoJTIyJTIzMDAwJTIyJTJDJTIwJTIyJTIzMGJmJTIyJTJDJTIwJTIycmVkJTIyJTJDJTIwJTIyd2hpdGUlMjIpJTNCJTBBJTIwJTBBb3NjKDMwJTJDLjA1KS5rYWxlaWQoNzIwKS5zY2FsZSgxJTJDKCklM0QlM0Vpbm5lckhlaWdodCUyRmlubmVyV2lkdGgpJTBBJTA5Lmxvb2t1cFgobXlHcmFkaWVudCklMEElMDkub3V0KCklMEElMjAlMEFzcmMobXlHcmFkaWVudCkub3V0KG8xKSUwQSUwQXJlbmRlcigp',
+        },
+        {
+          name: 'mouse - geikha *',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLW1vdXNlLmpzJTIyJTI5JTBBJTBBbm9pc2UlMjgxJTI5JTBBJTA5LmFkZCUyOHNoYXBlJTI4NjQlMkMuMDElMkMuMiUyOS5zY3JvbGxYJTI4JTI4JTI5JTNEJTNFbW91c2UucG9zeCUyOS5zY3JvbGxZJTI4JTI4JTI5JTNEJTNFbW91c2UucG9zeSUyOSUyOSUwQSUwOS5vdXQlMjglMjk=',
+        },
+        {
+          name: 'outputs - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS1vdXRwdXRzLmpzJTIyKSUwQSUwQW8wLnNldE5lYXJlc3QoKSUwQW8xLnNldExpbmVhcigpJTBBJTBBc3JjKG8wKSUwQSUyMC5sYXllcihvc2MoMzAlMkMuMiUyQzEpLm1hc2soc2hhcGUoNCUyQy4xJTJDMCkpKSUwQSUyMC5zY2FsZSgxLjAxKS5yb3RhdGUoLjAxKSUwQSUyMC5vdXQobzApJTBBJTBBc3JjKG8xKSUwQSUyMC5sYXllcihvc2MoMzAlMkMuMiUyQzEpLm1hc2soc2hhcGUoNCUyQy4xJTJDMCkpKSUwQSUyMC5zY2FsZSgxLjAxKS5yb3RhdGUoLjAxKSUwQSUyMC5vdXQobzEpJTBBJTBBcmVuZGVyKCklMEE%3D',
+        },
+        {
+          name: 'pip - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLXBpcC5qcyUyMiUyOSUwQSUwQW9zYyUyODQwJTJDLjA5JTJDMS41JTI5JTBBJTIwJTIwJTIwLmRpZmYlMjhvc2MlMjgyMCUyOS5sdW1hJTI4JTI5JTI5JTBBLm91dCUyOCUyOSUwQSUwQSUyRiUyRiUyMGh5ZHJhUGlwJTI4JTI5JTNC',
+        },
+        {
+          name: 'pixels - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLXBpeGVscy5qcyUyMiUyOSUwQSUwQW9zYyUyODQwJTJDLjA5JTJDMS41JTI5JTBBJTIwJTIwJTIwLmRpZmYlMjhvc2MlMjgyMCUyOS5sdW1hJTI4JTI5JTI5JTBBJTIwJTIwJTIwLmNvbG9yJTI4MSUyQzElMkMlMjglMjklM0QlM0UxJTJCcGl4ZWwlNUIwJTVEJTJGMjU1JTI5JTBBLm91dCUyOCUyOSUwQSUwQXVwZGF0ZSUyMCUzRCUyMCUyOCUyOSUzRCUzRSUyMCU3QiUwQSUyMCUyMHBpeGVsJTIwJTNEJTIwbzAucmVhZCUyOHdpZHRoJTJGMiUyQ2hlaWdodCUyRjIlMjklMjAlMkYlMkYlMjBjZW50ZXIlMjBvZiUyMHRoZSUyMHNjcmVlbiUwQSU3RA==',
+        },
+        {
+          name: 'src - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLXNyYy5qcyUyMiUyOSUwQSUwQXMwLmluaXRJbWFnZSUyOCUyN2h0dHBzJTNBJTJGJTJGdXBsb2FkLndpa2ltZWRpYS5vcmclMkZ3aWtpcGVkaWElMkZjb21tb25zJTJGMiUyRjI1JTJGSHlkcmEtRm90by5qcGclMjclMjklMEElMEFzcmMlMjhvMCUyOSUwQSUwOS5zY2FsZSUyODEuMDElMjklMEElMjAlMjAlMDkuY29sb3JhbWElMjgtLjAyJTI5LmJyaWdodG5lc3MlMjgtLjIlMjklMEElMjAlMjAlMDkuYmxlbmQlMjhvMCUyQy44JTI5JTBBJTA5LmxheWVyJTI4c3JjQWJzJTI4czAlMjkubHVtYSUyOC40JTJDLjElMjklMjklMEElMDkub3V0JTI4JTI5',
+        },
+        {
+          name: 'swizzle - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLXN3aXp6bGUuanMlMjIlMjklMEElMEFncmFkaWVudCUyODElMjkuZ2JnJTBBJTA5LmxheWVyJTI4b3NjJTI4MzAlMkMuMSUyQzIlMjkuYmdnciUyOSUwQSUwOS5sYXllciUyOGdyYWRpZW50JTI4JTI5LnIubWFzayUyOHNoYXBlJTI4MiUyOSUyOSUyOSUwQSUwOS5vdXQlMjglMjk=',
+        },
+        {
+          name: 'tap - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLXRhcC5qcyUyMiUyOSUwQSUwQW9zYyUyODMwJTJDLjAxJTJDYmVhdHMlMjgxJTI5JTI5Lm91dCUyOCUyOSUwQSUwQW9zYyUyOCUyOS5yb3RhdGUlMjhiZWF0c18lMjgyJTI5LmN1cnZlJTI4LTMlMjklMjkub3V0JTI4JTI5JTBBJTBBb3NjJTI4JTI5LnNjYWxlJTI4YmVhdHMlMjgxJTI5LmN1cnZlJTI4MiUyOS5yYW5nZSUyODElMkMyJTI5JTI5Lm91dCUyOCUyOSUwQSUwQSUyRiUyRiUyMEN0cmwlMjAlMkIlMjBTcGFjZSUyMEJhciUyMGZvciUyMHRhcHBpbmclMEElMkYlMkYlMjBDdHJsJTIwJTJCJTIwJTJDJTIwJTI4Q29tbWElMjklMjBmb3IlMjByZS1zeW5j',
+        },
+        {
+          name: 'vec4 - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLXZlYzQuanMlMjIlMjklMEElMEFub2lzZSUyOCUyOSUwQSUwOS5tdWx0JTI4JTIwdmVjNCUyOCUyMHZlYzMlMjgwLjUlMjklMjAlMkMlMjAxJTIwJTI5JTIwJTI5JTBBJTIwJTIwJTA5LmFkZCUyOCUyMHZlYzQlMjglMjAlNUIwLjUlMkMwJTVELnNtb290aCUyOCUyOSUyMCUyOSUyMCUyOSUwQSUwOS5sYXllciUyOCUwQSUwOSUwOXZlYzQlMjglMjB2ZWMzJTI4JTIwJTVCMCUyQyUyMDElMkMlMjAwLjUlNUQlMjAlMkMlMjB2ZWMyJTI4JTIwJTI4JTI5JTNEJTNFdGltZSUyNTElMjAlMjklMjAlMjklMjAlMkMlMjAxJTI5JTBBJTIwJTIwJTA5JTA5JTA5Lm1hc2slMjhzaGFwZSUyODQlMjklMjklMEElMDklMjklMEElMjAlMjAlMDkub3V0JTI4JTI5',
+        },
+        {
+          name: 'wrap - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS13cmFwLmpzJTIyKSUwQSUwQWh5ZHJhV3JhcC5zZXRNaXJyb3IoKSUwQSUwQXNyYyhvMCklMEElMDkubGF5ZXIob3NjKCkucm90YXRlKCkubWFzayhzaGFwZSg0JTJDMSUyQzApKSklMEElMDkuc2NhbGUoLjUpJTBBJTA5LmJsZW5kKG5vaXNlKCklMkMuMiklMEElMDkub3V0KCklMEE%3D',
+        },
+        {
+          name: 'gif - geikha *',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS1naWYuanMlMjIpJTBBJTBBczAuaW5pdEdpZignaHR0cHMlM0ElMkYlMkZpLmdpcGh5LmNvbSUyRm1lZGlhJTJGa1pxYkJUNjRFQ3RqeSUyRmdpcGh5LmdpZicpJTBBJTBBc3JjKHMwKS5zY2FsZSgxJTJDLjYpJTBBJTA5Lm91dCgpJTBB',
+        },
+        {
+          name: 'text - geikha *',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTBBYXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGY2RuLmpzZGVsaXZyLm5ldCUyRmdoJTJGZ2Vpa2hhJTJGaHlwZXItaHlkcmElNDBsYXRlc3QlMkZoeWRyYS10ZXh0LmpzJTIyKSUwQSUwQWF3YWl0JTIwbG9hZFNjcmlwdCglMjJodHRwcyUzQSUyRiUyRmh5cGVyLWh5ZHJhLmdsaXRjaC5tZSUyRmh5ZHJhLXRleHQuanMlMjIpJTBBJTBBaHlkcmFUZXh0LmZvbnQlMjAlM0QlMjAlMjJzZXJpZiUyMiUwQWh5ZHJhVGV4dC5saW5lV2lkdGglMjAlM0QlMjAlMjIyJTI1JTIyJTBBc3RyJTIwJTNEJTIwJTIyJTIwaHlkcmFfISUyMCUyMiUwQXNvbGlkKDElMkMuMiklMEElMDkuYmxlbmQoc3JjKG8wKS5zY2FsZSgxLjAyKS5jb2xvcmFtYSguMDIpKSUwQSUwOS5sYXllcih0ZXh0KHN0cikpJTBBJTA5LmRpZmYoc3Ryb2tlVGV4dChzdHIpLm1vZHVsYXRlU2NhbGUobm9pc2UoMSUyQzEpJTJDJTIwLjQpKSUwQSUwOS5vdXQoKSUwQQ%3D%3D',
+        },
+        {
+          name: 'canvas - geikha',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0JTI4JTIyaHR0cHMlM0ElMkYlMkZjZG4uanNkZWxpdnIubmV0JTJGZ2glMkZnZWlraGElMkZoeXBlci1oeWRyYSU0MGxhdGVzdCUyRmh5ZHJhLWNhbnZhcy5qcyUyMiUyOSUwQSUwQXNldFJlc29sdXRpb24lMjgyNTYlMkMyNTYlMjklMEFjYW52YXMuc2V0UmVsYXRpdmVTaXplJTI4MiUyOSUwQWNhbnZhcy5zZXRBbGlnbiUyOCUyMnJpZ2h0JTIyJTI5JTBBY2FudmFzLnNldExpbmVhciUyOCUyOSUwQSUwQXNvbGlkJTI4MSUyOS5kaWZmJTI4bzAlMjkuc2NhbGUlMjguNSUyOS5kaWZmJTI4bm9pc2UlMjgyJTJDMC40JTI5JTI5Lm91dCUyOCUyOQ==',
+        },
+        {
+          name: 'color - thomas jourdan',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEFhd2FpdCUyMGxvYWRTY3JpcHQoJTIyaHR0cHMlM0ElMkYlMkZtZXRhZ3Jvd2luZy5vcmclMkZleHRyYS1zaGFkZXJzLWZvci1oeWRyYSUyRmxpYi1jb2xvci5qcyUyMiklMEElMEFvc2MoMyUyQyUyMDAuNSUyQyUyMDEpJTBBJTA5LnJvdGF0ZSgoKSUyMCUzRCUzRSUyMC0wLjE3JTIwKiUyMHRpbWUpJTBBJTA5LmNvbHJlZmxlY3Qob3NjKDEyJTJDJTIwMC4yMyUyQyUyMDEpJTBBJTA5JTA5LnJvdGF0ZSgoKSUyMCUzRCUzRSUyMDAuMSUyMColMjB0aW1lKSUyQyUyMDAuMyklMEElMDkub3V0KG8wKSUwQXJlbmRlcihvMCklMEE=',
+        },
+        {
+          name: 'if then else - thomas jourdan',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEFhd2FpdCUyMGxvYWRTY3JpcHQoJTIyaHR0cHMlM0ElMkYlMkZtZXRhZ3Jvd2luZy5vcmclMkZleHRyYS1zaGFkZXJzLWZvci1oeWRyYSUyRmxpYi1jb25kLmpzJTIyKSUwQSUwQW5vaXNlKCkucmVwZWF0KCklMjAlMkYlMkYlMjBkZWZhdWx0JTIwYnJhbmNoJTBBJTA5LmlmemVybyhvc2MoNSUyQyUyMC4yKS5yZXBlYXQoKS5rYWxlaWQoKSUyQyUyMCUyRiUyRiUyMGFsdGVybmF0ZSUyMGJyYW5jaCUyQyUyMG9ubHklMjB3aGVuJTIwY29uZGlkaXRpb24lMjBpcyUyMG1ldCUwQSUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCUyMCgpJTIwJTNEJTNFJTIwTWF0aC5zaW4oNS4xKnRpbWUpJTBBJTA5JTA5JTA5JTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwJTIwKiUyME1hdGguY29zKDcuMSp0aW1lKSklMjAlMkYlMkYlMjB2YWx1ZSUyMGZvciUyMHRoZSUyMGNvbmRpdGlvbiUyMCUyMmlmJTIwemVybyUyMiUyMHRvJTIwYmUlMjB0ZXN0ZWQlMEElMDkub3V0KG8wKSUwQQ==',
+        },
+        {
+          name: 'noise - thomas jourdan',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEFhd2FpdCUyMGxvYWRTY3JpcHQoJTIyaHR0cHMlM0ElMkYlMkZtZXRhZ3Jvd2luZy5vcmclMkZleHRyYS1zaGFkZXJzLWZvci1oeWRyYSUyRmxpYi1ub2lzZS5qcyUyMiklMEElMEF0dXJiKDMlMkMlMjAwJTJDJTIwJTIwKCklMjAlM0QlM0UlMjA2JTIwKiUyMCgoMC41JTIwKiUyMHRpbWUpJTIwJTI1JTIwMS4wKSkub3V0KG8wKSUzQiUwQXV0dXJiKDMlMkMlMjAwJTJDJTIwKCklMjAlM0QlM0UlMjA2JTIwKiUyMCgoMC41JTIwKiUyMHRpbWUpJTIwJTI1JTIwMS4wKSkub3V0KG8xKSUzQiUwQXdhcnAoMyUyQyUyMDAlMkMlMjAlMjAoKSUyMCUzRCUzRSUyMDYlMjAqJTIwKCgwLjUlMjAqJTIwdGltZSklMjAlMjUlMjAxLjApJTJDJTIwKCklMjAlM0QlM0UlMjA2JTIwKiUyMCgoMC41JTIwKiUyMHRpbWUpJTIwJTI1JTIwMS4wKSkub3V0KG8yKSUzQiUwQWN3YXJwKDMlMkMlMjAwJTJDJTIwKCklMjAlM0QlM0UlMjA2JTIwKiUyMCgoMC41JTIwKiUyMHRpbWUpJTIwJTI1JTIwMS4wKSUyQyUyMCgpJTIwJTNEJTNFJTIwNiUyMColMjAoKDAuNSUyMColMjB0aW1lKSUyMCUyNSUyMDEuMCkpLm91dChvMyklM0IlMEFyZW5kZXIoKSUwQQ==',
+        },
+        {
+          name: 'op-art - thomas jourdan',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEFhd2FpdCUyMGxvYWRTY3JpcHQoJTIyaHR0cHMlM0ElMkYlMkZtZXRhZ3Jvd2luZy5vcmclMkZleHRyYS1zaGFkZXJzLWZvci1oeWRyYSUyRmxpYi1wYXR0ZXJuLmpzJTIyKSUwQSUwQWElMjAlM0QlMjAoKSUyMCUzRCUzRSUyMDAuMTM3JTIwKiUyMHRpbWUlM0IlMEFzcGlyYWwoMi4wJTJDJTIwNS4wJTJDJTIwMC4zKS5yb3RhdGUoKCklMjAlM0QlM0UlMjAtMi4wJTIwKiUyMGEoKSkub3V0KG8wKSUwQXNwaXJhbCgyLjAlMkMlMjA1LjAlMkMlMjAwLjMpLnJvdGF0ZShhKS5kaWZmKGNvbmNlbnRyaWMoMTAwLjAlMkMwLjI1JTJDMC4yNSkpLm91dChvMSklMEFzcGlyYWwoMi4wJTJDJTIwNS4wJTJDJTIwMC4zKS5yb3RhdGUoYSkubXVsdChzcGlyYWwoMS4wJTJDJTIwMy4wJTJDJTIwMC4zKSkub3V0KG8yKSUwQXNwaXJhbCgxLjAlMkMlMjA1LjAlMkMlMjAwLjEpLnJvdGF0ZShhKS5kaWZmKGJyaWNrKCkpLm91dChvMyklMEFyZW5kZXIoKSUwQSUwQSUwQQ==',
+        },
+        {
+          name: 'screen space - thomas jourdan',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGJTIwbGljZW5zZWQlMjB3aXRoJTIwQ0MlMjBCWS1OQy1TQSUyMDQuMCUyMGh0dHBzJTNBJTJGJTJGY3JlYXRpdmVjb21tb25zLm9yZyUyRmxpY2Vuc2VzJTJGYnktbmMtc2ElMkY0LjAlMkYlMEFhd2FpdCUyMGxvYWRTY3JpcHQoJTIyaHR0cHMlM0ElMkYlMkZtZXRhZ3Jvd2luZy5vcmclMkZleHRyYS1zaGFkZXJzLWZvci1oeWRyYSUyRmxpYi1zY3JlZW4uanMlMjIpJTBBJTBBd2luZG93LmZyYW1lJTIwJTNEJTIwMCUwQXJlbmRlcihvMyklMEElMEFvc2MoMzAlMkMlMjAwLjElMkMlMjAyKS5rYWxlaWQoMykub3V0KG8yKSUwQXNyYyhvMyklMEElMjAlMjAlMjAlMjAucHhzb3J0KDAuMSUyQyUyMCgpJTIwJTNEJTNFJTIwJTdCcmV0dXJuJTIwZnJhbWUlMkIlMkIlM0IlN0QpJTBBJTIwJTIwJTIwJTIwLmJsZW5kKG8yJTJDJTIwKCklMjAlM0QlM0UlMjAlN0JyZXR1cm4lMjAoKGZyYW1lJTIwJTI1JTIwMzAwKSUyMCUzRCUzRCUyMDApJTIwJTNGJTIwMSUyMCUzQSUyMDAuMDElM0IlN0QpJTBBJTIwJTIwJTIwJTIwLmNvbnRyYXN0KDEuMDEpJTBBJTIwJTIwJTIwJTIwLm91dChvMyklMEE=',
+        },
+        {
+          name: 'soft - thomas jourdan',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGbWV0YWdyb3dpbmcub3JnJTJGZXh0cmEtc2hhZGVycy1mb3ItaHlkcmElMkZsaWItc29mdHBhdHRlcm4uanMlMjIpJTBBJTBBYmxvYnMoMC4xMyUyQyUyMDAuMiUyQyUyMDAuMiklMEElMDkubW9kdWxhdGUoYmxvYnMoMC4yMSUyQyUyMDAuNSUyQyUyMDAuMiklMEElMDklMDkubW9kdWxhdGUoYmxvYnMoMC4yMyUyQyUyMDAuOSUyQyUyMDAuMiklMkMlMjAxKSUyQyUyMDEpJTBBJTA5LnNoaWZ0KCklMEElMDkub3V0KG8wKSUwQSUwQXJlbmRlcihvMCk=',
+        },
+        {
+          name: 'wave - thomas jourdan',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGbWV0YWdyb3dpbmcub3JnJTJGZXh0cmEtc2hhZGVycy1mb3ItaHlkcmElMkZsaWItd2F2ZS5qcyUyMiklMEElMEFoYXJtb25pYygxMCUyQyUyMDAuMSUyQyUyMCgpJTIwJTNEJTNFJTIwMC4wNSUyMColMjBNYXRoLnNpbigwLjUlMjAqJTIwdGltZSklMkMlMjAoKSUyMCUzRCUzRSUyMDAuMTAlMjAqJTIwTWF0aC5zaW4odGltZSkpLm91dChvMCklMEFzYXcoNCUyQyUyMDAuMSkub3V0KG8xKSUwQXRyaSg0JTJDJTIwMC4xKS5vdXQobzIpJTBBc3F1KDIlMkMlMjAwLjEpLm91dChvMyklMEElMEFyZW5kZXIoKSUwQQ%3D%3D',
+        },
+        {
+          name: 'gradient - joan queralt',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGaHlkcmF0ZWQuc2F2YW1hbGEudG9wJTJGaHlkcmEtZ3JhZGllbnQuanMlMjIpJTBBJTBBJTJGJTJGJTIwVXNlJTIwZ3JhZGllbnQyJTIwdG8lMjBjcmVhdGUlMjBhJTIwZ3JhZGllbnQlMjBiZXR3ZWVuJTIwdHdvJTIwY29sb3JzJTNBJTBBJTJGJTJGJTIwZ3JhZGllbnQyKHIwJTNEMSUyQ2cwJTNEMCUyQ2IwJTNEJTJDcjElM0QwJTJDZzElM0QwJTJDYjElM0QxJTJDc3BlZWQlM0QwKSUwQSUwQWdyYWRpZW50MigxJTJDMCUyQzAlMkMwLjglMkMwJTJDMC44JTJDMC4yKS5vdXQoKSUwQSUwQXJlbmRlcihvMCk%3D',
+        },
+        {
+          name: 'three.js - mr.doob & flor de fuego',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=JTJGJTJGVGhyZWUuanMlMjBCYXNpYyUyMEV4YW1wbGUlMjBieSUyMG1yLmRvb2IlMjBhbmQlMjBGbG9yJTIwZGUlMjBGdWVnbyUwQWNvbnN0JTIwVEhSRUUlMjAlM0QlMjBhd2FpdCUyMGltcG9ydCglMjJodHRwcyUzQSUyRiUyRnVucGtnLmNvbSUyRnRocmVlJTQwMC4xNjMuMCUyRmJ1aWxkJTJGdGhyZWUubW9kdWxlLmpzJTIyKSUwQSUwQXNjZW5lJTIwJTNEJTIwbmV3JTIwVEhSRUUuU2NlbmUoKSUwQWNhbWVyYSUyMCUzRCUyMG5ldyUyMFRIUkVFLlBlcnNwZWN0aXZlQ2FtZXJhKDc1JTJDJTIwd2luZG93LmlubmVyV2lkdGglMjAlMkYlMjB3aW5kb3cuaW5uZXJIZWlnaHQlMkMlMjAwLjElMkMlMjAxMDAwKSUwQSUwQXJlbmRlcmVyJTIwJTNEJTIwbmV3JTIwVEhSRUUuV2ViR0xSZW5kZXJlciglN0JhbHBoYSUzQXRydWUlN0QpJTIwJTJGJTJGVGhyZWUuanMlMjBiYWNrZ3JvdW5kJTIwdHJhbnNwYXJlbnQlMEFyZW5kZXJlci5zZXRTaXplKHdpZHRoJTJDJTIwaGVpZ2h0KSUwQWdlb21ldHJ5JTIwJTNEJTIwbmV3JTIwVEhSRUUuSWNvc2FoZWRyb25HZW9tZXRyeSgpJTNCJTBBbWF0ZXJpYWwlMjAlM0QlMjBuZXclMjBUSFJFRS5NZXNoTm9ybWFsTWF0ZXJpYWwoKSUwQWljb3NhaGVkcm9uJTIwJTNEJTIwbmV3JTIwVEhSRUUuTWVzaChnZW9tZXRyeSUyQyUyMG1hdGVyaWFsKSUzQiUwQXNjZW5lLmFkZChpY29zYWhlZHJvbiklMEFjYW1lcmEucG9zaXRpb24ueiUyMCUzRCUyMDEuOCUwQSUwQSUyRiUyRiUyMCd1cGRhdGUnJTIwaXMlMjBhJTIwcmVzZXJ2ZWQlMjBmdW5jdGlvbiUyMHRoYXQlMjB3aWxsJTIwYmUlMjBydW4lMjBldmVyeSUyMHRpbWUlMjB0aGUlMjBtYWluJTIwaHlkcmElMjByZW5kZXJpbmclMjBjb250ZXh0JTIwaXMlMjB1cGRhdGVkJTBBdXBkYXRlJTIwJTNEJTIwKCklMjAlM0QlM0UlMjAlN0IlMEElMDklMEElMDlpY29zYWhlZHJvbi5yb3RhdGlvbi54JTIwJTJCJTNEJTIwMC4wMSUzQiUwQSUwOWljb3NhaGVkcm9uLnJvdGF0aW9uLnklMjAlMkIlM0QlMjAwLjAxJTNCJTBBJTIwJTIwJTA5aWNvc2FoZWRyb24uc2NhbGUuc2V0KG1vdXNlLnglMkZpbm5lcldpZHRoJTJDbW91c2UueSUyRmlubmVySGVpZ2h0JTJDMSklMjAlMkYlMkZyZXNpemUlMjB4JTIwJTI2JTIweSUyMHdpdGglMjBIeWRyYSUyMG1vdXNlLnglMjBhbmQlMjBtb3VzZS55JTIwZnVuY3Rpb24lMEElMDlyZW5kZXJlci5yZW5kZXIoc2NlbmUlMkMlMjBjYW1lcmEpJTNCJTBBJTdEJTBBJTBBczAuaW5pdCglN0IlMEElMDlzcmMlM0ElMjByZW5kZXJlci5kb21FbGVtZW50JTBBJTdEKSUwQSUwQXNyYyhvMCklMEElMDkubGF5ZXIoc3JjKHMwKS5odWUoKCklM0QlM0V0aW1lKjAuMikpJTBBJTA5Lm91dCgp',
+        },
+        {
+          name: 'shader-park - emptyflash',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=Y29uc3QlMjAlN0IlMjBzY3VscHRUb0h5ZHJhUmVuZGVyZXIlMjAlN0QlMjAlM0QlMjBhd2FpdCUyMGltcG9ydCglMjJodHRwcyUzQSUyRiUyRnVucGtnLmNvbSUyRnNoYWRlci1wYXJrLWNvcmUlMkZkaXN0JTJGc2hhZGVyLXBhcmstY29yZS5lc20uanMlMjIpJTBBJTBBc2N1bHB0VG9IeWRyYVJlbmRlcmVyKCgpJTIwJTNEJTNFJTIwJTdCJTBBJTA5JTA5cm90YXRlWCh0aW1lJTIwJTJGJTIwNSklMEElMDklMDlyb3RhdGVaKHRpbWUlMjAlMkYlMjAzKSUwQSUwOSUwOWRpc3BsYWNlKHNpbih0aW1lKSUyQyUyMDElMkMlMjAwKSUwQSUwOSUwOW1pcnJvck4oMyUyQyUyMDMpJTBBJTA5JTA5dG9ydXMoMC44JTJDJTIwMC4zOCUyMCUyQiUyMDAuMSUyMColMjBzaW4odGltZSkpJTBBJTA5JTdEKSUwQSUwOS5vdXQobzApJTBBJTBBcmVuZGVyKG8wKSUwQQ%3D%3D',
+        },
+        {
+          name: 'datamosh - emptyflash',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=Y29uc3QlMjAlN0IlMjBkYXRhbW9zaCUyMCU3RCUyMCUzRCUyMGF3YWl0JTIwaW1wb3J0KCUyMmh0dHBzJTNBJTJGJTJGZW1wdHlmbGEuc2glMkZoeWRyYS1kYXRhbW9zaCUyRmRhdGFtb3NoLmpzJTIyKSUwQWF3YWl0JTIwczAuaW5pdFZpZGVvKCdodHRwcyUzQSUyRiUyRmNvbnRlbnQuandwbGF0Zm9ybS5jb20lMkZ2aWRlb3MlMkZONFgxTmtJUi0xaG9uNEJzdS5tcDQnKSUwQWNvbnN0JTIwbmV3U291cmNlJTIwJTNEJTIwYXdhaXQlMjBkYXRhbW9zaChzMCklMEFzcmMobmV3U291cmNlKS5vdXQoKQ%3D%3D',
+        },
+        {
+          name: 'paper.js - lehni & puckey',
+          audio: false,
+          url: 'https://hydra.ojack.xyz/?code=YXdhaXQlMjBsb2FkU2NyaXB0KCUyMmh0dHBzJTNBJTJGJTJGdW5wa2cuY29tJTJGcGFwZXIlMjIpJTBBJTBBdmFyJTIwY2FudmFzJTIwJTNEJTIwZG9jdW1lbnQuY3JlYXRlRWxlbWVudCgnY2FudmFzJyklMEFjYW52YXMud2lkdGglMjAlM0QlMjA0MDAlMEFjYW52YXMuaGVpZ2h0JTIwJTNEJTIwNDAwJTBBcGFwZXIuc2V0dXAoY2FudmFzKSUwQSUwQXZhciUyMGNpcmNsZSUyMCUzRCUyMG5ldyUyMHBhcGVyLlBhdGguQ2lyY2xlKG5ldyUyMHBhcGVyLlBvaW50KDIwMCUyQyUyMDIwMCklMkMlMjA4MCklMEFjaXJjbGUuZmlsbENvbG9yJTIwJTNEJTIwJ29yYW5nZSclMEElMEFwYXBlci52aWV3LmRyYXcoKSUwQXMwLmluaXQoJTdCJTIwc3JjJTNBJTIwY2FudmFzJTIwJTdEKSUwQXNyYyhzMCkub3V0KCk%3D',
+        },
+      ]
+
+      const sketchSelect = document.querySelector('#sketch')
+      const elementSelect = document.querySelector('#element')
+      const elements = document.querySelectorAll('hydra-element')
+
+      function decodeHydraUrl(url) {
+        const b64 = new URL(url).searchParams.get('code').replace(/-/g, '+').replace(/_/g, '/')
+        return decodeURIComponent(atob(b64))
+      }
+
+      sketches.forEach((sketch, index) => {
+        const option = document.createElement('option')
+        option.value = index
+        option.textContent = sketch.name
+        sketchSelect.append(option)
+      })
+
+      elements.forEach((_, index) => {
+        const option = document.createElement('option')
+        option.value = index
+        option.textContent = `element ${index + 1}`
+        elementSelect.append(option)
+      })
+
+      document.querySelector('#eval').addEventListener('click', () => {
+        const sketch = sketches[sketchSelect.value]
+        const el = elements[elementSelect.value]
+        el.setAttribute('audio', String(sketch.audio))
+        el.code = decodeHydraUrl(sketch.url)
+      })
+    </script>
   </body>
 </html>
