@@ -1,0 +1,10 @@
+{
+  "extends": ["./node_modules/oxc-standard/.oxlintrc.json"],
+  "ignorePatterns": ["node_modules/**", "dist/**", "coverage/**"],
+  "rules": {
+    "no-eval": "off",
+    "no-new-func": "off",
+    "no-underscore-dangle": "off",
+    "no-unused-expressions": "off"
+  }
+}
