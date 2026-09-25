@@ -1,17 +1,15 @@
 import { defineConfig } from 'vite'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   define: {
     global: 'globalThis',
   },
   build: {
+    emptyOutDir: mode !== 'context',
     lib: {
-      entry: {
-        'hydra-element': 'index.js',
-        context: 'src/context.js',
-      },
+      entry: mode === 'context' ? 'src/context.js' : 'index.js',
       formats: ['es'],
-      fileName: (format, entryName) => `${entryName}.js`,
+      fileName: () => (mode === 'context' ? 'context.js' : 'hydra-element.js'),
     },
   },
-})
+}))

@@ -45,7 +45,7 @@
   "scripts": {
     "dev": "vite --host",
     "test": "vitest run",
-    "build": "vite build",
+    "build": "vite build --mode hydra-element && vite build --mode context",
     "prepublishOnly": "pnpm build",
     "lint": "oxlint --fix .; oxfmt .",
     "format": "oxfmt .",
