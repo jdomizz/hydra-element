@@ -1,6 +1,6 @@
 {
   "name": "hydra-element",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "description": "A custom element for embedding Hydra video synth scenes in HTML",
   "keywords": [
     "canvas",
