@@ -172,6 +172,43 @@ el.addEventListener('hydra-eval', e => {
 })
 ```
 
+## Framework integration
+
+`<hydra-element>` is a standard Web Component, so it works in any framework that
+supports them. The key bits are its properties (`code`, `synth`, `bind`, …) and
+the `hydra-eval` / `hydra-ready` events.
+
+### React
+
+React 19+ maps matching props to properties and custom events to
+`onHydraEval` / `onHydraReady`:
+
+```jsx
+<hydra-element
+  audio="false"
+  onHydraEval={e => e.detail.success ? null : console.error(e.detail.error)}
+/>
+```
+
+React < 19 has no custom-element prop support — drive the element with a ref
+(`code`, `bind`, `addEventListener`) and call `destroy()` in the effect cleanup.
+
+### Vue
+
+Vue 3 binds props as properties and listens to events with `@hydra-eval`; set
+`isCustomElement` to avoid the "failed to resolve component" warning:
+
+```js
+// vite.config.js
+vue({ template: { compilerOptions: { isCustomElement: tag => tag === 'hydra-element' } } })
+```
+
+### Other frameworks
+
+Solid, Svelte, Angular and Preact render it natively — bind values via the
+element's properties and attach the events with the framework's regular syntax.
+Call `destroy()` on unmount to free the WebGL context.
+
 ## Styling with `::part`
 
 The internal canvas and the audio analyzer are exposed as CSS parts:
