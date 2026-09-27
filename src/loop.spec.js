@@ -13,7 +13,8 @@ describe('Loop', () => {
     expect(onTick).toHaveBeenLastCalledWith(100)
     loop.tick(150)
     expect(onTick).toHaveBeenLastCalledWith(50)
-    expect(loop.tick(150)).toBe(0)
+    loop.tick(150)
+    expect(onTick).toHaveBeenLastCalledWith(0)
   })
 
   it('should start and stop the loop', () => {

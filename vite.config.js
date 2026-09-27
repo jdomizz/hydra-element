@@ -6,7 +6,7 @@ export default defineConfig({
   },
   build: {
     lib: {
-      entry: 'index.js',
+      entry: 'src/index.js',
       formats: ['es'],
       fileName: () => 'hydra-element.js',
     },

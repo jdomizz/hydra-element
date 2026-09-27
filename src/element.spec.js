@@ -159,6 +159,46 @@ describe('<hydra-element>', () => {
     expect(stub.tick).toHaveBeenCalledWith(16)
   })
 
+  it('should capture the next frame through the engine frame latch', async () => {
+    const blob = { size: 12 }
+    const stub = makeStubHydra()
+    stub.getScreenImage = vi.fn(cb => cb(blob))
+    HydraElement.hydraFactory = () => stub
+    const el = mount()
+    await el.ready
+    await expect(el.capture()).resolves.toBe(blob)
+    expect(stub.getScreenImage).toHaveBeenCalledOnce()
+  })
+
+  it('should reject capture before the engine is initialized', async () => {
+    const el = document.createElement('hydra-element')
+    await expect(el.capture()).rejects.toThrow('capture: the engine is not initialized')
+  })
+
+  it('should reject capture when the render loop is stopped', async () => {
+    const stub = makeStubHydra()
+    stub.getScreenImage = vi.fn()
+    HydraElement.hydraFactory = () => stub
+    const el = document.createElement('hydra-element')
+    el.setAttribute('loop', 'false')
+    document.body.append(el)
+    await el.ready
+    await expect(el.capture()).rejects.toThrow('capture: the render loop is not running')
+    expect(stub.getScreenImage).not.toHaveBeenCalled()
+  })
+
+  it('should reject a second capture while one is in flight, and both on teardown', async () => {
+    const stub = makeStubHydra()
+    stub.getScreenImage = vi.fn()
+    HydraElement.hydraFactory = () => stub
+    const el = mount()
+    await el.ready
+    const first = el.capture()
+    await expect(el.capture()).rejects.toThrow('capture: another capture is in flight')
+    el.destroy()
+    await expect(first).rejects.toThrow('capture: the engine was torn down')
+  })
+
   it('should init the engine once with multiple initial attributes', async () => {
     const stub = makeStubHydra()
     const seen = []
@@ -244,11 +284,38 @@ describe('<hydra-element>', () => {
     await el.ready
     expect(el.synth).toBe(first.synth)
     el.destroy()
-    const readyPromise = el.ready
     el.remove()
+    const readyPromise = el.ready
     document.body.append(el)
     expect((await readyPromise).synth).toBe(second.synth)
     expect(el.synth).toBe(second.synth)
+  })
+
+  it('should tear down when disconnected and re-init on reconnect', async () => {
+    const first = makeStubHydra()
+    const second = makeStubHydra()
+    const instances = [first, second]
+    HydraElement.hydraFactory = () => instances.shift()
+    const el = mount()
+    await el.ready
+    expect(el.synth).toBe(first.synth)
+    el.remove()
+    expect(globalThis.cancelAnimationFrame).toHaveBeenCalledTimes(1)
+    expect(el.synth).toBeUndefined()
+    const readyPromise = el.ready
+    document.body.append(el)
+    expect((await readyPromise).synth).toBe(second.synth)
+    expect(el.synth).toBe(second.synth)
+  })
+
+  it('should destroy the engine GL resources on teardown', async () => {
+    const stub = makeStubHydra()
+    stub.regl = { destroy: vi.fn() }
+    HydraElement.hydraFactory = () => stub
+    const el = mount()
+    await el.ready
+    el.destroy()
+    expect(stub.regl.destroy).toHaveBeenCalledOnce()
   })
 
   it('should publish the engine surface while loadScript runs', async () => {

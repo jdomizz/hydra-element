@@ -1,55 +1,11 @@
 import Hydra from 'hydra-synth'
-import { HydraContext, userCodeLine } from 'hydra-context'
+import { HydraContext, publishHydraGlobals, userCodeLine } from 'hydra-context'
 import { EvalQueue } from './queue'
 import { CanvasManager } from './canvas'
 import { Loop } from './loop'
-import { parseJSON, parseNumber, parseOption } from './parser'
-
-/** Default options for creating a Hydra instance. */
-const DEFAULT_OPTIONS = {
-  canvas: null,
-  autoLoop: true,
-  makeGlobal: false,
-  detectAudio: false,
-  numSources: 4,
-  numOutputs: 4,
-  extendTransforms: [],
-  precision: null,
-  pb: null,
-  dpr: 2,
-}
-
-/** Maps each `hydra-element` attribute to a function that parses it into options. */
-const ATTR_PARSERS = {
-  global: (options, value) => ({
-    ...options,
-    makeGlobal: parseJSON(value, DEFAULT_OPTIONS.makeGlobal),
-  }),
-  audio: (options, value) => ({
-    ...options,
-    detectAudio: parseJSON(value, DEFAULT_OPTIONS.detectAudio),
-  }),
-  sources: (options, value) => ({
-    ...options,
-    numSources: Math.floor(parseNumber(value, DEFAULT_OPTIONS.numSources, 0, 16)),
-  }),
-  outputs: (options, value) => ({
-    ...options,
-    numOutputs: Math.floor(parseNumber(value, DEFAULT_OPTIONS.numOutputs, 0, 16)),
-  }),
-  precision: (options, value) => ({
-    ...options,
-    precision: parseOption(value, DEFAULT_OPTIONS.precision, ['highp', 'mediump', 'lowp']),
-  }),
-  dpr: (options, value) => ({
-    ...options,
-    dpr: parseNumber(value, DEFAULT_OPTIONS.dpr, 1),
-  }),
-  loop: (options, value) => ({
-    ...options,
-    autoLoop: parseJSON(value, DEFAULT_OPTIONS.autoLoop),
-  }),
-}
+import { FrameCapture } from './capture'
+import { loadScriptInto } from './script'
+import { DEFAULT_OPTIONS, OBSERVED_ATTRIBUTES, foldOptions } from './options'
 
 /**
  * A custom element that renders Hydra sketches.
@@ -64,7 +20,7 @@ export class HydraElement extends HTMLElement {
 
   /** @returns {string[]} */
   static get observedAttributes() {
-    return ['width', 'height', 'global', 'audio', 'sources', 'outputs', 'precision', 'dpr', 'loop']
+    return OBSERVED_ATTRIBUTES
   }
 
   #code = ''
@@ -79,11 +35,9 @@ export class HydraElement extends HTMLElement {
   #queue = new EvalQueue()
   #context = new HydraContext(null, { scope: this.#scope })
   #globalsRestore = null
+  #capture = new FrameCapture()
 
-  /**
-   * Per-attribute side effects, applied after the parsed options are folded in.
-   * Attributes without an entry recreate the engine and re-evaluate the code.
-   */
+  /** Per-attribute side effects; attributes without an entry recreate the engine and re-evaluate. */
   #attrEffects = {
     width: () => this.#canvasManager.refresh(),
     height: () => this.#canvasManager.refresh(),
@@ -151,6 +105,14 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
+   * Captures the next rendered frame as a PNG blob.
+   * @returns {Promise<Blob>}
+   */
+  capture() {
+    return this.#capture.capture(() => this.#loop?.isRunning)
+  }
+
+  /**
    * The canvas element backing the render.
    * @returns {HTMLCanvasElement}
    */
@@ -179,7 +141,7 @@ export class HydraElement extends HTMLElement {
   set transforms(value) {
     this.#options.extendTransforms = value
     if (this.#hydra) {
-      this.#options.extendTransforms.forEach(fn => this.#hydra.synth.setFunction(fn))
+      this.#applyTransforms()
     }
   }
 
@@ -226,8 +188,7 @@ export class HydraElement extends HTMLElement {
   }
 
   /**
-   * Loads an extension script into the element's eval scope, publishing the engine's surface on the global scope while it runs.
-   * Dispatches `hydra-loadscript` with the outcome and rethrows on failure.
+   * Loads an extension script into the element's eval scope, dispatching `hydra-loadscript` and rethrowing on failure.
    * @param {string} url
    */
   async loadScript(url) {
@@ -235,37 +196,15 @@ export class HydraElement extends HTMLElement {
       throw new Error('[hydra-element] loadScript before the engine is initialized')
     }
     try {
-      await this.#context.withBridge(async () => {
-        const text = await this.#fetchText(url)
-        if (text === null) {
-          await this.#hydra.loadScript(url)
-        } else {
-          await this.#context.eval(text)
-        }
-      })
+      await loadScriptInto(this.#context, this.#hydra, url)
       this.#dispatch('hydra-loadscript', { success: true, url })
     } catch (error) {
       this.#dispatch('hydra-loadscript', {
         success: false,
         url,
-        error: error instanceof Error ? error.message : String(error),
+        error: this.#errorMessage(error),
       })
       throw error
-    }
-  }
-
-  /**
-   * Fetches script text; `null` on non-OK (dead URL) or CORS failure, signalling a `script`-tag fallback.
-   * @param {string} url
-   * @returns {Promise<string | null>}
-   */
-  async #fetchText(url) {
-    try {
-      const res = await fetch(url)
-      if (!res.ok) return null
-      return res.text()
-    } catch {
-      return null
     }
   }
 
@@ -278,6 +217,7 @@ export class HydraElement extends HTMLElement {
 
   /** Stops the loop and drops the engine, without resetting the initialized flag. */
   #teardown() {
+    this.#capture.detach()
     this.#loop?.stop()
     this.#loop = null
     this.#canvasManager.disconnect()
@@ -285,6 +225,7 @@ export class HydraElement extends HTMLElement {
     this.#clearSources()
     this.#globalsRestore?.()
     this.#globalsRestore = null
+    this.#hydra?.regl?.destroy?.()
     this.#hydra = null
   }
 
@@ -301,7 +242,7 @@ export class HydraElement extends HTMLElement {
   attributeChangedCallback(attrName, oldValue, newValue) {
     if (oldValue === newValue || !this.#initialized) return
 
-    this.#options = this.#getNewOptions(attrName, newValue)
+    this.#options = foldOptions(this.#options, attrName, newValue)
     const effect = this.#attrEffects[attrName]
     if (effect) {
       effect()
@@ -327,12 +268,17 @@ export class HydraElement extends HTMLElement {
     }
   }
 
+  /** Tears the element down on removal; re-insertion re-initializes it. */
+  disconnectedCallback() {
+    this.destroy()
+  }
+
   /** Folds the present attributes into the options once. */
   #parseInitialAttrs() {
     for (const name of HydraElement.observedAttributes) {
       const value = this.getAttribute(name)
       if (value === null) continue
-      this.#options = this.#getNewOptions(name, value)
+      this.#options = foldOptions(this.#options, name, value)
     }
   }
 
@@ -356,18 +302,24 @@ export class HydraElement extends HTMLElement {
   #initHydra() {
     this.#teardown()
     this.#hydra = this.constructor.hydraFactory({ ...this.#options })
-    this.#options.extendTransforms.forEach(fn => this.#hydra.synth.setFunction(fn))
+    this.#applyTransforms()
     this.#canvasManager.tagAnalyzerCanvases()
     this.#context.attach(this.#hydra)
+    this.#capture.attach(this.#hydra)
     this.#scope.loadScript = url => this.loadScript(url)
     if (this.#options.makeGlobal) {
-      this.#globalsRestore = this.#context.publishGlobals()
+      this.#globalsRestore = publishHydraGlobals(this.#hydra)
     }
     this.#dispatch('hydra-ready', { synth: this.#hydra.synth })
     this.#resolveReady?.({ synth: this.#hydra.synth })
     if (this.#options.autoLoop) {
       this.#startLoop()
     }
+  }
+
+  /** Applies the custom transforms to the engine. */
+  #applyTransforms() {
+    this.#options.extendTransforms.forEach(fn => this.#hydra.synth.setFunction(fn))
   }
 
   /** Starts the render loop, creating it lazily. */
@@ -398,7 +350,7 @@ export class HydraElement extends HTMLElement {
       .catch(error => {
         this.#dispatch('hydra-eval', {
           success: false,
-          error: error instanceof Error ? error.message : String(error),
+          error: this.#errorMessage(error),
           line: userCodeLine(error, code),
         })
       })
@@ -413,13 +365,8 @@ export class HydraElement extends HTMLElement {
     this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }))
   }
 
-  /**
-   * @param {string} attrName
-   * @param {string|null} newValue
-   * @returns {Object}
-   */
-  #getNewOptions(attrName, newValue) {
-    const parse = ATTR_PARSERS[attrName]
-    return parse ? parse(this.#options, newValue) : this.#options
+  /** @param {unknown} error @returns {string} */
+  #errorMessage(error) {
+    return error instanceof Error ? error.message : String(error)
   }
 }

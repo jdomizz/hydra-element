@@ -31,13 +31,11 @@ export class Loop {
   /**
    * Computes delta time from the frame timestamp and calls the tick function.
    * @param {number} now A timestamp
-   * @returns {number} The delta time in milliseconds
    */
   tick(now) {
     const dt = now - this.#lastTime
     this.#lastTime = now
     this.#onTick(dt)
-    return dt
   }
 
   /** @returns {boolean} Whether the loop is running */

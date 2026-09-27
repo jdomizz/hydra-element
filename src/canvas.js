@@ -101,7 +101,7 @@ export class CanvasManager {
    * @param {number} width
    * @param {number} height
    */
-  resize(width, height) {
+  #resize(width, height) {
     this.#width = width
     this.#height = height
     if (this.#canvas) {
@@ -126,7 +126,7 @@ export class CanvasManager {
    */
   #applySize(size) {
     if (size.width === this.#width && size.height === this.#height) return false
-    this.resize(size.width, size.height)
+    this.#resize(size.width, size.height)
     return true
   }
 

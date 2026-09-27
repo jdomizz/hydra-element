@@ -1,4 +1,4 @@
-import { HydraElement } from './src/element.js'
+import { HydraElement } from './element.js'
 
 if (!customElements.get('hydra-element')) {
   customElements.define('hydra-element', HydraElement)
