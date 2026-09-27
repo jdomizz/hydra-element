@@ -39,13 +39,12 @@
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
   "exports": {
-    ".": "./dist/hydra-element.js",
-    "./context": "./dist/context.js"
+    ".": "./dist/hydra-element.js"
   },
   "scripts": {
     "dev": "vite --host",
     "test": "vitest run",
-    "build": "vite build --mode hydra-element && vite build --mode context",
+    "build": "vite build --mode hydra-element",
     "prepublishOnly": "pnpm build",
     "lint": "oxlint --fix .; oxfmt .",
     "format": "oxfmt .",
@@ -53,6 +52,7 @@
     "check": "pnpm lint && pnpm format:check && pnpm test && pnpm build"
   },
   "dependencies": {
+    "hydra-context": "file:../hydra-context",
     "hydra-synth": "^1.4.0"
   },
   "devDependencies": {

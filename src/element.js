@@ -1,10 +1,9 @@
 import Hydra from 'hydra-synth'
+import { HydraContext, publishHydraGlobals, userCodeLine } from 'hydra-context'
+import { EvalQueue } from './queue'
 import { CanvasManager } from './canvas'
-import { bindLiveScope, bindScope, hydraEval, unbindScope, userCodeLine } from './eval'
-import { publishHydraGlobals } from './globals'
 import { Loop } from './loop'
 import { parseJSON, parseNumber, parseOption } from './parser'
-import { EvalQueue } from './queue'
 
 /** Default options for creating a Hydra instance. */
 const DEFAULT_OPTIONS = {
@@ -78,6 +77,7 @@ export class HydraElement extends HTMLElement {
   #resolveReady
   #canvasManager
   #queue = new EvalQueue()
+  #context = new HydraContext(null, { scope: this.#scope })
   #globalsRestore = null
 
   /**
@@ -126,17 +126,17 @@ export class HydraElement extends HTMLElement {
 
   /** Binds a static value into the eval scope; the bound name wins over live engine-owned reads (`time`, `width`, `height`, `speed`, …). */
   bind(name, value) {
-    bindScope(this.#scope, name, value)
+    this.#context.bind(name, value)
   }
 
-  /** Binds a live getter into the eval scope, re-read on every access (read-only inside the sketch). */
+  /** Binds a live getter into the eval scope, re-read on every access (a sketch assignment replaces it). */
   bindLive(name, provider) {
-    bindLiveScope(this.#scope, name, provider)
+    this.#context.bindLive(name, provider)
   }
 
   /** Removes a previously bound value or provider from the eval scope. */
   unbind(name) {
-    unbindScope(this.#scope, name)
+    this.#context.unbind(name)
   }
 
   /**
@@ -222,17 +222,14 @@ export class HydraElement extends HTMLElement {
     if (!this.#hydra) {
       throw new Error('[hydra-element] loadScript before the engine is initialized')
     }
-    const restore = publishHydraGlobals(this.#hydra)
-    try {
+    await this.#context.withBridge(async () => {
       const text = await this.#fetchText(url)
       if (text === null) {
         await this.#hydra.loadScript(url)
       } else {
-        await hydraEval(text, this.#hydra.synth, this.#scope)
+        await this.#context.eval(text)
       }
-    } finally {
-      restore()
-    }
+    })
   }
 
   /**
@@ -346,12 +343,11 @@ export class HydraElement extends HTMLElement {
   /** Creates the engine, tearing down any previous one. */
   #initHydra() {
     this.#teardown()
-    this.#hydra = HydraElement.hydraFactory({ ...this.#options })
+    this.#hydra = this.constructor.hydraFactory({ ...this.#options })
     this.#options.extendTransforms.forEach(fn => this.#hydra.synth.setFunction(fn))
     this.#canvasManager.tagAnalyzerCanvases()
+    this.#context.attach(this.#hydra)
     this.#scope.loadScript = url => this.loadScript(url)
-    this.#scope._hydra = this.#hydra
-    this.#scope.hydraSynth = this.#hydra
     if (this.#options.makeGlobal) {
       this.#globalsRestore = publishHydraGlobals(this.#hydra)
     }
@@ -379,7 +375,7 @@ export class HydraElement extends HTMLElement {
   #evalCode() {
     const code = this.#code
     this.#queue
-      .submit(() => hydraEval(code, this.#hydra.synth, this.#scope))
+      .submit(() => this.#context.eval(code))
       .then(() => this.#dispatch('hydra-eval', { success: true }))
       .catch(error => {
         this.#dispatch('hydra-eval', {

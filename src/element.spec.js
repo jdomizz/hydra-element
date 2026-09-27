@@ -65,6 +65,20 @@ describe('<hydra-element>', () => {
     expect(globalThis.hydraSynth).toBeUndefined()
   })
 
+  it('should keep bindings made before initialization', async () => {
+    const stub = makeStubHydra()
+    HydraElement.hydraFactory = () => stub
+    const el = document.createElement('hydra-element')
+    el.bind('x', 42)
+    document.body.append(el)
+    await el.ready
+    const detail = await Promise.all([nextHydraEval(el), (el.code = 'captured = x')]).then(
+      ([d]) => d
+    )
+    expect(detail.success).toBe(true)
+    expect(el.scope.captured).toBe(42)
+  })
+
   it('should publish the engine on globalThis only when global is enabled', async () => {
     const stub = makeStubHydra()
     HydraElement.hydraFactory = () => stub
@@ -234,6 +248,7 @@ describe('<hydra-element>', () => {
     const el = mount()
     await el.ready
     const loading = el.loadScript('ext.js')
+    await Promise.resolve()
     expect(globalThis.synth).toBe(stub.synth)
     resolve({ ok: true, text: () => Promise.resolve('') })
     await loading
@@ -254,5 +269,19 @@ describe('<hydra-element>', () => {
     )
     expect(detail.success).toBe(true)
     expect(globalThis.fetch).toHaveBeenCalledWith('ext.js')
+  })
+
+  it('should use a subclass hydraFactory override', async () => {
+    const stub = makeStubHydra()
+    class CustomHydraElement extends HydraElement {
+      static hydraFactory = () => stub
+    }
+    if (!customElements.get('custom-hydra-element')) {
+      customElements.define('custom-hydra-element', CustomHydraElement)
+    }
+    const el = document.createElement('custom-hydra-element')
+    document.body.append(el)
+    await el.ready
+    expect(el.synth).toBe(stub.synth)
   })
 })

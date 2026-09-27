@@ -166,6 +166,9 @@ importers:
 
   .:
     dependencies:
+      hydra-context:
+        specifier: file:../hydra-context
+        version: file:../hydra-context
       hydra-synth:
         specifier: ^1.4.0
         version: 1.4.0(rollup@4.63.3)(supports-color@7.2.0)
@@ -1013,6 +1016,9 @@ packages:
     resolution: {integrity: sha512-T2UbfbBEF32wiepXIsMlTW9+dDYC6wMh/t/vYA4tuOMKqWz/n3vr1NFSxQiyP+zk2mXsoMA/i/7qV6LKut1t1A==}
     engines: {node: '>= 0.4'}
 
+  hydra-context@file:../hydra-context:
+    resolution: {directory: ../hydra-context, type: directory}
+
   hydra-synth@1.4.0:
     resolution: {integrity: sha512-suKn8wjx5Kqvj5Ev0aTByNzpT+7PTX2Qu83h9mIp7CArFn14VVNxlm6hBS0T/O4GG2E9P9SHvhyN2Ue0f1jH5A==}
 
@@ -1846,6 +1852,8 @@ snapshots:
   hasown@2.0.4:
     dependencies:
       function-bind: 1.1.2
+
+  hydra-context@file:../hydra-context: {}
 
   hydra-synth@1.4.0(rollup@4.63.3)(supports-color@7.2.0):
     dependencies:
