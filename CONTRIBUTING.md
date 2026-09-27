@@ -39,9 +39,10 @@ button, so you can run any sketch into any of the four live elements.
 
 ## Structure
 
-The library is a single custom element with small, focused modules — see
-[ARCHITECTURE.md](./ARCHITECTURE.md) for the module map and the extension
-compatibility table.
+The library is a single custom element with small, focused modules; the
+headless evaluation facade is `HydraContext` in the sibling `hydra-context`
+package. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the module map and the
+extension compatibility table.
 
 ## Conventions
 

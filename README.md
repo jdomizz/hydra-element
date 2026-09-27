@@ -17,9 +17,7 @@ its own engine, so several on one page don't interfere.
 
 ## Demo
 
-Want to poke around without setting up a project? Open the CodePen 
-[example](https://codepen.io/editor/jdomizz/pen/01a0d310-226b-78dc-b5b1-cb56f2ad4150) 
-for a ready-to-edit playground and quick tests.
+Want to poke around? Open the [CodePen demo](https://codepen.io/editor/jdomizz/pen/01a0d310-226b-78dc-b5b1-cb56f2ad4150), or run the local playground (`pnpm dev`) for a sketch gallery.
 
 ## Install
 
@@ -79,9 +77,8 @@ synth.bpm = 120
 
 ## Binding values
 
-Feed values from your page into the sketch without touching `globalThis`. 
-Bound names can also shadow the engine's own built-ins (`time`, `width`, `speed`, `mouse`, `a` …), 
-so you can override those or add entirely new ones:
+Feed values from your page into the sketch without touching `globalThis`. Bound
+names can also shadow the engine's built-ins (`time`, `width`, `speed`, …):
 
 ```js
 const el = document.querySelector('hydra-element')
@@ -100,9 +97,9 @@ el.unbind('speed')
 <input id="freq" type="range" min="1" max="120" value="30">
 ```
 
-Parameters re-evaluate per frame only when passed as functions: `osc(freq, …)`
-pins the value at eval time, `osc(() => freq, …)` stays live. A bound getter is
-read-only inside the sketch — assigning it throws.
+Parameters only re-evaluate per frame when passed as functions: `osc(freq, …)`
+pins, `osc(() => freq, …)` stays live. A sketch can override a binding with a
+bare assignment; `bind`/`bindLive` restores it.
 
 ## Attributes
 
@@ -116,9 +113,8 @@ read-only inside the sketch — assigning it throws.
 | `global` | `false` | Keep Hydra globals on `window`. Use **at most one** per document. |
 | `loop` | `true` | Whether the element drives its own render loop. |
 
-Auto-sized canvases follow the layout via `ResizeObserver` and scale by
-`min(devicePixelRatio, dpr)`, so they stay sharp on retina. Changing
-`width`/`height`/`dpr` resizes in place — no engine recreation.
+Auto-sized canvases follow the layout via `ResizeObserver`, scaled by
+`min(devicePixelRatio, dpr)`. Changing `width`/`height`/`dpr` resizes in place.
 
 Turn `loop` off and drive frames yourself with `tick`:
 
@@ -151,10 +147,18 @@ recreating the engine.
 | `pb` | get/set | An `rtc-patch-bay` instance for streaming (recreates the engine). |
 | `scope` | get | The persistent eval scope — bare assignments, bound values, and `_hydra`/`hydraSynth` live here. |
 | `bind(name, value)` | method | Binds a static value into the eval scope; wins over live engine-owned reads (`time`, `width`, …). |
-| `bindLive(name, fn)` | method | Binds a getter re-read on every access (read-only inside the sketch). |
+| `bindLive(name, fn)` | method | Binds a getter re-read on every access (a sketch assignment replaces it). |
 | `unbind(name)` | method | Removes a previously bound value or live getter. |
 | `loadScript(url)` | method | Loads an extension script, scoped to this element. |
-| `destroy()` | method | Tears the element down (engine, loop, canvas) without removing it from the DOM. |
+| `capture()` | method | The next rendered frame as a PNG `Blob` (needs the loop running). |
+| `destroy()` | method | Tears the element down in place; also automatic on removal. |
+
+### Capturing frames
+
+```js
+const el = document.querySelector('hydra-element')
+const blob = await el.capture() // PNG of the next rendered frame
+```
 
 ## Events
 
@@ -164,6 +168,7 @@ Bubbling `CustomEvent`s dispatched on the element:
 | --- | --- |
 | `hydra-eval` | `{ success, error?, line? }` — after each `code` assignment. |
 | `hydra-ready` | `{ synth }` — after every engine (re)initialization. |
+| `hydra-loadscript` | `{ success, url, error? }` — after a `loadScript(url)` call (rethrows on failure). |
 | `hydra-element-resize` | `{ width, height }` — when the canvas backing store resizes. |
 
 ```js
@@ -191,7 +196,8 @@ React 19+ maps matching props to properties and custom events to
 ```
 
 React < 19 has no custom-element prop support — drive the element with a ref
-(`code`, `bind`, `addEventListener`) and call `destroy()` in the effect cleanup.
+(`code`, `bind`, `addEventListener`). Removing the element from the DOM frees
+its engine automatically, so no manual cleanup is needed.
 
 ### Vue
 
@@ -207,7 +213,7 @@ vue({ template: { compilerOptions: { isCustomElement: tag => tag === 'hydra-elem
 
 Solid, Svelte, Angular and Preact render it natively — bind values via the
 element's properties and attach the events with the framework's regular syntax.
-Call `destroy()` on unmount to free the WebGL context.
+Removing the element from the DOM frees its engine automatically.
 
 ## Styling with `::part`
 
@@ -242,39 +248,19 @@ script is fetched and evaluated inside the element's scope:
 ```
 
 > **Note** — extensions built for the classic single-global editor read
-> `window._hydra`, `window.hydraSynth`, `window.update`, etc. Alone they work fine,
-> but across several isolated elements the bridge may resolve to the wrong engine.
-> And anything global by nature — APIs exposed on `window` or UI appended to
-> `document.body` (MIDI monitor, audio analyzer, …) — can collide between elements.
+> `window._hydra`, `window.hydraSynth`, `window.update`, etc. Across several
+> isolated elements the bridge may resolve to the wrong engine, and anything
+> global by nature (UI appended to `document.body`, APIs on `window`) can collide.
 
-## Headless context
+## Evaluation context
 
-Don't need the `<hydra-element>` tag in the page? The evaluation core is
-available headless from `hydra-element/context`:
-
-```js
-import Hydra from 'hydra-synth'
-import { createContext, loadScript } from 'hydra-element/context'
-
-const hydra = new Hydra({ canvas, makeGlobal: false })
-const context = createContext(hydra)
-
-context.bind('speed', 1.5)
-context.bindLive('freq', () => 20 + 10 * Math.sin(Date.now() / 1000))
-
-await context.eval('osc(() => freq, 0.1, speed).out()')
-await loadScript('https://…/lib-noise.js', { hydra, scope: context.scope })
-```
-
-By default the context also binds `_hydra`/`hydraSynth` into its scope; pass
-`{ editorGlobals: false }` to `createContext` to skip that.
-
-Exports: `createContext`, `loadScript`, `hydraEval`, `userCodeLine` (V8-only — parses `error.stack` frame format).
+Evaluation is provided by [`hydra-context`](https://github.com/jdomizz/hydra-context).
 
 ## Notes and limitations
 
 - **~16 WebGL contexts per browser** — ~12+ elements on one page may hit it.
 - `hydra-synth` itself is only tested with 4 outputs; raise `outputs` with caution.
+- **No `p5` wrapper** — the classic editor ships a global `p5`; here load it yourself and `bind` it in.
 
 ## Acknowledgements
 
