@@ -1,6 +1,7 @@
 const FALLBACK_WIDTH = 1280
 const FALLBACK_HEIGHT = 720
 const DEFAULT_DPR_CAP = 2
+const INTERNAL_CANVAS_ID = 'hydra-element-canvas'
 
 /** Manages the canvas: creates it, keeps its resolution in sync with the layout, exposes CSS parts. */
 export class CanvasManager {
@@ -30,10 +31,10 @@ export class CanvasManager {
    */
   init(options = {}) {
     this.#dprCap = options.dpr ?? DEFAULT_DPR_CAP
-    if (this.#canvas && this.#canvas.id !== 'hydra-element-canvas') return
+    if (this.#canvas && this.#canvas.id !== INTERNAL_CANVAS_ID) return
     this.removeInternalCanvas()
     this.#canvas = document.createElement('canvas')
-    this.#canvas.id = 'hydra-element-canvas'
+    this.#canvas.id = INTERNAL_CANVAS_ID
     this.#canvas.setAttribute('part', 'canvas')
     this.#canvas.setAttribute('role', 'img')
     this.#canvas.setAttribute('aria-label', 'Hydra visual')
@@ -60,13 +61,13 @@ export class CanvasManager {
   /** Removes the internal canvas from the shadow root. */
   removeInternalCanvas() {
     this.#shadowRoot
-      ?.querySelectorAll('canvas#hydra-element-canvas')
+      ?.querySelectorAll(`canvas#${INTERNAL_CANVAS_ID}`)
       .forEach(canvas => canvas.remove())
   }
 
   /** Tags non-internal canvases (e.g. the audio analyzer) as `part="analyzer"`. */
   tagAnalyzerCanvases() {
-    this.#shadowRoot?.querySelectorAll('canvas:not(#hydra-element-canvas)').forEach(canvas => {
+    this.#shadowRoot?.querySelectorAll(`canvas:not(#${INTERNAL_CANVAS_ID})`).forEach(canvas => {
       canvas.setAttribute('part', 'analyzer')
       canvas.setAttribute('aria-hidden', 'true')
     })
@@ -75,7 +76,7 @@ export class CanvasManager {
   /** Removes non-internal canvases from the shadow root. */
   removeAnalyzerCanvases() {
     this.#shadowRoot
-      ?.querySelectorAll('canvas:not(#hydra-element-canvas)')
+      ?.querySelectorAll(`canvas:not(#${INTERNAL_CANVAS_ID})`)
       .forEach(canvas => canvas.remove())
   }
 
@@ -119,22 +120,22 @@ export class CanvasManager {
   }
 
   /**
-   * Applies a size without dispatching an event.
+   * Applies a size, returning whether it changed (no event dispatched).
    * @param {{ width: number, height: number }} size
+   * @returns {boolean}
    */
   #applySize(size) {
-    if (size.width === this.#width && size.height === this.#height) return
+    if (size.width === this.#width && size.height === this.#height) return false
     this.resize(size.width, size.height)
+    return true
   }
 
   /** Recomputes the size and, if changed, resizes and dispatches `hydra-element-resize`. */
   #sync() {
-    const size = this.#computeSize()
-    if (size.width === this.#width && size.height === this.#height) return
-    this.resize(size.width, size.height)
+    if (!this.#applySize(this.#computeSize())) return
     this.#host.dispatchEvent(
       new CustomEvent('hydra-element-resize', {
-        detail: { width: size.width, height: size.height },
+        detail: { width: this.#width, height: this.#height },
         bubbles: true,
       })
     )
