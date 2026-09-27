@@ -1,5 +1,5 @@
 import Hydra from 'hydra-synth'
-import { HydraContext, publishHydraGlobals, userCodeLine } from 'hydra-context'
+import { HydraContext, userCodeLine } from 'hydra-context'
 import { EvalQueue } from './queue'
 import { CanvasManager } from './canvas'
 import { Loop } from './loop'
@@ -227,20 +227,31 @@ export class HydraElement extends HTMLElement {
 
   /**
    * Loads an extension script into the element's eval scope, publishing the engine's surface on the global scope while it runs.
+   * Dispatches `hydra-loadscript` with the outcome and rethrows on failure.
    * @param {string} url
    */
   async loadScript(url) {
     if (!this.#hydra) {
       throw new Error('[hydra-element] loadScript before the engine is initialized')
     }
-    await this.#context.withBridge(async () => {
-      const text = await this.#fetchText(url)
-      if (text === null) {
-        await this.#hydra.loadScript(url)
-      } else {
-        await this.#context.eval(text)
-      }
-    })
+    try {
+      await this.#context.withBridge(async () => {
+        const text = await this.#fetchText(url)
+        if (text === null) {
+          await this.#hydra.loadScript(url)
+        } else {
+          await this.#context.eval(text)
+        }
+      })
+      this.#dispatch('hydra-loadscript', { success: true, url })
+    } catch (error) {
+      this.#dispatch('hydra-loadscript', {
+        success: false,
+        url,
+        error: error instanceof Error ? error.message : String(error),
+      })
+      throw error
+    }
   }
 
   /**
@@ -251,10 +262,7 @@ export class HydraElement extends HTMLElement {
   async #fetchText(url) {
     try {
       const res = await fetch(url)
-      if (!res.ok) {
-        console.warn(`[hydra-element] loadScript failed: ${res.status} ${url}`)
-        return null
-      }
+      if (!res.ok) return null
       return res.text()
     } catch {
       return null
@@ -353,7 +361,7 @@ export class HydraElement extends HTMLElement {
     this.#context.attach(this.#hydra)
     this.#scope.loadScript = url => this.loadScript(url)
     if (this.#options.makeGlobal) {
-      this.#globalsRestore = publishHydraGlobals(this.#hydra)
+      this.#globalsRestore = this.#context.publishGlobals()
     }
     this.#dispatch('hydra-ready', { synth: this.#hydra.synth })
     this.#resolveReady?.({ synth: this.#hydra.synth })

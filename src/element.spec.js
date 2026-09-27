@@ -285,6 +285,39 @@ describe('<hydra-element>', () => {
     expect(globalThis.fetch).toHaveBeenCalledWith('ext.js')
   })
 
+  it('should dispatch `hydra-loadscript` success when loadScript succeeds', async () => {
+    const stub = makeStubHydra()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve({ ok: true, text: () => Promise.resolve('') }))
+    )
+    HydraElement.hydraFactory = () => stub
+    const el = mount()
+    await el.ready
+    const detail = await new Promise(resolve => {
+      el.addEventListener('hydra-loadscript', e => resolve(e.detail), { once: true })
+      el.loadScript('ext.js')
+    })
+    expect(detail).toEqual({ success: true, url: 'ext.js' })
+  })
+
+  it('should dispatch `hydra-loadscript` failure and rethrow when loadScript fails', async () => {
+    const stub = makeStubHydra()
+    stub.loadScript = vi.fn().mockRejectedValue(new Error('network down'))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve({ ok: false, status: 404 }))
+    )
+    HydraElement.hydraFactory = () => stub
+    const el = mount()
+    await el.ready
+    const detail = await new Promise(resolve => {
+      el.addEventListener('hydra-loadscript', e => resolve(e.detail), { once: true })
+      el.loadScript('ext.js').catch(() => {})
+    })
+    expect(detail).toEqual({ success: false, url: 'ext.js', error: 'network down' })
+  })
+
   it('should use a subclass hydraFactory override', async () => {
     const stub = makeStubHydra()
     class CustomHydraElement extends HydraElement {
