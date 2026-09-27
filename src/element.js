@@ -81,6 +81,17 @@ export class HydraElement extends HTMLElement {
   #globalsRestore = null
 
   /**
+   * Per-attribute side effects, applied after the parsed options are folded in.
+   * Attributes without an entry recreate the engine and re-evaluate the code.
+   */
+  #attrEffects = {
+    width: () => this.#canvasManager.refresh(),
+    height: () => this.#canvasManager.refresh(),
+    dpr: () => this.#canvasManager.refresh(this.#options.dpr),
+    loop: () => (this.#options.autoLoop ? this.#startLoop() : this.#stopLoop()),
+  }
+
+  /**
    * Follows a canvas resolution change.
    * @param {CustomEvent} event
    */
@@ -263,10 +274,15 @@ export class HydraElement extends HTMLElement {
     this.#loop = null
     this.#canvasManager.disconnect()
     this.#canvasManager.removeAnalyzerCanvases()
-    this.#hydra?.s?.forEach(source => source.clear?.())
+    this.#clearSources()
     this.#globalsRestore?.()
     this.#globalsRestore = null
     this.#hydra = null
+  }
+
+  /** Clears the engine's source buffers, if any. */
+  #clearSources() {
+    this.#hydra?.s?.forEach(source => source.clear?.())
   }
 
   /**
@@ -277,25 +293,13 @@ export class HydraElement extends HTMLElement {
   attributeChangedCallback(attrName, oldValue, newValue) {
     if (oldValue === newValue || !this.#initialized) return
 
-    if (attrName === 'width' || attrName === 'height') {
-      this.#canvasManager.refresh()
-      return
-    }
-    if (attrName === 'dpr') {
-      this.#options = this.#getNewOptions('dpr', newValue)
-      this.#canvasManager.refresh(this.#options.dpr)
-      return
-    }
-
     this.#options = this.#getNewOptions(attrName, newValue)
-    if (attrName === 'loop') {
-      if (this.#options.autoLoop) this.#startLoop()
-      else this.#stopLoop()
-      return
+    const effect = this.#attrEffects[attrName]
+    if (effect) {
+      effect()
+    } else {
+      this.#recreate()
     }
-
-    this.#initHydra()
-    this.#evalCode()
   }
 
   /** Initializes once on connect and evaluates the code. */
@@ -369,6 +373,12 @@ export class HydraElement extends HTMLElement {
   /** Stops the render loop. */
   #stopLoop() {
     this.#loop?.stop()
+  }
+
+  /** Recreates the engine and re-evaluates the code after an attribute change. */
+  #recreate() {
+    this.#initHydra()
+    this.#evalCode()
   }
 
   /** Evaluates the code and dispatches `hydra-eval` with the outcome. */

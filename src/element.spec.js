@@ -194,6 +194,20 @@ describe('<hydra-element>', () => {
     expect(stub.synth.height).toBe(720)
   })
 
+  it('should resize without recreating the engine when dpr changes', async () => {
+    const stub = makeStubHydra()
+    let calls = 0
+    HydraElement.hydraFactory = () => {
+      calls++
+      return stub
+    }
+    const el = mount()
+    await el.ready
+    el.setAttribute('dpr', '1')
+    expect(calls).toBe(1)
+    expect(el.synth).toBe(stub.synth)
+  })
+
   it('should toggle the loop via the loop attribute without recreating the engine', async () => {
     const stub = makeStubHydra()
     let calls = 0
