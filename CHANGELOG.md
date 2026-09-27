@@ -5,11 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-09-27
+
+### Added
+
+- `hydra-loadscript` event with `{ success, url, error? }` after each `loadScript`.
+- `capture()` — the next rendered frame as a PNG `Blob` (needs the loop running).
+- `disconnectedCallback` — removal tears the element down; re-insertion re-initializes it (the eval scope survives).
+
+### Fixed
+
+- Use `this.constructor.hydraFactory` so subclasses can override the engine factory.
+
+### Changed
+
+- Evaluation moved to the `hydra-context` package (`HydraContext`); the `hydra-element/context` subpath is gone.
+- `loadScript` holds the global bridge via `HydraContext.withBridge`, serialized across elements.
+- `global` mode publishes the engine surface via `publishHydraGlobals` from `hydra-context`.
+
 ## [0.7.1] - 2026-09-25
 
 ### Fixed
 
-- Build each entry as a self-contained bundle, so loading the package root URL (e.g. `https://cdn.jsdelivr.net/npm/hydra-element`) no longer 404s on a shared `globals-*.js` chunk
+- Bundle each entry self-contained so the package root URL never 404s on a shared chunk.
 
 ## [0.7.0] - 2026-09-24
 
@@ -19,19 +37,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `loadScript(url)` method — load extensions without the `global` attribute
 - `hydra-ready` and `hydra-eval` events
 - `dpr` attribute and `::part(canvas)`/`::part(analyzer)` CSS parts
-- `bind(name, value)`, `bindLive(name, provider)`, and `unbind(name)` — feed static values or live getters into the eval scope; bound names win over engine-owned reads (`time`, `width`, `height`, `speed`, …)
-- headless context module (`hydra-element/context`): `createContext(hydra, options)` exposing `eval`/`bind`/`bindLive`/`unbind`, plus `loadScript` and re-exports of `hydraEval`/`userCodeLine`
-- `editorGlobals: false` option to `createContext` to skip binding `_hydra`/`hydraSynth` into the scope
+- `bind`/`bindLive`/`unbind` — feed static values or live getters into the eval scope; bound names win over engine-owned reads
+- headless context module (`hydra-element/context`): `createContext()` with `eval`/`bind`/`bindLive`/`unbind`, `loadScript`, and re-exports of `hydraEval`/`userCodeLine`
+- `editorGlobals: false` option to `createContext` to skip `_hydra`/`hydraSynth` in the scope
 
 ### Changed
 
-- `hydraEval` now resolves the DSL through a scope proxy, so `time`, `bpm`, `speed`, extra buffers and custom transforms work without `synth.`
+- `hydraEval` resolves the DSL through a scope proxy, so `time`, `bpm`, `speed`, extra buffers and custom transforms work without `synth.`
 - identifier resolution follows: bound name → live engine read → persistent scope → synth → `globalThis`
 - evaluations are serialized through a queue
 - `loop` attribute now toggles the loop without recreating the engine
 - `width`/`height`/`dpr` changes resize without recreating the engine
 - toolchain moved to pnpm + vitest + oxc-standard
-- dev dependencies updated: vite 8, oxlint 1.85 (oxfmt stays on 0.48 for the oxc-standard peer)
+- dev dependencies updated: vite 8, oxlint 1.85
 
 ### Fixed
 

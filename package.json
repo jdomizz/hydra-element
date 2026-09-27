@@ -1,6 +1,6 @@
 {
   "name": "hydra-element",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "description": "A custom element for embedding Hydra video synth scenes in HTML",
   "keywords": [
     "canvas",
@@ -52,7 +52,7 @@
     "check": "pnpm lint && pnpm format:check && pnpm test && pnpm build"
   },
   "dependencies": {
-    "hydra-context": "file:../hydra-context",
+    "hydra-context": "^0.1.0",
     "hydra-synth": "^1.4.0"
   },
   "devDependencies": {
