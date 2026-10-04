@@ -11,7 +11,8 @@ you just want to use the element, [README.md](./README.md) is enough.
 
 ## Development setup
 
-The package manager is **pnpm** (pinned in `package.json`).
+The package manager is **pnpm** (pinned in `package.json`). Dependencies
+(including `hydra-context`, consumed from npm) install normally:
 
 ```sh
 pnpm install
@@ -34,15 +35,17 @@ button, so you can run any sketch into any of the four live elements.
 | `pnpm test` | Run the test suites (Vitest). |
 | `pnpm lint` | Lint + format (`oxlint --fix` + `oxfmt`). |
 | `pnpm format:check` | Check formatting without writing. |
-| `pnpm build` | Bundle `dist/hydra-element.js`. |
-| `pnpm check` | `lint` + `format:check` + `test` + `build` — the gate. |
+| `pnpm build` | Bundle `dist/hydra-element.js` + emit `dist/*.d.ts` (tsc). |
+| `pnpm publint` | Lint the published package surface. |
+| `pnpm attw` | Check type resolution of the packed package. |
+| `pnpm check` | `lint` + `format:check` + `test` + `build` + `publint` + `attw` — the gate. |
 
 ## Structure
 
 The library is a single custom element with small, focused modules; the
-headless evaluation facade is `HydraContext` in the sibling `hydra-context`
+headless evaluation facade is `HydraContext` in the `hydra-context`
 package. See [ARCHITECTURE.md](./ARCHITECTURE.md) for the module map and the
-extension compatibility table.
+extension loading notes.
 
 ## Conventions
 

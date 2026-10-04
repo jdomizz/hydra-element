@@ -34,7 +34,7 @@ hydra-synth — a bundled dependency, built through hydraFactory, driven by the 
 ```
 
 The element is plain JavaScript in `src/`; evaluation lives behind the
-`HydraContext` class in the sibling `hydra-context` package. Imports flow one
+`HydraContext` class in the `hydra-context` package. Imports flow one
 way (`src/index.js → element → helpers`), and `hydra-synth` is imported only in
 `element.js`'s factory.
 
@@ -43,6 +43,7 @@ way (`src/index.js → element → helpers`), and `hydra-synth` is imported only
 | File | Responsibility |
 | --- | --- |
 | `src/index.js` | Entry point. Registers `<hydra-element>` and re-exports `HydraElement`. |
+| `src/hydra-element.ts` | Types entry. Augments `HTMLElementTagNameMap` so `querySelector`/`createElement` resolve `<hydra-element>` to `HydraElement`, and re-exports the class. |
 | `src/element.js` | `HydraElement` — the custom element. Owns the lifecycle, attributes, events and the public API; engine, loop, canvas, eval and capture are delegated to the helpers. |
 | `hydra-context` | Evaluation package — `HydraContext`, `publishHydraGlobals`, `userCodeLine`. |
 | `src/canvas.js` | `CanvasManager` — internal canvas, `ResizeObserver` (+ DPR) sizing, `::part` exposition. |
@@ -53,10 +54,11 @@ way (`src/index.js → element → helpers`), and `hydra-synth` is imported only
 | `src/queue.js` | `EvalQueue` — serializes element code evaluation tasks. |
 | `src/parser.js` | Pure attribute parsing (`parseNumber`, `parseJSON`, `parseOption`). |
 
-The build yields one artifact: `dist/hydra-element.js`, exposed as the package
-root export. Evaluation is provided by the sibling `hydra-context` package;
-its root exports are `HydraContext`, `publishHydraGlobals`, and `userCodeLine`,
-and the element does not import any package-internal modules.
+`dist/` ships the self-contained `hydra-element.js` bundle (inlines `hydra-synth`
+and `hydra-context`) and the generated `dist/*.d.ts` declarations. The root
+export is the bundle, with `types` at `dist/hydra-element.d.ts`. Evaluation
+comes from `hydra-context` (`HydraContext`, `publishHydraGlobals`,
+`userCodeLine`).
 
 ## Data flow
 
@@ -111,3 +113,23 @@ re-binding restores it.
 Extensions load through `el.loadScript(url)` (or bare `loadScript(url)` inside a sketch), routed through `src/script.js`: it **fetches and evaluates** the script inside the element's scope under a transient bridge from `HydraContext.withBridge` — so self-registering extensions (`setFunction`, …) can reach the engine — falling back to the engine's `script`-tag loader when the fetch fails. This keeps `window` clean after the load. The `global` attribute instead publishes the engine surface persistently via `publishHydraGlobals` (imported from `hydra-context`).
 
 > Extensions that spawn their own UI (MIDI monitor, audio analyzer, p5/Tone canvas, …) append it to `document.body`, **outside** the element's shadow DOM, and expose their API on `window`. They are global by nature and can overlap or collide across multiple isolated elements.
+
+## Build and verification
+
+`pnpm build` runs the Vite library build (the self-contained
+`dist/hydra-element.js`) and then `tsc -p tsconfig.types.json`, which emits the
+`dist/*.d.ts` declarations from the existing JSDoc (`strict` + `checkJs`, with
+`src/types/hydra-synth.d.ts` shimming the untyped `hydra-synth` engine). The full
+local gate is:
+
+```sh
+pnpm check
+```
+
+lint + format check + the Vitest suite + the build + the package publishing
+linters (`publint`, `arethetypeswrong`). CI runs it on every push and pull
+request. The demo (`index.html`) runs against `src` via the Vite dev server
+(`pnpm dev`) and needs no build.
+
+`hydra-context` is consumed from npm as a regular dependency (`^0.2.0`); its
+evaluation types resolve from its published declarations.
