@@ -1,6 +1,21 @@
-import { parseJSON, parseNumber, parseOption } from './parser'
+import { parseJSON, parseNumber, parseOption } from './parser.js'
 
-/** Default options for creating a Hydra instance. */
+/**
+ * Options for creating a Hydra instance, as folded from element attributes.
+ * @typedef {Object} HydraOptions
+ * @property {HTMLCanvasElement | null} canvas The canvas to render into.
+ * @property {boolean} autoLoop Whether the engine runs its own loop (the element overrides it).
+ * @property {boolean} makeGlobal Whether to publish Hydra globals on `window`.
+ * @property {boolean} detectAudio Whether to enable audio analysis.
+ * @property {number} numSources Number of source buffers.
+ * @property {number} numOutputs Number of output buffers.
+ * @property {Array<Function>} extendTransforms Custom GLSL transforms.
+ * @property {'highp'|'mediump'|'lowp'|null} precision Shader precision.
+ * @property {any} pb An `rtc-patch-bay` instance.
+ * @property {number} dpr Device-pixel-ratio cap.
+ */
+
+/** @type {HydraOptions} Default options for creating a Hydra instance. */
 export const DEFAULT_OPTIONS = {
   canvas: null,
   autoLoop: true,
@@ -14,7 +29,12 @@ export const DEFAULT_OPTIONS = {
   dpr: 2,
 }
 
-/** Maps each `hydra-element` attribute to a function that parses it into options. */
+/** @typedef {(options: HydraOptions, value: string | null) => HydraOptions} AttrParser */
+
+/**
+ * Maps each `hydra-element` attribute to a function that parses it into options.
+ * @type {Record<string, AttrParser>}
+ */
 const ATTR_PARSERS = {
   global: (options, value) => ({
     ...options,
@@ -51,10 +71,10 @@ export const OBSERVED_ATTRIBUTES = ['width', 'height', ...Object.keys(ATTR_PARSE
 
 /**
  * Folds the parsed attribute value into the options.
- * @param {Object} options
+ * @param {HydraOptions} options
  * @param {string} attrName
  * @param {string|null} newValue
- * @returns {Object}
+ * @returns {HydraOptions}
  */
 export function foldOptions(options, attrName, newValue) {
   const parse = ATTR_PARSERS[attrName]

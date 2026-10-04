@@ -1,11 +1,11 @@
-import Hydra from 'hydra-synth'
 import { HydraContext, publishHydraGlobals, userCodeLine } from 'hydra-context'
-import { EvalQueue } from './queue'
-import { CanvasManager } from './canvas'
-import { Loop } from './loop'
-import { FrameCapture } from './capture'
-import { loadScriptInto } from './script'
-import { DEFAULT_OPTIONS, OBSERVED_ATTRIBUTES, foldOptions } from './options'
+import Hydra from 'hydra-synth'
+import { CanvasManager } from './canvas.js'
+import { FrameCapture } from './capture.js'
+import { Loop } from './loop.js'
+import { DEFAULT_OPTIONS, OBSERVED_ATTRIBUTES, foldOptions } from './options.js'
+import { EvalQueue } from './queue.js'
+import { loadScriptInto } from './script.js'
 
 /**
  * A custom element that renders Hydra sketches.
@@ -14,30 +14,41 @@ import { DEFAULT_OPTIONS, OBSERVED_ATTRIBUTES, foldOptions } from './options'
 export class HydraElement extends HTMLElement {
   /**
    * Overridable engine factory (test seam).
-   * @param {Object} options
+   * @type {(options: import('./options.js').HydraOptions) => any}
    */
   static hydraFactory = options => new Hydra({ ...options, autoLoop: false })
 
-  /** @returns {string[]} */
+  /**
+   * Attributes the element reacts to.
+   * @returns {string[]}
+   */
   static get observedAttributes() {
     return OBSERVED_ATTRIBUTES
   }
 
   #code = ''
+  /** @type {import('./options.js').HydraOptions} */
   #options = { ...DEFAULT_OPTIONS }
   #scope = Object.create(null)
+  /** @type {import('./loop.js').Loop | null} */
   #loop = null
+  /** @type {any} */
   #hydra = null
   #initialized = false
   #readyPromise
+  /** @type {((value: { synth: unknown } | PromiseLike<{ synth: unknown }>) => void) | undefined} */
   #resolveReady
   #canvasManager
   #queue = new EvalQueue()
-  #context = new HydraContext(null, { scope: this.#scope })
+  #context = new HydraContext(undefined, { scope: this.#scope })
+  /** @type {Function | null} */
   #globalsRestore = null
   #capture = new FrameCapture()
 
-  /** Per-attribute side effects; attributes without an entry recreate the engine and re-evaluate. */
+  /**
+   * Per-attribute side effects; attributes without an entry recreate the engine and re-evaluate.
+   * @type {Record<string, () => void>}
+   */
   #attrEffects = {
     width: () => this.#canvasManager.refresh(),
     height: () => this.#canvasManager.refresh(),
@@ -47,21 +58,22 @@ export class HydraElement extends HTMLElement {
 
   /**
    * Follows a canvas resolution change.
-   * @param {CustomEvent} event
+   * @param {Event} event
    */
   #onResize = event => {
     const synth = this.#hydra?.synth
     if (!synth) return
-    synth.setResolution(event.detail.width, event.detail.height)
-    synth.width = event.detail.width
-    synth.height = event.detail.height
+    const { width, height } = /** @type {CustomEvent} */ (event).detail
+    synth.setResolution(width, height)
+    synth.width = width
+    synth.height = height
   }
 
   constructor() {
     super()
     this.#readyPromise = this.#createReadyPromise()
     this.attachShadow({ mode: 'open' })
-    this.#canvasManager = new CanvasManager(this, this.shadowRoot)
+    this.#canvasManager = new CanvasManager(this, /** @type {ShadowRoot} */ (this.shadowRoot))
     this.addEventListener('hydra-element-resize', this.#onResize)
   }
 
@@ -89,17 +101,28 @@ export class HydraElement extends HTMLElement {
     return this.#scope
   }
 
-  /** Binds a static value into the eval scope; the bound name wins over live engine-owned reads (`time`, `width`, `height`, `speed`, …). */
+  /**
+   * Binds a static value into the eval scope; the bound name wins over live engine-owned reads (`time`, `width`, `height`, `speed`, …).
+   * @param {string} name
+   * @param {unknown} value
+   */
   bind(name, value) {
     this.#context.bind(name, value)
   }
 
-  /** Binds a live getter into the eval scope, re-read on every access (a sketch assignment replaces it). */
+  /**
+   * Binds a live getter into the eval scope, re-read on every access (a sketch assignment replaces it).
+   * @param {string} name
+   * @param {() => any} provider
+   */
   bindLive(name, provider) {
     this.#context.bindLive(name, provider)
   }
 
-  /** Removes a previously bound value or provider from the eval scope. */
+  /**
+   * Removes a previously bound value or provider from the eval scope.
+   * @param {string} name
+   */
   unbind(name) {
     this.#context.unbind(name)
   }
@@ -109,12 +132,12 @@ export class HydraElement extends HTMLElement {
    * @returns {Promise<Blob>}
    */
   capture() {
-    return this.#capture.capture(() => this.#loop?.isRunning)
+    return this.#capture.capture(() => Boolean(this.#loop?.isRunning))
   }
 
   /**
    * The canvas element backing the render.
-   * @returns {HTMLCanvasElement}
+   * @returns {HTMLCanvasElement | null}
    */
   get canvas() {
     return this.#options.canvas
@@ -208,7 +231,10 @@ export class HydraElement extends HTMLElement {
     }
   }
 
-  /** @returns {Promise<{ synth: unknown }>} */
+  /**
+   * Creates the `ready` promise, resolved with `{ synth }` on engine init.
+   * @returns {Promise<{ synth: unknown }>}
+   */
   #createReadyPromise() {
     return new Promise(resolve => {
       this.#resolveReady = resolve
@@ -231,10 +257,11 @@ export class HydraElement extends HTMLElement {
 
   /** Clears the engine's source buffers, if any. */
   #clearSources() {
-    this.#hydra?.s?.forEach(source => source.clear?.())
+    this.#hydra?.s?.forEach(/** @param {any} source */ source => source.clear?.())
   }
 
   /**
+   * Folds an attribute change into the options, then reapplies or recreates.
    * @param {string} attrName
    * @param {string|null} oldValue
    * @param {string|null} newValue
@@ -253,9 +280,10 @@ export class HydraElement extends HTMLElement {
 
   /** Initializes once on connect and evaluates the code. */
   connectedCallback() {
-    if (this.#code === '' && this.textContent) {
-      this.#code = this.textContent
-      this.textContent = ''
+    const initialText = this.textContent
+    if (this.#code === '' && initialText) {
+      this.#code = initialText
+      this.replaceChildren()
     }
     if (!this.#initialized) {
       this.#initialized = true
@@ -301,12 +329,13 @@ export class HydraElement extends HTMLElement {
   /** Creates the engine, tearing down any previous one. */
   #initHydra() {
     this.#teardown()
-    this.#hydra = this.constructor.hydraFactory({ ...this.#options })
+    const factory = /** @type {typeof HydraElement} */ (this.constructor).hydraFactory
+    this.#hydra = factory({ ...this.#options })
     this.#applyTransforms()
     this.#canvasManager.tagAnalyzerCanvases()
     this.#context.attach(this.#hydra)
     this.#capture.attach(this.#hydra)
-    this.#scope.loadScript = url => this.loadScript(url)
+    this.#scope.loadScript = /** @param {string} url */ url => this.loadScript(url)
     if (this.#options.makeGlobal) {
       this.#globalsRestore = publishHydraGlobals(this.#hydra)
     }
@@ -365,7 +394,11 @@ export class HydraElement extends HTMLElement {
     this.dispatchEvent(new CustomEvent(name, { detail, bubbles: true }))
   }
 
-  /** @param {unknown} error @returns {string} */
+  /**
+   * Coerces an eval error to a message string.
+   * @param {unknown} error
+   * @returns {string}
+   */
   #errorMessage(error) {
     return error instanceof Error ? error.message : String(error)
   }

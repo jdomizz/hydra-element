@@ -7,10 +7,12 @@ const INTERNAL_CANVAS_ID = 'hydra-element-canvas'
 export class CanvasManager {
   #host
   #shadowRoot
+  /** @type {HTMLCanvasElement | null} */
   #canvas = null
   #width = 0
   #height = 0
   #dprCap = DEFAULT_DPR_CAP
+  /** @type {ResizeObserver | null} */
   #resizeObserver = null
 
   /** Warn messages are tracked per manager instance, so each element warns on its own attributes. */

@@ -15,8 +15,8 @@ export async function fetchScriptText(url) {
 
 /**
  * Loads an extension script into a context, falling back to the engine's loader when the fetch fails.
- * @param {Object} context
- * @param {Object} hydra
+ * @param {import('hydra-context').HydraContext} context
+ * @param {any} hydra
  * @param {string} url
  * @returns {Promise<void>}
  */

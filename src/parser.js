@@ -33,7 +33,7 @@ export function parseJSON(value, defaultValue) {
  * otherwise returns the default value.
  * @param {*} value - The value to parse.
  * @param {*} defaultValue - The default value returned if the value is not included.
- * @param {Array} options - The array of options to check against.
+ * @param {Array<any>} options - The array of options to check against.
  * @returns {*} - The parsed value or the default value.
  */
 export function parseOption(value, defaultValue, options) {

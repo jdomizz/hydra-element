@@ -1,9 +1,14 @@
 /** Reads frames through the engine's `getScreenImage` latch. */
 export class FrameCapture {
+  /** @type {any} */
   #hydra = null
+  /** @type {((reason?: any) => void) | null} */
   #reject = null
 
-  /** Attaches the engine whose frames are captured. */
+  /**
+   * Attaches the engine whose frames are captured.
+   * @param {any} hydra
+   */
   attach(hydra) {
     this.#hydra = hydra
   }
@@ -33,14 +38,16 @@ export class FrameCapture {
     }
     return new Promise((resolve, reject) => {
       this.#reject = reject
-      hydra.getScreenImage(blob => {
-        this.#reject = null
-        if (blob) {
-          resolve(blob)
-        } else {
-          reject(new Error('capture: no frame was produced'))
+      hydra.getScreenImage(
+        /** @param {any} blob */ blob => {
+          this.#reject = null
+          if (blob) {
+            resolve(blob)
+          } else {
+            reject(new Error('capture: no frame was produced'))
+          }
         }
-      })
+      )
     })
   }
 }

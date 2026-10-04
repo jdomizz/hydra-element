@@ -1,6 +1,7 @@
 /** Animation loop owned by the element. dt is in milliseconds. */
 export class Loop {
   #onTick
+  /** @type {number | null} */
   #rafId = null
   #lastTime = 0
 
@@ -13,7 +14,7 @@ export class Loop {
   start() {
     if (this.#rafId !== null) return
     this.#lastTime = performance.now()
-    const step = now => {
+    const step = /** @param {number} now */ now => {
       this.tick(now)
       this.#rafId = globalThis.requestAnimationFrame(step)
     }
