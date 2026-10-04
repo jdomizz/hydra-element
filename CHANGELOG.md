@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-10-04
+
+### Added
+
+- TypeScript declarations generated from JSDoc — `pnpm build` emits `dist/*.d.ts` next to the bundle.
+- Package surfaces the types — `types` field and `exports` `"types"` condition pointing at `dist/hydra-element.d.ts`.
+- `tsconfig.json` (type-check base) and `tsconfig.types.json` (emit config).
+- `publint` and `arethetypeswrong` in the `pnpm check` gate (ESM-only profile).
+- `src/types/hydra-synth.d.ts` shim for the untyped `hydra-synth` engine (not shipped).
+- Global typing for `<hydra-element>` — `dist/hydra-element.d.ts` augments `HTMLElementTagNameMap` so `querySelector`/`createElement` resolve to `HydraElement`.
+- `hydra-context` now consumed from npm (`^0.2.0`).
+
+### Changed
+
+- `prepublishOnly` runs the full `pnpm check` gate instead of just the build.
+- Relative imports in `src/` use explicit `.js` extensions.
+
 ## [0.8.0] - 2026-09-27
 
 ### Added
