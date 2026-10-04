@@ -38,30 +38,42 @@
   ],
   "main": "dist/hydra-element.js",
   "module": "dist/hydra-element.js",
+  "types": "dist/hydra-element.d.ts",
   "exports": {
-    ".": "./dist/hydra-element.js"
+    ".": {
+      "types": "./dist/hydra-element.d.ts",
+      "import": "./dist/hydra-element.js",
+      "default": "./dist/hydra-element.js"
+    },
+    "./package.json": "./package.json"
   },
   "scripts": {
     "dev": "vite --host",
     "test": "vitest run",
-    "build": "vite build --mode hydra-element",
-    "prepublishOnly": "pnpm build",
+    "clean": "rm -rf dist",
+    "build": "vite build --mode hydra-element && tsc -p tsconfig.types.json",
+    "prepublishOnly": "pnpm check",
     "lint": "oxlint --fix .; oxfmt .",
     "format": "oxfmt .",
     "format:check": "oxfmt --check .",
-    "check": "pnpm lint && pnpm format:check && pnpm test && pnpm build"
+    "publint": "publint",
+    "attw": "attw --pack . --profile esm-only",
+    "check": "pnpm lint && pnpm format:check && pnpm test && pnpm clean && pnpm build && pnpm publint && pnpm attw"
   },
   "dependencies": {
-    "hydra-context": "^0.1.0",
+    "hydra-context": "^0.2.1",
     "hydra-synth": "^1.4.0"
   },
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "happy-dom": "^20.14.5",
-    "oxc-standard": "^1.4.0",
-    "oxfmt": "^0.48.0",
-    "oxlint": "^1.85.0",
-    "vite": "^8.3.0",
-    "vitest": "^5.0.1"
+    "oxc-standard": "^1.4.2",
+    "oxfmt": "^0.67.0",
+    "oxlint": "^1.86.0",
+    "publint": "^0.3.25",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.2",
+    "vitest": "^5.0.3"
   },
   "packageManager": "pnpm@12.4.2"
 }
