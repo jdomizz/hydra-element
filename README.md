@@ -110,7 +110,7 @@ bare assignment; `bind`/`bindLive` restores it.
 | `precision` | default | Shader precision: `highp`, `mediump`, `lowp`. |
 | `sources` / `outputs` | `4` | Number of source/output buffers (0–16). Extra buffers are `s4`, `s5`, …. |
 | `audio` | `false` | Enable audio analysis (`a.fft`, …) — requests microphone access. |
-| `global` | `false` | Keep Hydra globals on `window`. Use **at most one** per document. |
+| `global` | `false` | Keep Hydra globals on `window`; `destroy()` restores them. Use **at most one** per document. |
 | `loop` | `true` | Whether the element drives its own render loop. |
 
 Auto-sized canvases follow the layout via `ResizeObserver`, scaled by
@@ -152,13 +152,6 @@ recreating the engine.
 | `loadScript(url)` | method | Loads an extension script, scoped to this element. |
 | `capture()` | method | The next rendered frame as a PNG `Blob` (needs the loop running). |
 | `destroy()` | method | Tears the element down in place; also automatic on removal. |
-
-### Capturing frames
-
-```js
-const el = document.querySelector('hydra-element')
-const blob = await el.capture() // PNG of the next rendered frame
-```
 
 ## Events
 
@@ -251,6 +244,8 @@ script is fetched and evaluated inside the element's scope:
 > `window._hydra`, `window.hydraSynth`, `window.update`, etc. Across several
 > isolated elements the bridge may resolve to the wrong engine, and anything
 > global by nature (UI appended to `document.body`, APIs on `window`) can collide.
+> In `global` mode, `window.loadScript` is the element's fetch+eval loader, so
+> extensions follow the page CSP and emit `hydra-loadscript`.
 
 ## Evaluation context
 
