@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-11-25
+
+### Changed
+
+- `hydra-context` updated to `^0.2.3`; global mode now keeps
+  `update`/`speed`/`bpm`/`fps`/`afterUpdate` assignments instead of reverting
+  them on the engine's next tick.
+- In `global` mode `window.loadScript` is the element's fetch+eval loader
+  (restored on teardown) instead of hydra-synth's `<script>` injector, so
+  extensions honour the page CSP and report through `hydra-loadscript`.
+- Dev dependencies updated: Vite 8.3.8, Vitest 5.1.1, happy-dom 21.0.4,
+  oxlint 1.95.0, oxfmt 0.80.0.
+
+### Fixed
+
+- `destroy()` and engine rebuilds restore the engine-owned `window` names
+  (`speed`, `bpm`, `update`, `afterUpdate`, `fps`, `time`, `width`, `height`,
+  `mouse`, `stats`, `loadScript`) to their pre-element values, deleting names
+  the page did not own. Uses `snapshotEngineGlobals()` from `hydra-context`.
+
 ## [0.9.0] - 2026-10-04
 
 ### Added
