@@ -1,4 +1,9 @@
-import { HydraContext, publishHydraGlobals, userCodeLine } from 'hydra-context'
+import {
+  HydraContext,
+  publishHydraGlobals,
+  snapshotEngineGlobals,
+  userCodeLine,
+} from 'hydra-context'
 import Hydra from 'hydra-synth'
 import { CanvasManager } from './canvas.js'
 import { FrameCapture } from './capture.js'
@@ -43,6 +48,8 @@ export class HydraElement extends HTMLElement {
   #context = new HydraContext(undefined, { scope: this.#scope })
   /** @type {Function | null} */
   #globalsRestore = null
+  /** @type {Function | null} */
+  #engineGlobalsRestore = null
   #capture = new FrameCapture()
 
   /**
@@ -251,6 +258,8 @@ export class HydraElement extends HTMLElement {
     this.#clearSources()
     this.#globalsRestore?.()
     this.#globalsRestore = null
+    this.#engineGlobalsRestore?.()
+    this.#engineGlobalsRestore = null
     this.#hydra?.regl?.destroy?.()
     this.#hydra = null
   }
@@ -329,6 +338,9 @@ export class HydraElement extends HTMLElement {
   /** Creates the engine, tearing down any previous one. */
   #initHydra() {
     this.#teardown()
+    if (this.#options.makeGlobal) {
+      this.#engineGlobalsRestore = snapshotEngineGlobals()
+    }
     const factory = /** @type {typeof HydraElement} */ (this.constructor).hydraFactory
     this.#hydra = factory({ ...this.#options })
     this.#applyTransforms()
@@ -338,6 +350,8 @@ export class HydraElement extends HTMLElement {
     this.#scope.loadScript = /** @param {string} url */ url => this.loadScript(url)
     if (this.#options.makeGlobal) {
       this.#globalsRestore = publishHydraGlobals(this.#hydra)
+      const win = /** @type {any} */ (globalThis)
+      win.loadScript = /** @param {string} url */ url => this.loadScript(url)
     }
     this.#dispatch('hydra-ready', { synth: this.#hydra.synth })
     this.#resolveReady?.({ synth: this.#hydra.synth })

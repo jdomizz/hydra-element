@@ -8,6 +8,8 @@ if (!customElements.get('hydra-element')) {
 
 const originalFactory = HydraElement.hydraFactory
 
+const engineLoader = () => {}
+
 function makeStubHydra() {
   return {
     synth: { setFunction: vi.fn(), setResolution: vi.fn(), osc: () => ({ out: () => {} }) },
@@ -41,6 +43,9 @@ describe('<hydra-element>', () => {
     HydraElement.hydraFactory = originalFactory
     vi.unstubAllGlobals()
     document.body.innerHTML = ''
+    delete globalThis.speed
+    delete globalThis.loadScript
+    delete globalThis.mouse
   })
 
   it('should expose the synth instance', async () => {
@@ -91,6 +96,147 @@ describe('<hydra-element>', () => {
     el.destroy()
     expect(globalThis._hydra).toBeUndefined()
     expect(globalThis.hydraSynth).toBeUndefined()
+  })
+
+  it('should keep user-prop assignments on a global engine', async () => {
+    const stub = makeStubHydra()
+    stub.sandbox = { makeGlobal: true }
+    stub.synth.speed = 1
+    HydraElement.hydraFactory = () => stub
+    const el = document.createElement('hydra-element')
+    el.setAttribute('global', 'true')
+    document.body.append(el)
+    await el.ready
+
+    const detail = await Promise.all([nextHydraEval(el), (el.code = 'speed = 2')]).then(([d]) => d)
+    expect(detail.success).toBe(true)
+    expect(stub.synth.speed).toBe(2)
+    expect(globalThis.speed).toBe(2)
+
+    stub.synth.speed = globalThis.speed
+    expect(stub.synth.speed).toBe(2)
+
+    el.destroy()
+  })
+
+  it('should restore engine-owned globals when a global element is destroyed', async () => {
+    const stub = makeStubHydra()
+    stub.sandbox = { makeGlobal: true }
+    HydraElement.hydraFactory = () => {
+      globalThis.speed = 1
+      globalThis.loadScript = engineLoader
+      globalThis.mouse = {}
+      return stub
+    }
+    globalThis.speed = 'host'
+    const el = document.createElement('hydra-element')
+    el.setAttribute('global', 'true')
+    document.body.append(el)
+    await el.ready
+    expect(globalThis.speed).toBe(1)
+    expect(globalThis.mouse).toEqual({})
+    el.destroy()
+    expect(globalThis.speed).toBe('host')
+    expect(globalThis.loadScript).toBeUndefined()
+    expect(globalThis.mouse).toBeUndefined()
+    delete globalThis.speed
+  })
+
+  it('should keep the pre-element globals across engine rebuilds', async () => {
+    const first = makeStubHydra()
+    const second = makeStubHydra()
+    const instances = [first, second]
+    HydraElement.hydraFactory = () => {
+      globalThis.speed = 'engine'
+      globalThis.mouse = {}
+      return instances.shift()
+    }
+    globalThis.speed = 'host'
+    const el = document.createElement('hydra-element')
+    el.setAttribute('global', 'true')
+    document.body.append(el)
+    await el.ready
+    expect(globalThis.speed).toBe('engine')
+    el.setAttribute('audio', 'true')
+    expect(globalThis.speed).toBe('engine')
+    expect(globalThis.mouse).toEqual({})
+    el.destroy()
+    expect(globalThis.speed).toBe('host')
+    expect(globalThis.mouse).toBeUndefined()
+    delete globalThis.speed
+  })
+
+  it('should not restore engine globals in non-global mode', async () => {
+    const stub = makeStubHydra()
+    HydraElement.hydraFactory = () => {
+      globalThis.speed = 'engine'
+      return stub
+    }
+    globalThis.speed = 'host'
+    const el = mount()
+    await el.ready
+    el.destroy()
+    expect(globalThis.speed).toBe('engine')
+    delete globalThis.speed
+  })
+
+  it('should expose the element loader as globalThis.loadScript in global mode', async () => {
+    const stub = makeStubHydra()
+    stub.sandbox = { makeGlobal: true }
+    HydraElement.hydraFactory = () => stub
+    const el = document.createElement('hydra-element')
+    el.setAttribute('global', 'true')
+    document.body.append(el)
+    await el.ready
+    expect(typeof globalThis.loadScript).toBe('function')
+    const spy = vi.spyOn(el, 'loadScript').mockResolvedValue()
+    globalThis.loadScript('ext.js')
+    expect(spy).toHaveBeenCalledWith('ext.js')
+    el.destroy()
+  })
+
+  it('should restore the previous globalThis.loadScript on destroy', async () => {
+    const stub = makeStubHydra()
+    stub.sandbox = { makeGlobal: true }
+    HydraElement.hydraFactory = () => stub
+    globalThis.loadScript = 'host'
+    const el = document.createElement('hydra-element')
+    el.setAttribute('global', 'true')
+    document.body.append(el)
+    await el.ready
+    expect(typeof globalThis.loadScript).toBe('function')
+    el.destroy()
+    expect(globalThis.loadScript).toBe('host')
+    delete globalThis.loadScript
+  })
+
+  it('should not expose loadScript in non-global mode', async () => {
+    const stub = makeStubHydra()
+    HydraElement.hydraFactory = () => stub
+    const el = mount()
+    await el.ready
+    expect(globalThis.loadScript).toBeUndefined()
+    el.destroy()
+  })
+
+  it('should keep forwarding loadScript across rebuilds and restore on destroy', async () => {
+    const first = makeStubHydra()
+    const second = makeStubHydra()
+    const instances = [first, second]
+    HydraElement.hydraFactory = () => instances.shift()
+    globalThis.loadScript = 'host'
+    const el = document.createElement('hydra-element')
+    el.setAttribute('global', 'true')
+    document.body.append(el)
+    await el.ready
+    const spy = vi.spyOn(el, 'loadScript').mockResolvedValue()
+    el.setAttribute('audio', 'true')
+    expect(typeof globalThis.loadScript).toBe('function')
+    globalThis.loadScript('ext.js')
+    expect(spy).toHaveBeenCalledWith('ext.js')
+    el.destroy()
+    expect(globalThis.loadScript).toBe('host')
+    delete globalThis.loadScript
   })
 
   it('should dispatch `hydra-ready` with the engine on init', async () => {
